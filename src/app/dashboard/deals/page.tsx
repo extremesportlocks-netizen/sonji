@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Header from "@/components/dashboard/header";
 import {
   Search,
@@ -103,13 +103,14 @@ function formatCurrency(n: number) {
 // DEAL CARD
 // ────────────────────────────────────
 
-function DealCard({ deal, onDragStart }: { deal: Deal; onDragStart: (e: React.DragEvent, dealId: string) => void }) {
+function DealCard({ deal, onDragStart, onDragEnd }: { deal: Deal; onDragStart: (e: React.DragEvent, dealId: string) => void; onDragEnd: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, deal.id)}
+      onDragEnd={onDragEnd}
       className="bg-white rounded-xl border border-gray-100 p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition cursor-grab active:cursor-grabbing group"
     >
       {/* Title + Menu */}
@@ -187,7 +188,7 @@ export default function DealsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState<"kanban" | "list" | "grid">("kanban");
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
-  const dragDealId = useRef<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   // Filter by search
   const filtered = deals.filter((d) => {
@@ -205,7 +206,7 @@ export default function DealsPage() {
 
   // Drag handlers
   const handleDragStart = (e: React.DragEvent, dealId: string) => {
-    dragDealId.current = dealId;
+    setDraggingId(dealId);
     e.dataTransfer.setData("text/plain", dealId);
     e.dataTransfer.effectAllowed = "move";
   };
@@ -233,7 +234,7 @@ export default function DealsPage() {
     e.preventDefault();
     e.stopPropagation();
     setDragOverStage(null);
-    const dealId = e.dataTransfer.getData("text/plain") || dragDealId.current;
+    const dealId = e.dataTransfer.getData("text/plain") || draggingId;
     if (!dealId) return;
 
     setDeals((prev) =>
@@ -241,7 +242,7 @@ export default function DealsPage() {
         d.id === dealId ? { ...d, stage: stageId } : d
       )
     );
-    dragDealId.current = null;
+    setDraggingId(null);
   };
 
   return (
@@ -401,7 +402,7 @@ export default function DealsPage() {
                   }`}
                 >
                   {stageDeals.map((deal) => (
-                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} />
+                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} onDragEnd={() => { setDragOverStage(null); setDraggingId(null); }} />
                   ))}
 
                   {stageDeals.length === 0 && !isDragOver && (
