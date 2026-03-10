@@ -292,3 +292,74 @@ export const activityLog = pgTable("activity_log", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+/**
+ * COMPANIES — Business/organization records linked to contacts.
+ */
+export const companies = pgTable("companies", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  domain: varchar("domain", { length: 255 }),
+  industry: varchar("industry", { length: 100 }),
+  size: varchar("size", { length: 50 }),
+  phone: varchar("phone", { length: 50 }),
+  address: text("address"),
+  tags: jsonb("tags").default([]),
+  customFields: jsonb("custom_fields").default({}),
+  status: varchar("status", { length: 50 }).notNull().default("prospect"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * TASKS — To-do items assignable to users, optionally linked to contacts.
+ */
+export const tasks = pgTable("tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).notNull().default("todo"),
+  priority: varchar("priority", { length: 20 }).notNull().default("medium"),
+  assignedTo: uuid("assigned_to").references(() => users.id),
+  contactId: uuid("contact_id").references(() => contacts.id),
+  companyId: uuid("company_id").references(() => companies.id),
+  dueDate: date("due_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * NOTIFICATIONS — In-app notification feed per user.
+ */
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  type: varchar("type", { length: 100 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body"),
+  channel: varchar("channel", { length: 20 }).notNull().default("in_app"),
+  read: boolean("read").notNull().default(false),
+  actionUrl: varchar("action_url", { length: 500 }),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * API_KEYS — External API access tokens per tenant (Scale tier).
+ */
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  keyHash: varchar("key_hash", { length: 255 }).notNull(),
+  prefix: varchar("prefix", { length: 20 }).notNull(), // first 8 chars for display: sk_live_abc12...
+  permissions: jsonb("permissions").default([]),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
