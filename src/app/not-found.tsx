@@ -6,7 +6,7 @@ export default function NotFound() {
       <div className="text-center max-w-md">
         {/* Logo */}
         <Link href="/" className="inline-block mb-8">
-          <span className="text-2xl font-bold text-gray-900">sonji<span className="text-indigo-500">.</span></span>
+          <span className="text-2xl font-bold text-gray-900">sonji<span className="text-violet-500">.</span></span>
         </Link>
 
         {/* 404 number */}

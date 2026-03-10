@@ -31,7 +31,7 @@ export default function SignupPage() {
 
         <div className="relative z-10 text-center">
           <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8">
-            <span className="text-2xl font-bold text-white">S</span>
+            <span className="text-2xl font-bold text-white">sonji<span className="text-violet-300">.</span></span>
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">Replace $700/month in subscriptions.</h2>
           <p className="text-indigo-200 text-sm leading-relaxed max-w-xs mx-auto mb-10">
@@ -63,7 +63,7 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <Link href="/" className="inline-block mb-10">
-            <span className="text-2xl font-bold text-gray-900">sonji<span className="text-indigo-500">.</span></span>
+            <span className="text-2xl font-bold text-gray-900">sonji<span className="text-violet-500">.</span></span>
           </Link>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h1>

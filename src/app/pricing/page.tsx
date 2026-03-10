@@ -140,7 +140,7 @@ export default function PricingPage() {
       {/* Nav */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-gray-900">sonji<span className="text-indigo-500">.</span></Link>
+          <Link href="/" className="text-2xl font-bold text-gray-900">sonji<span className="text-violet-500">.</span></Link>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-600">
             <Link href="/#features" className="hover:text-gray-900 transition">Features</Link>
             <Link href="/pricing" className="text-indigo-600 font-medium">Pricing</Link>
@@ -315,7 +315,7 @@ export default function PricingPage() {
       {/* Footer */}
       <footer className="border-t border-gray-100 py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <span className="text-xl font-bold text-gray-900">sonji<span className="text-indigo-500">.</span></span>
+          <span className="text-xl font-bold text-gray-900">sonji<span className="text-violet-500">.</span></span>
           <div className="flex gap-8 text-sm text-gray-400">
             <Link href="/privacy" className="hover:text-gray-600 transition">Privacy</Link>
             <Link href="/terms" className="hover:text-gray-600 transition">Terms</Link>

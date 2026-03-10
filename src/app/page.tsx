@@ -122,9 +122,8 @@ export default function HomePage() {
       {/* ═══ NAV ═══ */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navScrolled?"bg-[#FAFAFA]/95 shadow-sm":"bg-[#FAFAFA]/80"} backdrop-blur-xl border-b border-gray-200/50`}>
         <div className="max-w-[1200px] mx-auto px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 font-bold text-[17px] tracking-tight text-gray-900">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xs font-extrabold font-mono">S</div>
-            Sonji
+          <Link href="/" className="text-2xl font-bold text-gray-900">
+            sonji<span className="text-violet-500">.</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#platform" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Platform</a>
@@ -168,8 +167,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] min-h-[420px]">
               <div className="bg-[#FAFBFC] border-r border-gray-100 py-5 hidden md:block">
                 <div className="flex items-center gap-2 px-4 pb-4 mb-3 border-b border-gray-100">
-                  <div className="w-6 h-6 bg-indigo-600 rounded-md flex items-center justify-center text-white text-[9px] font-extrabold font-mono">S</div>
-                  <span className="text-sm font-bold text-gray-900">Sonji</span>
+                  <span className="text-sm font-bold text-gray-900">sonji<span className="text-violet-500">.</span></span>
                 </div>
                 {["Dashboard","Contacts","Deals","Messages"].map((n,i)=>(
                   <div key={n} className={`flex items-center gap-2.5 px-4 py-2 text-[13px] font-medium relative ${i===0?"text-indigo-600 bg-indigo-50/60":"text-gray-400"}`}>
@@ -387,7 +385,7 @@ export default function HomePage() {
       <footer className="py-16 px-8 border-t border-gray-100">
         <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-[1.5fr_1fr_1fr_1fr] gap-12">
           <div>
-            <div className="flex items-center gap-2.5 font-bold text-base mb-3"><div className="w-6 h-6 bg-indigo-600 rounded-md flex items-center justify-center text-white text-[9px] font-extrabold font-mono">S</div>Sonji</div>
+            <div className="text-2xl font-bold text-gray-900 mb-3">sonji<span className="text-violet-500">.</span></div>
             <p className="text-sm text-gray-500 leading-relaxed max-w-[280px]">The all-in-one CRM built for businesses that want to stop juggling tools and start growing. One platform, one price, zero complexity.</p>
           </div>
           <div>

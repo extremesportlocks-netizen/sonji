@@ -25,7 +25,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Logo */}
           <Link href="/" className="inline-block mb-10">
-            <span className="text-2xl font-bold text-gray-900">sonji<span className="text-indigo-500">.</span></span>
+            <span className="text-2xl font-bold text-gray-900">sonji<span className="text-violet-500">.</span></span>
           </Link>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h1>
@@ -112,7 +112,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 text-center">
           <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8">
-            <span className="text-2xl font-bold text-white">S</span>
+            <span className="text-2xl font-bold text-white">sonji<span className="text-violet-300">.</span></span>
           </div>
           <h2 className="text-2xl font-bold text-white mb-3">The CRM that just works.</h2>
           <p className="text-indigo-200 text-sm leading-relaxed max-w-xs mx-auto">

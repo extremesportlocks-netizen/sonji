@@ -64,7 +64,7 @@ export default function OnboardingPage() {
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="text-xl font-bold text-gray-900">
-            sonji<span className="text-indigo-500">.</span>
+            sonji<span className="text-violet-500">.</span>
           </div>
           <div className="flex items-center gap-1">
             {steps.map((s, i) => (
