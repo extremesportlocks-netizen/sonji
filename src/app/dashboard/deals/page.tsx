@@ -206,27 +206,39 @@ export default function DealsPage() {
   // Drag handlers
   const handleDragStart = (e: React.DragEvent, dealId: string) => {
     dragDealId.current = dealId;
+    e.dataTransfer.setData("text/plain", dealId);
     e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e: React.DragEvent, stageId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
-    setDragOverStage(stageId);
+    if (dragOverStage !== stageId) {
+      setDragOverStage(stageId);
+    }
   };
 
-  const handleDragLeave = () => {
-    setDragOverStage(null);
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're actually leaving the column, not entering a child
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverStage(null);
+    }
   };
 
   const handleDrop = (e: React.DragEvent, stageId: string) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOverStage(null);
-    if (!dragDealId.current) return;
+    const dealId = e.dataTransfer.getData("text/plain") || dragDealId.current;
+    if (!dealId) return;
 
     setDeals((prev) =>
       prev.map((d) =>
-        d.id === dragDealId.current ? { ...d, stage: stageId } : d
+        d.id === dealId ? { ...d, stage: stageId } : d
       )
     );
     dragDealId.current = null;
@@ -381,6 +393,9 @@ export default function DealsPage() {
 
                 {/* Cards */}
                 <div
+                  onDragOver={(e) => handleDragOver(e, stage.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, stage.id)}
                   className={`space-y-3 min-h-[100px] rounded-xl p-2 transition ${
                     isDragOver ? "bg-indigo-50/50 border-2 border-dashed border-indigo-300" : "bg-gray-50/50"
                   }`}
