@@ -52,6 +52,7 @@ const navGroups: NavGroup[] = [
       { label: "Deals", href: "/dashboard/deals", icon: Handshake },
       { label: "Tasks", href: "/dashboard/tasks", icon: CheckSquare },
       { label: "Meetings", href: "/dashboard/meetings", icon: Calendar },
+      { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3 },
     ],
   },
   {
