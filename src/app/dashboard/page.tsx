@@ -1,6 +1,8 @@
 "use client";
 
 import Header from "@/components/dashboard/header";
+import OnboardingChecklist from "@/components/dashboard/onboarding-checklist";
+import ProductTour, { useTour } from "@/components/dashboard/product-tour";
 import {
   Users,
   Phone,
@@ -72,10 +74,18 @@ const recentActivity = [
 ];
 
 export default function DashboardPage() {
+  const { showTour, completeTour, dismissTour } = useTour();
+
   return (
     <>
       <Header title="Dashboard" />
       <div className="p-6 space-y-6">
+        {/* Onboarding Checklist */}
+        <OnboardingChecklist />
+
+        {/* Product Tour */}
+        {showTour && <ProductTour onComplete={completeTour} onDismiss={dismissTour} />}
+
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat) => (

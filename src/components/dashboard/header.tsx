@@ -48,7 +48,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         {/* Center: Search */}
-        <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
+        <div className="hidden md:flex items-center flex-1 max-w-md mx-8" data-tour="search">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -81,13 +81,13 @@ export default function Header({ title, subtitle }: HeaderProps) {
           <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block" />
 
           {/* Notifications */}
-          <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition">
+          <button data-tour="notifications" className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition">
             <Bell className="w-[18px] h-[18px]" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full" />
           </button>
 
           {/* Create Button */}
-          <div className="relative">
+          <div className="relative" data-tour="create">
             <button
               onClick={() => setShowCreateMenu(!showCreateMenu)}
               className="flex items-center gap-1.5 ml-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition shadow-sm"

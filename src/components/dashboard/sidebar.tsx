@@ -94,6 +94,7 @@ export default function Sidebar() {
 
   return (
     <aside
+      data-tour="sidebar"
       className={`
         fixed left-0 top-0 bottom-0 z-40
         flex flex-col
@@ -172,6 +173,7 @@ export default function Sidebar() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        data-tour={item.label.toLowerCase()}
                         className={`
                           flex items-center gap-3 rounded-lg text-sm font-medium transition-all
                           ${collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2"}
