@@ -22,6 +22,8 @@ import {
   MessageSquare,
   ChevronsLeft,
   ChevronsRight,
+  ClipboardList,
+  DollarSign,
 } from "lucide-react";
 
 // ────────────────────────────────────
@@ -53,6 +55,8 @@ const navGroups: NavGroup[] = [
       { label: "Tasks", href: "/dashboard/tasks", icon: CheckSquare },
       { label: "Meetings", href: "/dashboard/meetings", icon: Calendar },
       { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3 },
+      { label: "Forms", href: "/dashboard/forms", icon: ClipboardList },
+      { label: "Invoices", href: "/dashboard/invoices", icon: DollarSign },
     ],
   },
   {

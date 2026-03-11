@@ -10,6 +10,7 @@ import {
   Mail,
   Video,
 } from "lucide-react";
+import { useModal } from "@/components/modals/modal-provider";
 
 // ────────────────────────────────────
 // HEADER COMPONENT
@@ -24,12 +25,15 @@ interface HeaderProps {
 export default function Header({ title, subtitle }: HeaderProps) {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { openModal } = useModal();
 
   const createOptions = [
-    { label: "Add Contact", icon: "👤" },
-    { label: "Add Company", icon: "🏢" },
-    { label: "Add Deal", icon: "🤝" },
-    { label: "Add Task", icon: "✓" },
+    { label: "Add Contact", icon: "👤", modal: "contact" as const },
+    { label: "Add Deal", icon: "🤝", modal: "deal" as const },
+    { label: "Add Task", icon: "✓", modal: "task" as const },
+    { label: "Schedule Meeting", icon: "📅", modal: "meeting" as const },
+    { label: "Compose Email", icon: "✉️", modal: "email" as const },
+    { label: "Import Contacts", icon: "📥", modal: "import" as const },
   ];
 
   return (
@@ -108,7 +112,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
                     <button
                       key={opt.label}
                       className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                      onClick={() => setShowCreateMenu(false)}
+                      onClick={() => { setShowCreateMenu(false); openModal(opt.modal); }}
                     >
                       <span className="text-base">{opt.icon}</span>
                       <span>{opt.label}</span>
