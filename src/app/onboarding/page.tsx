@@ -14,6 +14,13 @@ import {
   Home,
   Sparkles,
   Rocket,
+  Hammer,
+  Scale,
+  Target,
+  UtensilsCrossed,
+  Car,
+  HandHeart,
+  ShoppingCart,
 } from "lucide-react";
 
 const steps = ["Account", "Plan", "Brand", "Industry", "Ready"];
@@ -30,7 +37,13 @@ const industries = [
   { id: "beauty", name: "Beauty & Salon", icon: Scissors, desc: "Salons, barbers, spas", color: "bg-pink-50 text-pink-600 border-pink-200" },
   { id: "agency", name: "Agency & Consulting", icon: Briefcase, desc: "Marketing, consulting, services", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
   { id: "realestate", name: "Real Estate", icon: Home, desc: "Agents, brokers, property mgmt", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-  { id: "other", name: "Other", icon: Sparkles, desc: "Something else entirely", color: "bg-gray-50 text-gray-600 border-gray-200" },
+  { id: "contractors", name: "Home Services", icon: Hammer, desc: "Roofing, HVAC, plumbing, electrical", color: "bg-amber-50 text-amber-600 border-amber-200" },
+  { id: "legal", name: "Legal & Law Firms", icon: Scale, desc: "Attorneys, paralegals, firms", color: "bg-slate-50 text-slate-600 border-slate-200" },
+  { id: "coaching", name: "Coaching & Education", icon: Target, desc: "Coaches, tutors, course creators", color: "bg-violet-50 text-violet-600 border-violet-200" },
+  { id: "restaurant", name: "Restaurant & Food", icon: UtensilsCrossed, desc: "Restaurants, catering, cafes", color: "bg-red-50 text-red-600 border-red-200" },
+  { id: "automotive", name: "Automotive", icon: Car, desc: "Dealerships, repair, detailing", color: "bg-blue-50 text-blue-600 border-blue-200" },
+  { id: "nonprofit", name: "Nonprofit", icon: HandHeart, desc: "Charities, foundations, churches", color: "bg-teal-50 text-teal-600 border-teal-200" },
+  { id: "ecommerce", name: "E-Commerce", icon: ShoppingCart, desc: "Online stores, DTC, subscriptions", color: "bg-purple-50 text-purple-600 border-purple-200" },
 ];
 
 const presetColors = ["#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#0f172a", "#0ea5e9"];
@@ -88,7 +101,7 @@ export default function OnboardingPage() {
 
       {/* Content */}
       <div className="flex-1 flex items-start justify-center pt-12 pb-24 px-6">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-3xl">
 
           {/* ═══ STEP 1: Account ═══ */}
           {step === 0 && (
@@ -249,7 +262,7 @@ export default function OnboardingPage() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">What's your industry?</h1>
               <p className="text-gray-500 mb-8">We'll set up pipeline stages, form templates, and email templates tailored to your business.</p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 {industries.map((ind) => {
                   const Icon = ind.icon;
                   return (
@@ -332,7 +345,7 @@ export default function OnboardingPage() {
       {/* Bottom bar */}
       {step < 4 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
-          <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
             <button onClick={prev}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition ${
                 step === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-600 hover:bg-gray-100"

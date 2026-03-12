@@ -6,3 +6,6 @@ export { renderEmail, renderVariables, wrapInEmailShell, htmlToPlainText, getTem
 export { parseCSV, autoMapColumns, validateRows, prepareForInsert, CRM_FIELDS } from "./csv-import";
 export { generateSlots, getAvailableSlots, isSlotAvailable, formatSlotDisplay, groupSlotsByDate, AVAILABILITY_PRESETS } from "./scheduling";
 export { executeWorkflow, executeStep, matchesTrigger, findMatchingWorkflows, evaluateCondition, WORKFLOW_TEMPLATES } from "./automation-engine";
+export { getAllIndustries, getIndustryTemplate, getIndustryPipeline, INDUSTRY_TEMPLATES } from "./industry-templates";
+export { scoreContact, scoreContacts, getScoreDisplay, DEFAULT_SCORING_PROFILE } from "./lead-scoring";
+export { computeDashboardMetrics, computePipelineMetrics, computeRevenueTrends, computeTeamMetrics, computeFunnel, exportToCSV, EXPORT_COLUMNS } from "./analytics";
