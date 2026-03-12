@@ -57,9 +57,23 @@ export const config = {
   ],
 };
 
+// ─── SITE PASSWORD PROTECTION ───
+// Set SITE_PASSWORD env var to enable. Remove to disable.
+const SITE_PASSWORD = process.env.SITE_PASSWORD || "";
+
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const hostname = request.headers.get("host") || "";
+
+  // ─── PASSWORD GATE ───
+  // If SITE_PASSWORD is set, require password before showing anything
+  if (SITE_PASSWORD && url.pathname !== "/_password" && url.pathname !== "/api/auth-password") {
+    const authed = request.cookies.get("site_auth")?.value;
+    if (authed !== SITE_PASSWORD) {
+      url.pathname = "/_password";
+      return NextResponse.rewrite(url);
+    }
+  }
 
   // ─── LOCAL DEVELOPMENT ───
   // In dev, hostname is localhost:3000 — skip tenant resolution
