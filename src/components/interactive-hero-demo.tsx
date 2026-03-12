@@ -57,7 +57,7 @@ const tabs = [
 function DashboardPanel() {
   const barHeights = [35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 85, 95];
   return (
-    <div className="p-5 bg-[#FAFAFA]">
+    <div className="p-5 bg-[#FAFAFA] h-full overflow-y-auto">
       <p className="text-[20px] font-bold tracking-tight mb-4 text-left text-gray-900">Good morning, Orlando</p>
       <div className="grid grid-cols-3 gap-2.5 mb-4">
         {[
@@ -100,7 +100,7 @@ function ContactsPanel() {
   ];
 
   return (
-    <div className="p-4 bg-[#FAFAFA]">
+    <div className="p-4 bg-[#FAFAFA] h-full overflow-y-auto">
       <div className="flex items-center gap-2 mb-3">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -154,20 +154,20 @@ function DealsPanel() {
   ];
 
   return (
-    <div className="p-3 bg-[#FAFAFA]">
+    <div className="p-3 bg-[#FAFAFA] h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[12px] font-semibold text-gray-700">Pipeline — <span className="text-indigo-600">$134,550</span></p>
         <button className="px-2 py-1 text-[9px] font-medium bg-indigo-600 text-white rounded-md flex items-center gap-1"><Plus className="w-2.5 h-2.5" /> Deal</button>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 flex-1 overflow-x-auto pb-1">
         {cols.map((col) => (
-          <div key={col.stage} className="flex-1 min-w-[120px]">
+          <div key={col.stage} className="flex-1 min-w-[120px] flex flex-col">
             <div className="flex items-center gap-1.5 mb-2">
               <div className={`w-2 h-2 rounded-full ${col.color}`} />
               <span className="text-[10px] font-semibold text-gray-600">{col.stage}</span>
               <span className="text-[9px] text-gray-400 ml-auto">{col.cards.length}</span>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 flex-1 bg-gray-100/50 rounded-lg p-1.5">
               {col.cards.map((c) => (
                 <div key={c.id}
                   onMouseDown={() => setDragCard(c.id)}
@@ -193,16 +193,22 @@ function MessagesPanel() {
   const [activeThread, setActiveThread] = useState(0);
   const threads = [
     { name: "Mason T.", msg: "Thanks for the proposal!", ch: "email", time: "2m", unread: true, messages: [
+      { dir: "out", text: "Hi Mason — attached is the updated proposal with the revised pricing we discussed." },
       { dir: "in", text: "Thanks for the proposal! We're reviewing internally and should have feedback by Thursday." },
       { dir: "out", text: "Sounds great — let me know if you have any questions in the meantime!" },
+      { dir: "in", text: "Quick question — can we schedule a 30 min call Wednesday to walk through implementation?" },
+      { dir: "out", text: "Absolutely! I'll send over a calendar link shortly." },
     ]},
     { name: "Sarah C.", msg: "Thursday at 2pm works", ch: "sms", time: "28m", unread: true, messages: [
       { dir: "out", text: "Hi Sarah! Still good for the demo Thursday at 2pm EST?" },
       { dir: "in", text: "Thursday at 2pm works. Looking forward to it!" },
       { dir: "out", text: "Perfect, sending the invite now 🙌" },
+      { dir: "in", text: "Got it! Can I bring our CTO along? He has some technical questions." },
+      { dir: "out", text: "Of course — the more the merrier. See you both Thursday!" },
     ]},
     { name: "Daniel K.", msg: "Interested in switching from GHL", ch: "form", time: "5h", unread: false, messages: [
       { dir: "in", text: "Interested in your CRM. Currently on GoHighLevel but the hidden fees are killing us. Team of 8, ~3K contacts." },
+      { dir: "out", text: "Hi Daniel! We hear that a lot from GHL users. Would love to show you how we handle that differently. Free this week for a quick demo?" },
     ]},
   ];
 
@@ -210,7 +216,7 @@ function MessagesPanel() {
 
   return (
     <div className="flex h-full bg-[#FAFAFA]">
-      <div className="w-[40%] border-r border-gray-100 bg-white">
+      <div className="w-[40%] border-r border-gray-100 bg-white overflow-y-auto">
         {threads.map((t, i) => (
           <div key={t.name} onClick={() => setActiveThread(i)}
             className={`flex items-center gap-2 px-3 py-2.5 cursor-pointer transition border-b border-gray-50 ${activeThread === i ? "bg-indigo-50/60" : "hover:bg-gray-50"}`}>
@@ -257,7 +263,7 @@ function MessagesPanel() {
 
 function AnalyticsPanel() {
   return (
-    <div className="p-4 bg-[#FAFAFA]">
+    <div className="p-4 bg-[#FAFAFA] h-full overflow-y-auto">
       <p className="text-[12px] font-semibold text-gray-700 mb-3">Pipeline Analytics</p>
       <div className="grid grid-cols-2 gap-2 mb-3">
         {[
@@ -306,7 +312,7 @@ function AutomationsPanel() {
   ];
 
   return (
-    <div className="p-4 bg-[#FAFAFA]">
+    <div className="p-4 bg-[#FAFAFA] h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-3">
         <p className="text-[12px] font-semibold text-gray-700">Workflows</p>
         <button className="px-2 py-1 text-[9px] font-medium bg-indigo-600 text-white rounded-md flex items-center gap-1"><Plus className="w-2.5 h-2.5" /> New</button>
@@ -392,7 +398,7 @@ export default function InteractiveHeroDemo() {
           </div>
 
           {/* Main content */}
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden h-[420px]">
             {/* Mobile tab bar */}
             <div className="flex md:hidden border-b border-gray-100 overflow-x-auto">
               {tabs.map((tab) => {
@@ -409,7 +415,7 @@ export default function InteractiveHeroDemo() {
             </div>
 
             {/* Panel with transition */}
-            <div key={activeTab} className="animate-panelIn">
+            <div key={activeTab} className="animate-panelIn h-full">
               {panels[activeTab]}
             </div>
           </div>
