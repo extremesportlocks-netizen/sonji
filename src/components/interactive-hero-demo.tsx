@@ -145,38 +145,132 @@ function ContactsPanel() {
 // ────────────────────────────────────
 
 function DealsPanel() {
-  const [dragCard, setDragCard] = useState<string | null>(null);
-  const cols = [
+  type Card = { id: string; name: string; val: string };
+  type Column = { stage: string; color: string; cards: Card[] };
+
+  const [columns, setColumns] = useState<Column[]>([
     { stage: "Lead", color: "bg-indigo-500", cards: [{ id: "d1", name: "Vertex Partners", val: "$24,000" }, { id: "d2", name: "DataFlow", val: "$8,500" }] },
     { stage: "Proposal", color: "bg-amber-500", cards: [{ id: "d3", name: "CloudPeak", val: "$15,750" }] },
     { stage: "Negotiation", color: "bg-violet-500", cards: [{ id: "d4", name: "TechVentures", val: "$42,000" }] },
     { stage: "Won", color: "bg-emerald-500", cards: [{ id: "d5", name: "Halo Collar", val: "$31,500" }, { id: "d6", name: "Fusion Labs", val: "$12,800" }] },
-  ];
+  ]);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [lastMoved, setLastMoved] = useState<string | null>(null);
+  const [showHint, setShowHint] = useState(true);
+
+  const totalValue = columns.reduce((s, col) => s + col.cards.reduce((cs, c) => cs + parseInt(c.val.replace(/[$,]/g, "")), 0), 0);
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, cardId: string) => {
+    setDragging(cardId);
+    setShowHint(false);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", cardId);
+    const el = e.currentTarget;
+    setTimeout(() => { el.style.opacity = "0.4"; }, 0);
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    setDragging(null);
+    setDragOverCol(null);
+    e.currentTarget.style.opacity = "1";
+  };
+
+  const handleDragOver = (e: React.DragEvent, stage: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverCol(stage);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverCol(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetStage: string) => {
+    e.preventDefault();
+    const cardId = e.dataTransfer.getData("text/plain");
+    setDragOverCol(null);
+    setDragging(null);
+
+    setColumns((prev) => {
+      // Find which column has this card
+      let card: Card | null = null;
+      let sourceStage = "";
+      for (const col of prev) {
+        const found = col.cards.find((c) => c.id === cardId);
+        if (found) { card = found; sourceStage = col.stage; break; }
+      }
+      if (!card || sourceStage === targetStage) return prev;
+
+      setLastMoved(cardId);
+      setTimeout(() => setLastMoved(null), 1000);
+
+      return prev.map((col) => {
+        if (col.stage === sourceStage) return { ...col, cards: col.cards.filter((c) => c.id !== cardId) };
+        if (col.stage === targetStage) return { ...col, cards: [...col.cards, card!] };
+        return col;
+      });
+    });
+  };
 
   return (
     <div className="p-3 bg-[#FAFAFA] h-full flex flex-col">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[12px] font-semibold text-gray-700">Pipeline — <span className="text-indigo-600">$134,550</span></p>
+      {/* Hint banner */}
+      {showHint && (
+        <div className="flex items-center justify-center gap-2 mb-2 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg animate-pulse">
+          <span className="text-[10px]">👆</span>
+          <span className="text-[10px] font-medium text-indigo-600">Try it — drag a deal to a new stage</span>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[12px] font-semibold text-gray-700">Pipeline — <span className="text-indigo-600">${totalValue.toLocaleString()}</span></p>
         <button className="px-2 py-1 text-[9px] font-medium bg-indigo-600 text-white rounded-md flex items-center gap-1"><Plus className="w-2.5 h-2.5" /> Deal</button>
       </div>
       <div className="flex gap-2 flex-1 overflow-x-auto pb-1">
-        {cols.map((col) => (
-          <div key={col.stage} className="flex-1 min-w-[120px] flex flex-col">
+        {columns.map((col) => (
+          <div key={col.stage} className="flex-1 min-w-[120px] flex flex-col"
+            onDragOver={(e) => handleDragOver(e, col.stage)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, col.stage)}>
             <div className="flex items-center gap-1.5 mb-2">
               <div className={`w-2 h-2 rounded-full ${col.color}`} />
               <span className="text-[10px] font-semibold text-gray-600">{col.stage}</span>
               <span className="text-[9px] text-gray-400 ml-auto">{col.cards.length}</span>
             </div>
-            <div className="space-y-1.5 flex-1 bg-gray-100/50 rounded-lg p-1.5">
+            <div className={`space-y-1.5 flex-1 rounded-lg p-1.5 transition-all duration-200 ${
+              dragOverCol === col.stage && dragging
+                ? "bg-indigo-100/70 border-2 border-dashed border-indigo-300"
+                : "bg-gray-100/50"
+            }`}>
               {col.cards.map((c) => (
                 <div key={c.id}
-                  onMouseDown={() => setDragCard(c.id)}
-                  onMouseUp={() => setDragCard(null)}
-                  className={`bg-white rounded-lg p-2.5 border border-gray-100 cursor-grab active:cursor-grabbing transition hover:shadow-md hover:-translate-y-0.5 ${dragCard === c.id ? "shadow-lg scale-[1.03] border-indigo-200" : ""}`}>
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, c.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`bg-white rounded-lg p-2.5 border cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                    dragging === c.id
+                      ? "opacity-40 scale-95 border-indigo-300"
+                      : lastMoved === c.id
+                        ? "border-emerald-300 shadow-md shadow-emerald-100 ring-2 ring-emerald-200"
+                        : "border-gray-100 hover:shadow-md hover:-translate-y-0.5 hover:border-gray-200"
+                  }`}>
                   <p className="text-[10px] font-semibold text-gray-800">{c.name}</p>
                   <p className="text-[10px] font-mono text-gray-500">{c.val}</p>
+                  {lastMoved === c.id && (
+                    <p className="text-[8px] text-emerald-600 font-medium mt-1 flex items-center gap-0.5">
+                      <Check className="w-2.5 h-2.5" /> Moved to {col.stage}
+                    </p>
+                  )}
                 </div>
               ))}
+              {col.cards.length === 0 && (
+                <div className={`flex items-center justify-center h-16 rounded-lg border-2 border-dashed text-[9px] ${
+                  dragOverCol === col.stage ? "border-indigo-300 text-indigo-400" : "border-gray-200 text-gray-300"
+                }`}>
+                  Drop here
+                </div>
+              )}
             </div>
           </div>
         ))}
