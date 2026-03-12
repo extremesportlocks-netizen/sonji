@@ -173,19 +173,27 @@ const SLIDE_DURATION = 6000; // 6 seconds per slide
 // MOCKUP COMPONENTS
 // ────────────────────────────────────
 
-function MockDashboard() {
+function BrowserChrome({ url, children }: { url?: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl shadow-2xl shadow-black/20 border border-white/10 overflow-hidden w-full max-w-[500px]">
       <div className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
         <span className="w-2.5 h-2.5 rounded-full bg-red-400" /><span className="w-2.5 h-2.5 rounded-full bg-amber-400" /><span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-        <span className="text-[10px] text-gray-400 font-mono ml-auto">app.sonji.io</span>
+        {url && <span className="text-[10px] text-gray-400 font-mono ml-auto">{url}</span>}
       </div>
+      {children}
+    </div>
+  );
+}
+
+function MockDashboard() {
+  return (
+    <BrowserChrome url="app.sonji.io">
       <div className="p-4 space-y-3">
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: "Revenue", value: "$48,200", color: "text-indigo-600" },
             { label: "Clients", value: "247", color: "text-emerald-600" },
-            { label: "Automations", value: "1,840", color: "text-violet-600" },
+            { label: "Win Rate", value: "68%", color: "text-violet-600" },
           ].map((s) => (
             <div key={s.label} className="bg-gray-50 rounded-lg p-3">
               <p className="text-[9px] text-gray-400 uppercase tracking-wider">{s.label}</p>
@@ -197,8 +205,233 @@ function MockDashboard() {
           <p className="text-[9px] text-gray-400 uppercase tracking-wider mb-2">Monthly Revenue</p>
           <div className="flex items-end gap-1 h-16">
             {[35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 85, 95].map((h, i) => (
-              <div key={i} className={`flex-1 rounded-sm ${i % 2 === 0 ? "bg-indigo-500" : "bg-indigo-300"}`} style={{ height: `${h}%` }} />
+              <div key={i} className={`flex-1 rounded-sm ${i >= 10 ? "bg-indigo-600" : i % 2 === 0 ? "bg-indigo-500" : "bg-indigo-300"}`} style={{ height: `${h}%` }} />
             ))}
+          </div>
+        </div>
+      </div>
+    </BrowserChrome>
+  );
+}
+
+function MockContacts() {
+  return (
+    <BrowserChrome url="app.sonji.io/contacts">
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex-1 h-7 bg-gray-100 rounded-lg flex items-center px-2.5">
+            <span className="text-[10px] text-gray-400">Search 247 contacts...</span>
+          </div>
+          <div className="px-2.5 py-1 bg-indigo-600 rounded-md text-[9px] text-white font-semibold">+ Add</div>
+        </div>
+        {[
+          { name: "Mason Thompson", company: "Vertex Partners", tag: "Hot Lead", tagColor: "bg-red-50 text-red-600", score: 92 },
+          { name: "Sarah Chen", company: "DataFlow Solutions", tag: "Demo Set", tagColor: "bg-blue-50 text-blue-600", score: 78 },
+          { name: "Lucas Anderson", company: "TechVentures Inc", tag: "Enterprise", tagColor: "bg-indigo-50 text-indigo-600", score: 65 },
+          { name: "Emily Rodriguez", company: "Pulse Media", tag: "Active", tagColor: "bg-emerald-50 text-emerald-600", score: 54 },
+        ].map((c) => (
+          <div key={c.name} className="flex items-center gap-3 py-2.5 border-b border-gray-50">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-[8px] font-bold text-white">{c.name.split(" ").map(n => n[0]).join("")}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold text-gray-900">{c.name}</p>
+              <p className="text-[9px] text-gray-400">{c.company}</p>
+            </div>
+            <span className={`text-[8px] font-medium px-1.5 py-0.5 rounded-full ${c.tagColor}`}>{c.tag}</span>
+            <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
+              <span className="text-[8px] font-bold text-gray-600">{c.score}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </BrowserChrome>
+  );
+}
+
+function MockKanban() {
+  return (
+    <BrowserChrome url="app.sonji.io/deals">
+      <div className="flex gap-2 p-3 overflow-hidden">
+        {[
+          { stage: "Lead", color: "bg-indigo-500", cards: [{ name: "Vertex Partners", val: "$24K" }, { name: "DataFlow", val: "$8.5K" }] },
+          { stage: "Proposal", color: "bg-amber-500", cards: [{ name: "CloudPeak", val: "$15K" }] },
+          { stage: "Won", color: "bg-emerald-500", cards: [{ name: "Halo Collar", val: "$31K" }, { name: "Fusion Labs", val: "$12K" }] },
+        ].map((col) => (
+          <div key={col.stage} className="flex-1 min-w-0">
+            <div className="flex items-center gap-1 mb-2">
+              <div className={`w-2 h-2 rounded-full ${col.color}`} />
+              <span className="text-[10px] font-semibold text-gray-600">{col.stage}</span>
+              <span className="text-[9px] text-gray-400 ml-auto">{col.cards.length}</span>
+            </div>
+            <div className="space-y-1.5">
+              {col.cards.map((c) => (
+                <div key={c.name} className="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
+                  <p className="text-[10px] font-medium text-gray-700">{c.name}</p>
+                  <p className="text-[9px] font-mono text-gray-500">{c.val}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </BrowserChrome>
+  );
+}
+
+function MockInbox() {
+  return (
+    <BrowserChrome url="app.sonji.io/messages">
+      <div className="flex h-[220px]">
+        <div className="w-[45%] border-r border-gray-100 p-2 space-y-1">
+          {[
+            { name: "Mason T.", msg: "Thanks for the proposal!", ch: "✉️", unread: true },
+            { name: "Sarah C.", msg: "Thursday at 2pm works", ch: "💬", unread: true },
+            { name: "Daniel K.", msg: "Interested in switching from GHL", ch: "📋", unread: false },
+          ].map((m) => (
+            <div key={m.name} className={`flex items-center gap-2 p-2 rounded-lg ${m.unread ? "bg-indigo-50/60" : ""}`}>
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                <span className="text-[7px] font-bold text-white">{m.name.split(" ").map(n => n[0]).join("")}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-semibold text-gray-900 truncate">{m.name} {m.ch}</p>
+                <p className="text-[8px] text-gray-400 truncate">{m.msg}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex-1 p-3 flex flex-col">
+          <div className="space-y-2 flex-1">
+            <div className="bg-gray-100 rounded-xl rounded-bl-sm px-3 py-2 max-w-[85%]">
+              <p className="text-[9px] text-gray-700">Thanks for the proposal! We're reviewing internally and should have feedback by Thursday.</p>
+            </div>
+            <div className="bg-indigo-600 rounded-xl rounded-br-sm px-3 py-2 max-w-[85%] ml-auto">
+              <p className="text-[9px] text-white">Sounds great — let me know if you have any questions!</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-7 bg-gray-100 rounded-lg flex items-center px-2.5"><span className="text-[9px] text-gray-400">Reply via email...</span></div>
+            <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center"><span className="text-[9px] text-white">→</span></div>
+          </div>
+        </div>
+      </div>
+    </BrowserChrome>
+  );
+}
+
+function MockFormBuilder() {
+  return (
+    <BrowserChrome url="app.sonji.io/forms/builder">
+      <div className="flex h-[220px]">
+        <div className="w-[30%] border-r border-gray-100 p-2 space-y-1">
+          <p className="text-[8px] text-gray-400 uppercase tracking-wider font-semibold px-1 mb-1">Fields</p>
+          {["Aa Text", "✉ Email", "☎ Phone", "▾ Dropdown", "☐ Checkbox", "📅 Date"].map((f) => (
+            <div key={f} className="text-[9px] text-gray-600 px-2 py-1.5 bg-gray-50 rounded-md hover:bg-indigo-50 cursor-pointer">{f}</div>
+          ))}
+        </div>
+        <div className="flex-1 p-3 bg-gray-50/50 space-y-2">
+          <p className="text-[10px] font-semibold text-gray-800 mb-2">New Patient Intake</p>
+          {[
+            { label: "Full Name", type: "text" },
+            { label: "Email Address", type: "email" },
+            { label: "Service Interest", type: "dropdown" },
+          ].map((f) => (
+            <div key={f.label} className="bg-white rounded-lg p-2 border border-gray-200">
+              <p className="text-[8px] font-medium text-gray-700 mb-1">{f.label} <span className="text-red-400">*</span></p>
+              <div className="h-6 bg-gray-50 rounded border border-gray-100" />
+            </div>
+          ))}
+          <div className="w-full h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <span className="text-[9px] font-semibold text-white">Submit</span>
+          </div>
+        </div>
+      </div>
+    </BrowserChrome>
+  );
+}
+
+function MockInvoice() {
+  return (
+    <BrowserChrome url="app.sonji.io/invoices/new">
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <p className="text-[11px] font-bold text-gray-900">sonji<span className="text-violet-500">.</span></p>
+            <p className="text-[8px] text-gray-400">hello@sonji.io</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[8px] text-gray-400 uppercase tracking-wider">Invoice</p>
+            <p className="text-[11px] font-bold text-gray-900">INV-007</p>
+          </div>
+        </div>
+        <table className="w-full text-[9px] mb-3">
+          <thead><tr className="border-b border-gray-200">
+            <th className="text-left py-1 text-gray-500 font-semibold">Item</th>
+            <th className="text-center py-1 text-gray-500 font-semibold w-8">Qty</th>
+            <th className="text-right py-1 text-gray-500 font-semibold">Amount</th>
+          </tr></thead>
+          <tbody>
+            {[{ item: "Growth Plan (Monthly)", qty: 1, amt: "$199" }, { item: "Custom Onboarding", qty: 1, amt: "$500" }, { item: "Data Migration", qty: 1, amt: "$250" }].map((r) => (
+              <tr key={r.item} className="border-b border-gray-50">
+                <td className="py-1.5 text-gray-700">{r.item}</td>
+                <td className="text-center text-gray-500">{r.qty}</td>
+                <td className="text-right font-mono text-gray-900">{r.amt}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex justify-end border-t border-gray-200 pt-2">
+          <div className="text-right">
+            <p className="text-[9px] text-gray-400">Total</p>
+            <p className="text-base font-bold text-gray-900 font-mono">$949</p>
+          </div>
+        </div>
+        <div className="mt-3 w-full h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <span className="text-[10px] font-semibold text-white">Pay Now →</span>
+        </div>
+      </div>
+    </BrowserChrome>
+  );
+}
+
+function MockWorkflows() {
+  return (
+    <div className="w-full max-w-[460px]">
+      <div className="flex flex-col items-center gap-2">
+        {/* Trigger */}
+        <div className="bg-violet-500/20 backdrop-blur border border-violet-400/30 rounded-xl px-5 py-3 text-center">
+          <p className="text-[8px] text-violet-300 uppercase tracking-wider mb-0.5">Trigger</p>
+          <p className="text-[11px] font-semibold text-white">Form Submitted</p>
+        </div>
+        <div className="w-px h-4 bg-white/20" />
+        {/* Condition */}
+        <div className="bg-amber-500/20 backdrop-blur border border-amber-400/30 rounded-xl px-5 py-3 text-center">
+          <p className="text-[8px] text-amber-300 uppercase tracking-wider mb-0.5">Condition</p>
+          <p className="text-[11px] font-semibold text-white">Lead Score &gt; 70?</p>
+        </div>
+        <div className="flex items-start gap-8">
+          {/* Yes branch */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1"><div className="w-px h-4 bg-white/20" /></div>
+            <span className="text-[8px] text-emerald-400 font-semibold">YES</span>
+            <div className="bg-emerald-500/20 backdrop-blur border border-emerald-400/30 rounded-xl px-4 py-2.5 text-center">
+              <p className="text-[8px] text-emerald-300 uppercase tracking-wider mb-0.5">Action</p>
+              <p className="text-[10px] font-semibold text-white">Assign to Sales</p>
+            </div>
+            <div className="w-px h-3 bg-white/20" />
+            <div className="bg-blue-500/20 backdrop-blur border border-blue-400/30 rounded-xl px-4 py-2.5 text-center">
+              <p className="text-[8px] text-blue-300 uppercase tracking-wider mb-0.5">Action</p>
+              <p className="text-[10px] font-semibold text-white">Send Welcome Email</p>
+            </div>
+          </div>
+          {/* No branch */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1"><div className="w-px h-4 bg-white/20" /></div>
+            <span className="text-[8px] text-red-400 font-semibold">NO</span>
+            <div className="bg-cyan-500/20 backdrop-blur border border-cyan-400/30 rounded-xl px-4 py-2.5 text-center">
+              <p className="text-[8px] text-cyan-300 uppercase tracking-wider mb-0.5">Action</p>
+              <p className="text-[10px] font-semibold text-white">Add to Nurture</p>
+            </div>
           </div>
         </div>
       </div>
@@ -206,61 +439,58 @@ function MockDashboard() {
   );
 }
 
-function MockKanban() {
+function MockAI() {
   return (
-    <div className="bg-white rounded-xl shadow-2xl shadow-black/20 border border-white/10 overflow-hidden w-full max-w-[500px]">
-      <div className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-400" /><span className="w-2.5 h-2.5 rounded-full bg-amber-400" /><span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-      </div>
-      <div className="flex gap-2 p-3 overflow-hidden">
-        {[
-          { stage: "Lead", color: "bg-indigo-500", cards: ["Vertex Partners", "DataFlow"] },
-          { stage: "Proposal", color: "bg-amber-500", cards: ["CloudPeak"] },
-          { stage: "Won", color: "bg-emerald-500", cards: ["Halo Collar", "Fusion Labs"] },
-        ].map((col) => (
-          <div key={col.stage} className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 mb-2">
-              <div className={`w-2 h-2 rounded-full ${col.color}`} />
-              <span className="text-[10px] font-semibold text-gray-600">{col.stage}</span>
-            </div>
-            <div className="space-y-1.5">
-              {col.cards.map((c) => (
-                <div key={c} className="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
-                  <p className="text-[10px] font-medium text-gray-700">{c}</p>
-                  <p className="text-[9px] text-gray-400">$12,000</p>
-                </div>
-              ))}
-            </div>
+    <BrowserChrome url="app.sonji.io">
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center"><span className="text-[10px]">🤖</span></div>
+          <span className="text-[10px] font-semibold text-gray-700">AI Assistant</span>
+        </div>
+        <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+          <p className="text-[9px] text-purple-900 font-medium mb-2">Lead Scoring — Mason Thompson</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex-1 h-2 bg-purple-200 rounded-full overflow-hidden"><div className="h-full bg-purple-600 rounded-full" style={{ width: "92%" }} /></div>
+            <span className="text-[10px] font-bold text-purple-700">92</span>
           </div>
-        ))}
+          <div className="space-y-1">
+            {["✅ Submitted intake form (+15)", "✅ Opened 3 emails (+10)", "✅ Referral source (+10)", "🔥 Hot lead — follow up now"].map((l) => (
+              <p key={l} className="text-[8px] text-purple-700">{l}</p>
+            ))}
+          </div>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+          <p className="text-[9px] text-gray-500 mb-1">✨ AI-drafted email:</p>
+          <p className="text-[9px] text-gray-700 italic">"Hi Mason, thanks for submitting your intake form. I'd love to schedule a quick call to discuss next steps..."</p>
+        </div>
       </div>
-    </div>
+    </BrowserChrome>
   );
 }
 
-function MockInbox() {
+function MockOnboarding() {
   return (
-    <div className="bg-white rounded-xl shadow-2xl shadow-black/20 border border-white/10 overflow-hidden w-full max-w-[500px]">
-      <div className="flex items-center gap-1.5 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-400" /><span className="w-2.5 h-2.5 rounded-full bg-amber-400" /><span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-      </div>
-      <div className="p-4 space-y-2">
+    <div className="w-full max-w-[460px]">
+      <div className="bg-white/10 backdrop-blur rounded-2xl border border-white/10 p-5 space-y-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] font-semibold text-white/80">Getting Started</span>
+          <span className="text-[9px] text-white/40">3 of 5</span>
+        </div>
+        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-indigo-400 to-violet-400 rounded-full" style={{ width: "60%" }} />
+        </div>
         {[
-          { name: "Mason T.", msg: "Thanks for the proposal! Reviewing internally...", time: "2m", unread: true },
-          { name: "Sarah C.", msg: "Confirmed — Thursday demo at 2pm EST.", time: "28m", unread: true },
-          { name: "Lucas A.", msg: "We need SOC 2 docs before CFO approval.", time: "1h", unread: false },
-        ].map((m) => (
-          <div key={m.name} className={`flex items-start gap-3 p-2.5 rounded-lg ${m.unread ? "bg-indigo-50/50" : ""}`}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-[9px] font-bold text-white">{m.name.split(" ").map(n => n[0]).join("")}</span>
+          { label: "Create account", done: true },
+          { label: "Choose plan", done: true },
+          { label: "Brand your CRM", done: true },
+          { label: "Pick industry", done: false, active: true },
+          { label: "You're ready!", done: false },
+        ].map((s) => (
+          <div key={s.label} className={`flex items-center gap-3 px-3 py-2 rounded-xl ${s.active ? "bg-white/10" : ""}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center ${s.done ? "bg-indigo-500" : "border border-white/20"}`}>
+              {s.done && <Check className="w-3 h-3 text-white" />}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-gray-900">{m.name}</span>
-                <span className="text-[9px] text-gray-400">{m.time}</span>
-              </div>
-              <p className="text-[10px] text-gray-500 truncate">{m.msg}</p>
-            </div>
+            <span className={`text-[10px] ${s.done ? "text-white/40 line-through" : "text-white/80"} ${s.active ? "font-semibold text-white" : ""}`}>{s.label}</span>
           </div>
         ))}
       </div>
@@ -310,11 +540,17 @@ function MockIndustries() {
 
 function getMockup(type: string) {
   switch (type) {
-    case "dashboard": case "analytics": return <MockDashboard />;
+    case "dashboard": return <MockDashboard />;
+    case "contacts": return <MockContacts />;
     case "deals": return <MockKanban />;
-    case "messages": case "contacts": return <MockInbox />;
+    case "messages": return <MockInbox />;
+    case "forms": return <MockFormBuilder />;
+    case "invoices": return <MockInvoice />;
+    case "workflows": return <MockWorkflows />;
+    case "analytics": return <MockAI />;
     case "pricing": return <MockPricing />;
-    case "industries": case "onboarding": return <MockIndustries />;
+    case "industries": return <MockIndustries />;
+    case "onboarding": return <MockOnboarding />;
     default: return null;
   }
 }
