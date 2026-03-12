@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import InteractiveHeroDemo from "@/components/interactive-hero-demo";
 import {
   ArrowRight, Users, BarChart3, Mail, Calendar, Zap, Bot, FileText,
   DollarSign, MessageSquare, Heart, Dumbbell, Scissors, Briefcase,
@@ -26,27 +27,6 @@ function useReveal() {
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useReveal();
   return <div ref={ref} className={`reveal-item ${className}`} style={{ transitionDelay: `${delay}s` }}>{children}</div>;
-}
-
-/* ═══ ANIMATED COUNTER ═══ */
-function Counter({ target, prefix = "", suffix = "" }: { target: number; prefix?: string; suffix?: string }) {
-  const [value, setValue] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !started.current) {
-        started.current = true;
-        let cur = 0; const step = target / 50;
-        const t = setInterval(() => { cur += step; if (cur >= target) { cur = target; clearInterval(t); } setValue(Math.floor(cur)); }, 20);
-      }
-    }, { threshold: 0.5 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [target]);
-  return <span ref={ref}>{prefix}{value >= 1000 ? value.toLocaleString() : value}{suffix}</span>;
 }
 
 /* ═══ DATA ═══ */
@@ -89,22 +69,11 @@ const logos = ["Glow Med Spa", "Apex Consulting", "Bright Realty", "Summit Fitne
 /* ═══ PAGE ═══ */
 export default function HomePage() {
   const [navScrolled, setNavScrolled] = useState(false);
-  const barHeights = [35, 42, 38, 55, 48, 62, 58, 72, 68, 78, 85, 95];
-  const [barsVisible, setBarsVisible] = useState(false);
-  const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const h = () => setNavScrolled(window.scrollY > 20);
     window.addEventListener("scroll", h);
     return () => window.removeEventListener("scroll", h);
-  }, []);
-
-  useEffect(() => {
-    const el = chartRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setBarsVisible(true); }, { threshold: 0.3 });
-    obs.observe(el);
-    return () => obs.disconnect();
   }, []);
 
   return (
@@ -157,52 +126,9 @@ export default function HomePage() {
         </div>
         <p className="hero-a hero-a3 text-sm text-gray-400">No credit card required · 14-day free trial · Cancel anytime</p>
 
-        {/* HERO UI MOCKUP */}
-        <div className="hero-a hero-a4 max-w-[1100px] mx-auto mt-16" style={{perspective:"1200px"}}>
-          <div className="bg-white border border-gray-200 rounded-[28px] shadow-xl overflow-hidden transition-transform duration-500" style={{transform:"rotateX(2deg)"}}>
-            <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100">
-              <div className="flex gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#FF6057]"/><span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]"/><span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]"/></div>
-              <div className="flex-1 text-center text-xs text-gray-400 font-mono">app.sonji.io</div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] min-h-[420px]">
-              <div className="bg-[#FAFBFC] border-r border-gray-100 py-5 hidden md:block">
-                <div className="flex items-center gap-2 px-4 pb-4 mb-3 border-b border-gray-100">
-                  <span className="text-sm font-bold text-gray-900">sonji<span className="text-violet-500">.</span></span>
-                </div>
-                {["Dashboard","Contacts","Deals","Messages"].map((n,i)=>(
-                  <div key={n} className={`flex items-center gap-2.5 px-4 py-2 text-[13px] font-medium relative ${i===0?"text-indigo-600 bg-indigo-50/60":"text-gray-400"}`}>
-                    {i===0&&<div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-indigo-600 rounded-r"/>}{n}
-                  </div>
-                ))}
-                <div className="mt-4 px-4 pt-4 border-t border-gray-100">
-                  <p className="text-[10px] uppercase tracking-[1.5px] text-gray-400 font-semibold mb-2">Insights</p>
-                  {["Analytics","Automations"].map(n=>(<div key={n} className="py-2 text-[13px] font-medium text-gray-400">{n}</div>))}
-                </div>
-              </div>
-              <div className="p-6 bg-[#FAFAFA]" ref={chartRef}>
-                <p className="text-[22px] font-bold tracking-tight mb-5 text-left text-gray-900">Good morning, Orlando</p>
-                <div className="grid grid-cols-3 gap-3 mb-5">
-                  {[
-                    {label:"Revenue",val:48200,prefix:"$",color:"text-indigo-600",hover:"hover:border-indigo-300 hover:shadow-[0_0_0_3px_rgba(99,102,241,0.06)]",change:"↑ 24% vs last month"},
-                    {label:"Active Clients",val:247,prefix:"",color:"text-emerald-600",hover:"hover:border-emerald-300 hover:shadow-[0_0_0_3px_rgba(16,163,127,0.06)]",change:"↑ 12 this week"},
-                    {label:"Automations Run",val:1840,prefix:"",color:"text-violet-600",hover:"hover:border-violet-300 hover:shadow-[0_0_0_3px_rgba(139,92,246,0.06)]",change:"↑ 340 today"},
-                  ].map(s=>(
-                    <div key={s.label} className={`bg-white border border-gray-100 rounded-xl p-4 transition text-left ${s.hover}`}>
-                      <p className="text-[11px] uppercase tracking-[1px] text-gray-400 font-semibold mb-1.5">{s.label}</p>
-                      <p className={`text-[26px] font-extrabold font-mono tracking-tight ${s.color}`}><Counter target={s.val} prefix={s.prefix}/></p>
-                      <p className="text-[11px] text-emerald-600 font-semibold mt-1">{s.change}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-white border border-gray-100 rounded-xl p-4 text-left">
-                  <p className="text-xs font-semibold text-gray-500 mb-3">Monthly Revenue — Last 12 Months</p>
-                  <div className="flex items-end gap-1.5 h-[110px]">
-                    {barHeights.map((h,i)=>(<div key={i} className={`flex-1 rounded-t transition-all duration-1000 ${i%2===0?"bg-indigo-500":"bg-indigo-500/30"}`} style={{height:barsVisible?`${h}%`:"0%",transitionDelay:`${0.3+i*0.08}s`,transitionTimingFunction:"cubic-bezier(0.34,1.56,0.64,1)"}}/>))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* INTERACTIVE HERO DEMO */}
+        <div className="hero-a hero-a4">
+          <InteractiveHeroDemo />
         </div>
       </section>
 
