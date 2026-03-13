@@ -1,269 +1,212 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/dashboard/header";
+import { useCRM } from "@/lib/crm-store";
+import { useModal } from "@/components/modals/modal-provider";
 import {
-  Search,
-  SlidersHorizontal,
   Plus,
   MoreHorizontal,
-  Columns3,
-  List,
-  CheckSquare,
+  GripVertical,
+  CheckCircle2,
   Clock,
+  AlertCircle,
   User,
   Calendar,
-  Flag,
+  Trash2,
+  Search,
   X,
-  ChevronDown,
+  SlidersHorizontal,
 } from "lucide-react";
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: "Todo" | "In Progress" | "Done";
-  priority: "High" | "Medium" | "Low";
-  assignee: string;
-  assigneeAvatar: string;
-  dueDate: string;
-  contact?: string;
-  company?: string;
-}
-
-const mockTasks: Task[] = [
-  { id: "t1", title: "Follow up with Mason Thompson", description: "Send follow-up email about Enterprise Platform Migration next steps.", status: "In Progress", priority: "High", assignee: "Orlando", assigneeAvatar: "O", dueDate: "Mar 12, 2026", contact: "Mason Thompson", company: "Vertex Partners" },
-  { id: "t2", title: "Prepare Q2 proposal deck", description: "Create updated pricing tiers and implementation timeline for DataFlow.", status: "Todo", priority: "High", assignee: "Orlando", assigneeAvatar: "O", dueDate: "Mar 14, 2026", contact: "Logan Mitchell", company: "DataFlow Solutions" },
-  { id: "t3", title: "Schedule QBR with Vertex team", description: "Set up quarterly business review for Q2 with Mason and leadership.", status: "Todo", priority: "Medium", assignee: "Sarah Chen", assigneeAvatar: "SC", dueDate: "Mar 18, 2026", company: "Vertex Partners" },
-  { id: "t4", title: "Review SOC 2 compliance docs", description: "Compile documentation for TechVentures CFO review process.", status: "In Progress", priority: "Medium", assignee: "Orlando", assigneeAvatar: "O", dueDate: "Mar 15, 2026", company: "TechVentures Inc" },
-  { id: "t5", title: "Send contract renewal notice", description: "Annual software license renewal approaching for Skyline Group.", status: "Todo", priority: "Low", assignee: "Emily Rodriguez", assigneeAvatar: "ER", dueDate: "Mar 20, 2026", contact: "Joshua Murphy", company: "Skyline Group" },
-  { id: "t6", title: "Update CRM contact records", description: "Merge duplicate contacts and update phone numbers from latest call.", status: "Done", priority: "Low", assignee: "Marcus Rivera", assigneeAvatar: "MR", dueDate: "Mar 8, 2026" },
-  { id: "t7", title: "Create onboarding flow for Fusion Labs", description: "Set up welcome sequence and intake forms for new customer.", status: "In Progress", priority: "High", assignee: "Orlando", assigneeAvatar: "O", dueDate: "Mar 11, 2026", company: "Fusion Labs" },
-  { id: "t8", title: "Prepare demo environment", description: "Spin up sandbox for Halo Collar product demo scheduled Thursday.", status: "Done", priority: "Medium", assignee: "Orlando", assigneeAvatar: "O", dueDate: "Mar 10, 2026", company: "Halo Collar" },
-  { id: "t9", title: "Draft NDA for CloudPeak", description: "Legal review needed before contract negotiation meeting.", status: "Todo", priority: "High", assignee: "Sarah Chen", assigneeAvatar: "SC", dueDate: "Mar 13, 2026", company: "CloudPeak" },
-  { id: "t10", title: "Send weekly pipeline report", description: "Compile pipeline stats and send to team Slack channel.", status: "Done", priority: "Low", assignee: "Orlando", assigneeAvatar: "O", dueDate: "Mar 7, 2026" },
+const statusColumns = [
+  { id: "todo", name: "To Do", color: "text-gray-700", borderColor: "border-gray-300", bgColor: "bg-gray-50", dotColor: "bg-gray-400" },
+  { id: "in_progress", name: "In Progress", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50", dotColor: "bg-blue-500" },
+  { id: "done", name: "Done", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50", dotColor: "bg-emerald-500" },
 ];
 
-const statusConfig: Record<string, { badge: string; bg: string; count: string }> = {
-  "Todo": { badge: "bg-gray-50 text-gray-700 border-gray-200", bg: "bg-gray-50/50", count: "bg-gray-200 text-gray-600" },
-  "In Progress": { badge: "bg-blue-50 text-blue-700 border-blue-200", bg: "bg-blue-50/30", count: "bg-blue-100 text-blue-700" },
-  "Done": { badge: "bg-emerald-50 text-emerald-700 border-emerald-200", bg: "bg-emerald-50/30", count: "bg-emerald-100 text-emerald-700" },
-};
-
-const priorityConfig: Record<string, { badge: string; dot: string }> = {
-  "High": { badge: "bg-red-50 text-red-600 border-red-200", dot: "bg-red-500" },
-  "Medium": { badge: "bg-amber-50 text-amber-600 border-amber-200", dot: "bg-amber-500" },
-  "Low": { badge: "bg-gray-50 text-gray-500 border-gray-200", dot: "bg-gray-400" },
+const priorityStyles: Record<string, string> = {
+  high: "bg-red-50 text-red-600 border-red-200",
+  medium: "bg-amber-50 text-amber-600 border-amber-200",
+  low: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
-  const [view, setView] = useState<"kanban" | "list">("kanban");
+  const { tasks, updateTask, deleteTask } = useCRM();
+  const { openModal } = useModal();
   const [search, setSearch] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("All");
-  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const filtered = tasks.filter((t) => {
+    if (!search) return true;
     const q = search.toLowerCase();
-    const matchSearch = q === "" || `${t.title} ${t.description} ${t.assignee} ${t.company || ""}`.toLowerCase().includes(q);
-    const matchPriority = priorityFilter === "All" || t.priority === priorityFilter;
-    return matchSearch && matchPriority;
+    return t.title.toLowerCase().includes(q) || t.contactName.toLowerCase().includes(q) || t.assignedTo.toLowerCase().includes(q);
   });
 
-  const byStatus: Record<string, Task[]> = { "Todo": [], "In Progress": [], "Done": [] };
-  filtered.forEach((t) => { if (byStatus[t.status]) byStatus[t.status].push(t); });
+  const tasksByStatus = useMemo(() => {
+    const grouped: Record<string, typeof filtered> = {};
+    statusColumns.forEach((s) => { grouped[s.id] = []; });
+    filtered.forEach((t) => {
+      if (grouped[t.status]) grouped[t.status].push(t);
+      else grouped["todo"].push(t);
+    });
+    return grouped;
+  }, [filtered]);
 
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    setDraggingId(id);
-    e.dataTransfer.setData("text/plain", id);
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    setDraggingId(taskId);
+    e.dataTransfer.setData("text/plain", taskId);
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, status: string) => {
+  const handleDragOver = (e: React.DragEvent, colId: string) => {
     e.preventDefault();
-    setDragOverStatus(null);
-    const id = e.dataTransfer.getData("text/plain") || draggingId;
-    if (!id) return;
-    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: status as Task["status"] } : t));
+    e.dataTransfer.dropEffect = "move";
+    setDragOverCol(colId);
+  };
+
+  const handleDrop = (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("text/plain");
+    if (taskId) {
+      updateTask(taskId, { status: newStatus as "todo" | "in_progress" | "done" });
+    }
+    setDragOverCol(null);
     setDraggingId(null);
   };
 
-  const statuses: Array<Task["status"]> = ["Todo", "In Progress", "Done"];
-  const total = filtered.length;
-  const done = filtered.filter((t) => t.status === "Done").length;
-
   return (
     <>
-      <Header title="Tasks" subtitle={`${done}/${total} completed`} />
-
-      <div className="p-6">
+      <Header title="Tasks" />
+      <div className="p-6 space-y-4">
         {/* Toolbar */}
-        <div className="bg-white rounded-xl border border-gray-100 mb-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border text-gray-600 border-gray-200 hover:bg-gray-50 transition">
-                <SlidersHorizontal className="w-4 h-4" /> Filters
-              </button>
-
-              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden ml-2">
-                <button onClick={() => setView("kanban")}
-                  className={`p-2 transition ${view === "kanban" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}>
-                  <Columns3 className="w-4 h-4" />
-                </button>
-                <button onClick={() => setView("list")}
-                  className={`p-2 transition border-l border-gray-200 ${view === "list" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}>
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="hidden md:flex items-center gap-1 ml-2">
-                {["All", "High", "Medium", "Low"].map((p) => (
-                  <button key={p} onClick={() => setPriorityFilter(p)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${priorityFilter === p ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>
-                    {p}
-                  </button>
-                ))}
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">{tasks.length} Tasks</h2>
+                <p className="text-xs text-gray-400">{tasks.filter(t => t.status === "done").length} completed</p>
               </div>
             </div>
-
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" placeholder="Search tasks..." value={search} onChange={(e) => setSearch(e.target.value)}
-                  className="w-48 pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition" />
-                {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>}
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-48 pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition"
+                />
+                {search && (
+                  <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-              <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm">
-                <Plus className="w-4 h-4" /> Add Task
+              <button
+                onClick={() => openModal("task")}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Create Task
               </button>
             </div>
           </div>
         </div>
 
-        {/* ═══ KANBAN VIEW ═══ */}
-        {view === "kanban" && (
-          <div className="grid grid-cols-3 gap-4">
-            {statuses.map((status) => {
-              const config = statusConfig[status];
-              const statusTasks = byStatus[status] || [];
-              const isDragOver = dragOverStatus === status;
+        {/* Kanban Board */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {statusColumns.map((col) => {
+            const colTasks = tasksByStatus[col.id] || [];
+            const isDragOver = dragOverCol === col.id;
 
-              return (
-                <div key={status}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverStatus(status); }}
-                  onDragLeave={() => setDragOverStatus(null)}
-                  onDrop={(e) => handleDrop(e, status)}>
-                  <div className="flex items-center justify-between mb-3 px-1">
-                    <span className={`inline-flex items-center gap-2 text-xs font-semibold px-2.5 py-1 rounded-full border ${config.badge}`}>
-                      {status}
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${config.count}`}>
-                        {statusTasks.length}
-                      </span>
-                    </span>
-                    <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition"><Plus className="w-4 h-4" /></button>
+            return (
+              <div
+                key={col.id}
+                onDragOver={(e) => handleDragOver(e, col.id)}
+                onDragLeave={() => setDragOverCol(null)}
+                onDrop={(e) => handleDrop(e, col.id)}
+              >
+                {/* Column Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${col.dotColor}`} />
+                    <span className="text-sm font-semibold text-gray-900">{col.name}</span>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{colTasks.length}</span>
                   </div>
-
-                  <div className={`space-y-3 min-h-[200px] rounded-xl p-2 transition ${isDragOver ? "bg-indigo-50/50 border-2 border-dashed border-indigo-300" : config.bg}`}>
-                    {statusTasks.map((task) => {
-                      const pConfig = priorityConfig[task.priority];
-                      return (
-                        <div key={task.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, task.id)}
-                          onDragEnd={() => { setDragOverStatus(null); setDraggingId(null); }}
-                          className="bg-white rounded-xl border border-gray-100 p-4 hover:border-indigo-200 hover:shadow-sm transition cursor-grab active:cursor-grabbing group">
-                          <div className="flex items-start justify-between mb-2">
-                            <p className="text-sm font-semibold text-gray-900 leading-snug pr-2">{task.title}</p>
-                            <button className="p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100 transition flex-shrink-0">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <p className="text-xs text-gray-500 mb-3 leading-relaxed line-clamp-2">{task.description}</p>
-
-                          {task.company && (
-                            <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
-                              <CheckSquare className="w-3 h-3" />
-                              <span>{task.company}</span>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${pConfig.badge}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${pConfig.dot}`} />
-                                {task.priority}
-                              </span>
-                              <span className="flex items-center gap-1 text-[10px] text-gray-400">
-                                <Calendar className="w-3 h-3" />
-                                {task.dueDate}
-                              </span>
-                            </div>
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center" title={task.assignee}>
-                              <span className="text-[8px] font-bold text-white">{task.assigneeAvatar}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {statusTasks.length === 0 && (
-                      <div className="flex items-center justify-center h-24 text-xs text-gray-400">
-                        {isDragOver ? "Drop here" : "No tasks"}
-                      </div>
-                    )}
-                  </div>
+                  <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition">
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* ═══ LIST VIEW ═══ */}
-        {view === "list" && (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="w-12 px-5 py-3"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600" /></th>
-                  <th className="text-left px-3 py-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Task</span></th>
-                  <th className="text-left px-3 py-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</span></th>
-                  <th className="text-left px-3 py-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</span></th>
-                  <th className="text-left px-3 py-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Assignee</span></th>
-                  <th className="text-left px-3 py-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Due Date</span></th>
-                  <th className="text-left px-3 py-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50/70 transition">
-                    <td className="px-5 py-3"><input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600" /></td>
-                    <td className="px-3 py-3">
-                      <p className="text-sm font-medium text-gray-900">{t.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{t.description}</p>
-                    </td>
-                    <td className="px-3 py-3"><span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusConfig[t.status].badge}`}>{t.status}</span></td>
-                    <td className="px-3 py-3">
-                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${priorityConfig[t.priority].badge}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${priorityConfig[t.priority].dot}`} />{t.priority}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
-                          <span className="text-[9px] font-bold text-white">{t.assigneeAvatar}</span>
+                {/* Cards */}
+                <div className={`space-y-3 min-h-[200px] rounded-xl p-2 transition ${
+                  isDragOver ? "bg-indigo-50/50 border-2 border-dashed border-indigo-300" : "bg-gray-50/30"
+                }`}>
+                  {colTasks.map((task) => {
+                    const isOverdue = task.status !== "done" && task.dueDate < new Date().toISOString().split("T")[0];
+                    return (
+                      <div
+                        key={task.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, task.id)}
+                        onDragEnd={() => { setDragOverCol(null); setDraggingId(null); }}
+                        className="bg-white rounded-xl border border-gray-100 p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition cursor-grab active:cursor-grabbing group"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" />
+                            <h4 className="text-sm font-semibold text-gray-900 leading-snug">{task.title}</h4>
+                          </div>
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <span className="text-sm text-gray-600">{t.assignee}</span>
+
+                        {task.description && (
+                          <p className="text-xs text-gray-400 mb-3 ml-6">{task.description}</p>
+                        )}
+
+                        <div className="flex items-center gap-2 mb-3 ml-6">
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${priorityStyles[task.priority]}`}>
+                            {task.priority}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-50 ml-6">
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-3 h-3 text-gray-400" />
+                            <span className="text-xs text-gray-500">{task.contactName || task.assignedTo}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {isOverdue ? <AlertCircle className="w-3 h-3 text-red-500" /> : <Calendar className="w-3 h-3 text-gray-400" />}
+                            <span className={`text-xs ${isOverdue ? "text-red-500 font-medium" : "text-gray-400"}`}>{task.dueDate}</span>
+                          </div>
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-3 py-3"><span className="text-sm text-gray-500">{t.dueDate}</span></td>
-                    <td className="px-3 py-3"><span className="text-sm text-gray-500">{t.company || "—"}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    );
+                  })}
+
+                  {colTasks.length === 0 && !isDragOver && (
+                    <div className="flex items-center justify-center h-24 text-xs text-gray-400">
+                      No tasks
+                    </div>
+                  )}
+
+                  {isDragOver && colTasks.length === 0 && (
+                    <div className="flex items-center justify-center h-24 text-xs text-indigo-500 font-medium">
+                      Drop here
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </>
   );

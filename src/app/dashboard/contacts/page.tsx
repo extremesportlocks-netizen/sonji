@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Header from "@/components/dashboard/header";
+import { useCRM } from "@/lib/crm-store";
+import { useModal } from "@/components/modals/modal-provider";
 import {
   Search,
   SlidersHorizontal,
@@ -22,38 +24,11 @@ import {
   X,
 } from "lucide-react";
 
-interface Contact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  company: string;
-  companyLogo: string;
-  status: "Active" | "Lead" | "Lost" | "Inactive";
-  lastContacted: string;
-  tags: string[];
-}
-
-const mockContacts: Contact[] = [
-  { id: "1", firstName: "Mason", lastName: "Thompson", email: "mason@vertexpartners.com", phone: "+1 (555) 234-5678", company: "Vertex Partners", companyLogo: "VP", status: "Active", lastContacted: "Dec 28, 2025", tags: ["Enterprise", "Q1"] },
-  { id: "2", firstName: "Logan", lastName: "Mitchell", email: "logan@dataflow.io", phone: "+1 (555) 345-6789", company: "DataFlow Solutions", companyLogo: "DF", status: "Active", lastContacted: "Dec 30, 2025", tags: ["Startup"] },
-  { id: "3", firstName: "Lucas", lastName: "Anderson", email: "lucas@techventures.com", phone: "+1 (555) 456-7890", company: "TechVentures Inc", companyLogo: "TV", status: "Lead", lastContacted: "Dec 15, 2025", tags: ["Inbound"] },
-  { id: "4", firstName: "Jackson", lastName: "Brooks", email: "jackson@halocollar.com", phone: "+1 (555) 456-7890", company: "Halo Collar", companyLogo: "HC", status: "Lost", lastContacted: "Dec 29, 2025", tags: ["Pet Tech"] },
-  { id: "5", firstName: "Aiden", lastName: "Parker", email: "aiden@brightdynamics.com", phone: "+1 (555) 678-9012", company: "Bright Dynamics", companyLogo: "BD", status: "Lost", lastContacted: "Nov 20, 2025", tags: [] },
-  { id: "6", firstName: "Caleb", lastName: "Reed", email: "caleb@nexgenai.com", phone: "+1 (555) 789-0123", company: "NexGen AI", companyLogo: "NA", status: "Lead", lastContacted: "Dec 25, 2025", tags: ["AI", "Series A"] },
-  { id: "7", firstName: "Elijah", lastName: "Harris", email: "elijah@cloudpeak.io", phone: "+1 (555) 890-1234", company: "CloudPeak", companyLogo: "CP", status: "Active", lastContacted: "Dec 25, 2025", tags: ["Enterprise"] },
-  { id: "8", firstName: "Benjamin", lastName: "Scott", email: "benjamin@pulsemedia.co", phone: "+1 (555) 456-7890", company: "Pulse Media", companyLogo: "PM", status: "Active", lastContacted: "Dec 31, 2025", tags: ["Media"] },
-  { id: "9", firstName: "William", lastName: "Young", email: "william@ironforgedev.com", phone: "+1 (555) 890-1234", company: "IronForge Dev", companyLogo: "IF", status: "Lead", lastContacted: "Dec 31, 2025", tags: ["Agency"] },
-  { id: "10", firstName: "Joshua", lastName: "Murphy", email: "joshua@skylinegroup.com", phone: "+1 (555) 234-5678", company: "Skyline Group", companyLogo: "SG", status: "Active", lastContacted: "Dec 18, 2025", tags: ["Real Estate"] },
-  { id: "11", firstName: "Sarah", lastName: "Chen", email: "sarah@quantumleap.io", phone: "+1 (555) 901-2345", company: "Quantum Leap", companyLogo: "QL", status: "Active", lastContacted: "Dec 18, 2025", tags: ["SaaS"] },
-  { id: "12", firstName: "Emily", lastName: "Rodriguez", email: "emily@swiftcommerce.co", phone: "+1 (555) 345-6789", company: "Swift Commerce", companyLogo: "SC", status: "Lead", lastContacted: "Dec 22, 2025", tags: ["E-commerce"] },
-  { id: "13", firstName: "Nathan", lastName: "Phillips", email: "nathan@apexstrategy.com", phone: "+1 (555) 456-7890", company: "Apex Strategy", companyLogo: "AS", status: "Active", lastContacted: "Dec 18, 2025", tags: ["Consulting"] },
-  { id: "14", firstName: "Olivia", lastName: "Martinez", email: "olivia@greenwave.eco", phone: "+1 (555) 567-8901", company: "GreenWave", companyLogo: "GW", status: "Inactive", lastContacted: "Oct 12, 2025", tags: ["CleanTech"] },
-  { id: "15", firstName: "Daniel", lastName: "Kim", email: "daniel@fusionlabs.dev", phone: "+1 (555) 678-9012", company: "Fusion Labs", companyLogo: "FL", status: "Active", lastContacted: "Jan 2, 2026", tags: ["DevTools", "Seed"] },
-];
-
 const statusStyles: Record<string, string> = {
+  active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  lead: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  lost: "bg-red-50 text-red-600 border-red-200",
+  inactive: "bg-gray-100 text-gray-500 border-gray-200",
   Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
   Lead: "bg-indigo-50 text-indigo-700 border-indigo-200",
   Lost: "bg-red-50 text-red-600 border-red-200",
@@ -73,8 +48,13 @@ function getLogoColor(s: string) {
   return logoColors[Math.abs(h) % logoColors.length];
 }
 
+function getInitials(company: string) {
+  return company.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+}
+
 export default function ContactsPage() {
-  const [contacts] = useState<Contact[]>(mockContacts);
+  const { contacts, deleteContact } = useCRM();
+  const { openModal } = useModal();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState("All");
@@ -87,7 +67,7 @@ export default function ContactsPage() {
   const filtered = contacts.filter((c) => {
     const q = search.toLowerCase();
     const match = q === "" || `${c.firstName} ${c.lastName} ${c.email} ${c.company}`.toLowerCase().includes(q);
-    const stat = statusFilter === "All" || c.status === statusFilter;
+    const stat = statusFilter === "All" || c.status.toLowerCase() === statusFilter.toLowerCase();
     return match && stat;
   });
 
@@ -123,72 +103,65 @@ export default function ContactsPage() {
     </span>
   );
 
+  const statuses = ["All", "Active", "Lead", "Inactive", "Lost"];
+  const statusCounts: Record<string, number> = { All: contacts.length };
+  contacts.forEach((c) => {
+    const key = c.status.charAt(0).toUpperCase() + c.status.slice(1).toLowerCase();
+    statusCounts[key] = (statusCounts[key] || 0) + 1;
+  });
+
   return (
     <>
-      <Header title="Contacts" subtitle={`${filtered.length} total contacts`} />
+      <Header title="Contacts" />
       <div className="p-6">
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-gray-100">
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border text-gray-600 border-gray-200 hover:bg-gray-50 transition">
-                <SlidersHorizontal className="w-4 h-4" /> Show Filters
-              </button>
-              <div className="hidden md:flex items-center gap-1 ml-2">
-                {["All", "Active", "Lead", "Lost", "Inactive"].map((s) => (
-                  <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${statusFilter === s ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
+              {statuses.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => { setStatusFilter(s); setPage(1); }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${
+                    statusFilter === s ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {s} {statusCounts[s] !== undefined ? `(${statusCounts[s]})` : ""}
+                </button>
+              ))}
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" placeholder="Search..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  className="w-48 pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition" />
+                <input
+                  type="text"
+                  placeholder="Search contacts..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  className="w-52 pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition"
+                />
                 {search && (
                   <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
-              <div className="w-px h-6 bg-gray-200 mx-1 hidden sm:block" />
-              <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                <Download className="w-4 h-4" /><span className="hidden sm:inline">Export</span>
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                <Upload className="w-4 h-4" /><span className="hidden sm:inline">Import</span>
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm">
-                <Plus className="w-4 h-4" /><span className="hidden sm:inline">Add Contact</span>
+              <button
+                onClick={() => openModal("contact")}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Create Contact
               </button>
             </div>
           </div>
-
-          {/* Bulk bar */}
-          {selected.size > 0 && (
-            <div className="flex items-center gap-3 px-5 py-2.5 bg-indigo-50 border-b border-indigo-100">
-              <span className="text-sm font-medium text-indigo-700">{selected.size} selected</span>
-              <button className="px-3 py-1 text-xs font-medium text-indigo-600 bg-white border border-indigo-200 rounded-md hover:bg-indigo-100 transition">
-                <Mail className="w-3 h-3 inline mr-1" />Email
-              </button>
-              <button className="px-3 py-1 text-xs font-medium text-indigo-600 bg-white border border-indigo-200 rounded-md hover:bg-indigo-100 transition">Tag</button>
-              <button className="px-3 py-1 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition">
-                <Trash2 className="w-3 h-3 inline mr-1" />Delete
-              </button>
-              <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-indigo-500 hover:text-indigo-700">Clear</button>
-            </div>
-          )}
 
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-100">
+                <tr className="bg-gray-50/80">
                   <th className="w-12 px-5 py-3">
-                    <input type="checkbox" checked={selected.size === rows.length && rows.length > 0} onChange={toggleAll}
+                    <input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={toggleAll}
                       className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/20" />
                   </th>
                   <th className="text-left px-3 py-3 cursor-pointer select-none" onClick={() => toggleSort("lastName")}>
@@ -202,8 +175,8 @@ export default function ContactsPage() {
                   <th className="text-left px-3 py-3 cursor-pointer select-none" onClick={() => toggleSort("status")}>
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">Status <SI f="status" /></span>
                   </th>
-                  <th className="text-left px-3 py-3 cursor-pointer select-none" onClick={() => toggleSort("lastContacted")}>
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">Last Contacted <SI f="lastContacted" /></span>
+                  <th className="text-left px-3 py-3 cursor-pointer select-none" onClick={() => toggleSort("score")}>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">Score <SI f="score" /></span>
                   </th>
                   <th className="w-24 px-3 py-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</span></th>
                 </tr>
@@ -236,7 +209,7 @@ export default function ContactsPage() {
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${getLogoColor(c.company)}`}>
-                          <span className="text-[10px] font-bold">{c.companyLogo}</span>
+                          <span className="text-[10px] font-bold">{getInitials(c.company)}</span>
                         </div>
                         <span className="text-sm text-gray-700">{c.company}</span>
                       </div>
@@ -244,9 +217,18 @@ export default function ContactsPage() {
                     <td className="px-3 py-3"><span className="text-sm text-gray-500">{c.email}</span></td>
                     <td className="px-3 py-3"><span className="text-sm text-gray-500">{c.phone}</span></td>
                     <td className="px-3 py-3">
-                      <span className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full border ${statusStyles[c.status]}`}>{c.status}</span>
+                      <span className={`inline-flex text-xs font-medium px-2.5 py-1 rounded-full border ${statusStyles[c.status] || "bg-gray-100 text-gray-500 border-gray-200"}`}>
+                        {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                      </span>
                     </td>
-                    <td className="px-3 py-3"><span className="text-sm text-gray-500">{c.lastContacted}</span></td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                          <div className={`h-full rounded-full ${c.score >= 70 ? "bg-emerald-500" : c.score >= 40 ? "bg-amber-400" : "bg-gray-300"}`} style={{ width: `${c.score}%` }} />
+                        </div>
+                        <span className="text-xs text-gray-500 w-6">{c.score}</span>
+                      </div>
+                    </td>
                     <td className="px-3 py-3">
                       <div className="relative flex items-center gap-0.5">
                         <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition opacity-0 group-hover:opacity-100"><Pencil className="w-3.5 h-3.5" /></button>
@@ -265,7 +247,7 @@ export default function ContactsPage() {
                                 <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Mail className="w-3.5 h-3.5 text-gray-400" /> Send Email</button>
                                 <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Phone className="w-3.5 h-3.5 text-gray-400" /> Call</button>
                                 <div className="border-t border-gray-100 my-1" />
-                                <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+                                <button onClick={() => { deleteContact(c.id); setMenuId(null); }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
                               </div>
                             </>
                           )}

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/dashboard/header";
+import { useCRM } from "@/lib/crm-store";
+import { useModal } from "@/components/modals/modal-provider";
 import {
   Search,
   SlidersHorizontal,
@@ -19,24 +21,12 @@ import {
   DollarSign,
   X,
   ChevronDown,
+  Trash2,
 } from "lucide-react";
 
 // ────────────────────────────────────
-// TYPES
+// PIPELINE STAGES
 // ────────────────────────────────────
-
-interface Deal {
-  id: string;
-  title: string;
-  company: string;
-  companyLogo: string;
-  contact: string;
-  pipeline: string;
-  amount: number;
-  expectedClose: string;
-  stage: string;
-  creator: string;
-}
 
 interface Stage {
   id: string;
@@ -46,36 +36,14 @@ interface Stage {
   bgColor: string;
 }
 
-// ────────────────────────────────────
-// PIPELINE STAGES
-// ────────────────────────────────────
-
 const stages: Stage[] = [
-  { id: "lead", name: "Lead", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
-  { id: "qualified", name: "Sales Qualified", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
-  { id: "meeting", name: "Meeting Booked", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
-  { id: "proposal", name: "Proposal Sent", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
-  { id: "won", name: "Closed Won", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
-  { id: "lost", name: "Closed Lost", color: "text-red-600", borderColor: "border-red-400", bgColor: "bg-red-50" },
-];
-
-// ────────────────────────────────────
-// MOCK DEALS
-// ────────────────────────────────────
-
-const mockDeals: Deal[] = [
-  { id: "d1", title: "Epic Adventure Package", company: "Vertex Partners", companyLogo: "VP", contact: "Mason Thompson", pipeline: "Sales Pipeline", amount: 28000, expectedClose: "Dec 31, 2025", stage: "lead", creator: "Orlando" },
-  { id: "d2", title: "Luxury Cruise Experience", company: "CloudPeak", companyLogo: "CP", contact: "Elijah Harris", pipeline: "Enterprise", amount: 50000, expectedClose: "Sep 20, 2026", stage: "lead", creator: "Orlando" },
-  { id: "d3", title: "Premium Island Getaway", company: "DataFlow Solutions", companyLogo: "DF", contact: "Logan Mitchell", pipeline: "Adventure Seekers", amount: 35000, expectedClose: "Jan 15, 2026", stage: "qualified", creator: "Orlando" },
-  { id: "d4", title: "Cloud Infrastructure Setup", company: "TechVentures Inc", companyLogo: "TV", contact: "Lucas Anderson", pipeline: "Tech Pipeline", amount: 85000, expectedClose: "Feb 20, 2026", stage: "qualified", creator: "Orlando" },
-  { id: "d5", title: "Exclusive Safari Tour", company: "Bright Dynamics", companyLogo: "BD", contact: "Aiden Parker", pipeline: "Vacation Ventures", amount: 45000, expectedClose: "Mar 10, 2026", stage: "meeting", creator: "Orlando" },
-  { id: "d6", title: "Urban Exploration Tour", company: "NexGen AI", companyLogo: "NA", contact: "Caleb Reed", pipeline: "Cultural Connect", amount: 15000, expectedClose: "Feb 28, 2026", stage: "meeting", creator: "Orlando" },
-  { id: "d7", title: "Security Audit & Implementation", company: "Pulse Media", companyLogo: "PM", contact: "Benjamin Scott", pipeline: "Sales Pipeline", amount: 35000, expectedClose: "Feb 15, 2026", stage: "proposal", creator: "Orlando" },
-  { id: "d8", title: "Annual Software License", company: "IronForge Dev", companyLogo: "IF", contact: "William Young", pipeline: "Tech Pipeline", amount: 45000, expectedClose: "Mar 30, 2026", stage: "proposal", creator: "Orlando" },
-  { id: "d9", title: "Enterprise Platform Migration", company: "Skyline Group", companyLogo: "SG", contact: "Joshua Murphy", pipeline: "Enterprise", amount: 120000, expectedClose: "Jan 10, 2026", stage: "won", creator: "Orlando" },
-  { id: "d10", title: "Training & Support Contract", company: "Quantum Leap", companyLogo: "QL", contact: "Sarah Chen", pipeline: "Sales Pipeline", amount: 28000, expectedClose: "Feb 15, 2026", stage: "won", creator: "Orlando" },
-  { id: "d11", title: "Family Fun Package", company: "Swift Commerce", companyLogo: "SC", contact: "Emily Rodriguez", pipeline: "Joyful Journeys", amount: 12000, expectedClose: "Oct 30, 2026", stage: "lost", creator: "Orlando" },
-  { id: "d12", title: "Mountain Adventure Pack", company: "Halo Collar", companyLogo: "HC", contact: "Jackson Brooks", pipeline: "Adventure Awaits", amount: 30000, expectedClose: "May 25, 2026", stage: "lost", creator: "Orlando" },
+  { id: "Lead", name: "Lead", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
+  { id: "Sales Qualified", name: "Sales Qualified", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
+  { id: "Meeting Booked", name: "Meeting Booked", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
+  { id: "Proposal Sent", name: "Proposal Sent", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
+  { id: "Negotiation", name: "Negotiation", color: "text-orange-700", borderColor: "border-orange-400", bgColor: "bg-orange-50" },
+  { id: "Closed Won", name: "Closed Won", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
+  { id: "Closed Lost", name: "Closed Lost", color: "text-red-600", borderColor: "border-red-400", bgColor: "bg-red-50" },
 ];
 
 // ────────────────────────────────────
@@ -99,12 +67,22 @@ function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 }
 
+function getCompanyInitials(name: string) {
+  return name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+}
+
 // ────────────────────────────────────
 // DEAL CARD
 // ────────────────────────────────────
 
-function DealCard({ deal, onDragStart, onDragEnd }: { deal: Deal; onDragStart: (e: React.DragEvent, dealId: string) => void; onDragEnd: () => void }) {
+function DealCard({ deal, onDragStart, onDragEnd, onDelete }: {
+  deal: { id: string; title: string; value: number; stage: string; pipeline: string; contactName: string; assignedTo: string; closeDate: string; notes: string };
+  onDragStart: (e: React.DragEvent, dealId: string) => void;
+  onDragEnd: () => void;
+  onDelete: (id: string) => void;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const company = deal.contactName; // Using contactName as display
 
   return (
     <div
@@ -113,7 +91,6 @@ function DealCard({ deal, onDragStart, onDragEnd }: { deal: Deal; onDragStart: (
       onDragEnd={onDragEnd}
       className="bg-white rounded-xl border border-gray-100 p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition cursor-grab active:cursor-grabbing group"
     >
-      {/* Title + Menu */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" />
@@ -134,44 +111,34 @@ function DealCard({ deal, onDragStart, onDragEnd }: { deal: Deal; onDragStart: (
                 <button className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">View Details</button>
                 <button className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Add Note</button>
                 <div className="border-t border-gray-100 my-1" />
-                <button className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left">Delete</button>
+                <button onClick={() => { onDelete(deal.id); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left flex items-center gap-2"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Company */}
-      <div className="flex items-center gap-2 mb-2">
-        <Building2 className="w-3.5 h-3.5 text-gray-400" />
-        <div className="flex items-center gap-1.5">
-          <div className={`w-5 h-5 rounded flex items-center justify-center ${getColor(deal.company)}`}>
-            <span className="text-[8px] font-bold">{deal.companyLogo}</span>
-          </div>
-          <span className="text-xs text-gray-600">{deal.company}</span>
-        </div>
-      </div>
-
-      {/* Creator */}
+      {/* Contact */}
       <div className="flex items-center gap-2 mb-2">
         <User className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-xs text-gray-500">{deal.creator}</span>
+        <span className="text-xs text-gray-600">{deal.contactName}</span>
       </div>
 
       {/* Pipeline */}
-      <div className="text-xs text-gray-400 mb-3">
-        Pipeline: <span className="text-gray-600">{deal.pipeline}</span>
+      <div className="flex items-center gap-2 mb-3">
+        <Building2 className="w-3.5 h-3.5 text-gray-400" />
+        <span className="text-xs text-gray-500">{deal.pipeline}</span>
       </div>
 
-      {/* Amount + Close Date */}
+      {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-gray-50">
         <div className="flex items-center gap-1.5">
           <DollarSign className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-sm font-semibold text-gray-900">{formatCurrency(deal.amount)}</span>
+          <span className="text-sm font-bold text-gray-900">{formatCurrency(deal.value)}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-xs text-gray-500">{deal.expectedClose}</span>
+          <Calendar className="w-3 h-3 text-gray-400" />
+          <span className="text-xs text-gray-400">{deal.closeDate}</span>
         </div>
       </div>
     </div>
@@ -179,32 +146,42 @@ function DealCard({ deal, onDragStart, onDragEnd }: { deal: Deal; onDragStart: (
 }
 
 // ────────────────────────────────────
-// DEALS PAGE
+// MAIN PAGE
 // ────────────────────────────────────
 
 export default function DealsPage() {
-  const [deals, setDeals] = useState<Deal[]>(mockDeals);
+  const { deals, moveDeal, deleteDeal, stats } = useCRM();
+  const { openModal } = useModal();
   const [search, setSearch] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState<"kanban" | "list" | "grid">("kanban");
-  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
-  // Filter by search
   const filtered = deals.filter((d) => {
-    if (search === "") return true;
-    return `${d.title} ${d.company} ${d.contact}`.toLowerCase().includes(search.toLowerCase());
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return d.title.toLowerCase().includes(q) || d.contactName.toLowerCase().includes(q);
   });
 
-  // Group by stage
-  const dealsByStage: Record<string, Deal[]> = {};
-  stages.forEach((s) => { dealsByStage[s.id] = []; });
-  filtered.forEach((d) => { if (dealsByStage[d.stage]) dealsByStage[d.stage].push(d); });
+  const dealsByStage = useMemo(() => {
+    const grouped: Record<string, typeof filtered> = {};
+    stages.forEach((s) => { grouped[s.id] = []; });
+    filtered.forEach((d) => {
+      if (grouped[d.stage]) grouped[d.stage].push(d);
+      else {
+        // If stage doesn't match exactly, try to find closest
+        const match = stages.find(s => s.id.toLowerCase() === d.stage.toLowerCase());
+        if (match) grouped[match.id].push(d);
+        else if (grouped["Lead"]) grouped["Lead"].push(d);
+      }
+    });
+    return grouped;
+  }, [filtered]);
 
-  // Total pipeline value
-  const totalValue = filtered.reduce((sum, d) => sum + d.amount, 0);
+  const totalValue = filtered.reduce((s, d) => s + d.value, 0);
 
-  // Drag handlers
+  // Drag & Drop
   const handleDragStart = (e: React.DragEvent, dealId: string) => {
     setDraggingId(dealId);
     e.dataTransfer.setData("text/plain", dealId);
@@ -213,78 +190,46 @@ export default function DealsPage() {
 
   const handleDragOver = (e: React.DragEvent, stageId: string) => {
     e.preventDefault();
-    e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
-    if (dragOverStage !== stageId) {
-      setDragOverStage(stageId);
-    }
+    setDragOverStage(stageId);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    // Only clear if we're actually leaving the column, not entering a child
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX;
-    const y = e.clientY;
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      setDragOverStage(null);
-    }
-  };
+  const handleDragLeave = () => setDragOverStage(null);
 
   const handleDrop = (e: React.DragEvent, stageId: string) => {
     e.preventDefault();
-    e.stopPropagation();
+    const dealId = e.dataTransfer.getData("text/plain");
+    if (dealId) {
+      moveDeal(dealId, stageId);
+    }
     setDragOverStage(null);
-    const dealId = e.dataTransfer.getData("text/plain") || draggingId;
-    if (!dealId) return;
-
-    setDeals((prev) =>
-      prev.map((d) =>
-        d.id === dealId ? { ...d, stage: stageId } : d
-      )
-    );
     setDraggingId(null);
   };
 
   return (
     <>
-      <Header title="Deals" subtitle={`${filtered.length} deals · ${formatCurrency(totalValue)} total pipeline`} />
-
-      <div className="p-6">
+      <Header title="Deals" />
+      <div className="p-6 space-y-4">
         {/* Toolbar */}
-        <div className="bg-white rounded-xl border border-gray-100 mb-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border transition ${
-                  showFilters ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "text-gray-600 border-gray-200 hover:bg-gray-50"
-                }`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                {showFilters ? "Hide Filters" : "Show Filters"}
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">{filtered.length} Deals</h2>
+                <p className="text-xs text-gray-400">{formatCurrency(totalValue)} total pipeline</p>
+              </div>
+              <div className="w-px h-8 bg-gray-200 mx-2" />
+              <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-1.5 px-3 py-2 text-sm border rounded-lg transition ${showFilters ? "bg-indigo-50 text-indigo-600 border-indigo-200" : "text-gray-600 border-gray-200 hover:bg-gray-50"}`}>
+                <SlidersHorizontal className="w-4 h-4" /> Filters
               </button>
-
-              {/* View toggles */}
-              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden ml-2">
-                <button
-                  onClick={() => setView("kanban")}
-                  className={`p-2 transition ${view === "kanban" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
-                  title="Kanban"
-                >
+              <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden">
+                <button onClick={() => setView("kanban")} className={`p-2 transition ${view === "kanban" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`} title="Kanban">
                   <Columns3 className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => setView("list")}
-                  className={`p-2 transition border-l border-gray-200 ${view === "list" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
-                  title="List"
-                >
+                <button onClick={() => setView("list")} className={`p-2 transition border-l border-gray-200 ${view === "list" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`} title="List">
                   <List className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => setView("grid")}
-                  className={`p-2 transition border-l border-gray-200 ${view === "grid" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}
-                  title="Grid"
-                >
+                <button onClick={() => setView("grid")} className={`p-2 transition border-l border-gray-200 ${view === "grid" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`} title="Grid">
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
@@ -310,10 +255,10 @@ export default function DealsPage() {
               <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                 <Download className="w-4 h-4" /><span className="hidden sm:inline">Export</span>
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                <Upload className="w-4 h-4" /><span className="hidden sm:inline">Import CSV</span>
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm">
+              <button
+                onClick={() => openModal("deal")}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm"
+              >
                 <Plus className="w-4 h-4" /><span className="hidden sm:inline">Create Deal</span>
               </button>
             </div>
@@ -323,12 +268,6 @@ export default function DealsPage() {
           {showFilters && (
             <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/50">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Company</label>
-                  <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                    <option>All Companies</option>
-                  </select>
-                </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Pipeline</label>
                   <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
@@ -347,6 +286,12 @@ export default function DealsPage() {
                     <option>Any Date</option>
                   </select>
                 </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Assigned To</label>
+                  <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                    <option>Anyone</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -356,7 +301,7 @@ export default function DealsPage() {
         <div className="flex gap-4 overflow-x-auto pb-4">
           {stages.map((stage) => {
             const stageDeals = dealsByStage[stage.id] || [];
-            const stageTotal = stageDeals.reduce((sum, d) => sum + d.amount, 0);
+            const stageTotal = stageDeals.reduce((sum, d) => sum + d.value, 0);
             const isDragOver = dragOverStage === stage.id;
 
             return (
@@ -368,7 +313,7 @@ export default function DealsPage() {
                 onDrop={(e) => handleDrop(e, stage.id)}
               >
                 {/* Column Header */}
-                <div className={`flex items-center justify-between mb-3 px-1`}>
+                <div className="flex items-center justify-between mb-3 px-1">
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${stage.bgColor} ${stage.color} ${stage.borderColor}`}>
                       {stage.name}
@@ -394,15 +339,12 @@ export default function DealsPage() {
 
                 {/* Cards */}
                 <div
-                  onDragOver={(e) => handleDragOver(e, stage.id)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, stage.id)}
                   className={`space-y-3 min-h-[100px] rounded-xl p-2 transition ${
                     isDragOver ? "bg-indigo-50/50 border-2 border-dashed border-indigo-300" : "bg-gray-50/50"
                   }`}
                 >
                   {stageDeals.map((deal) => (
-                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} onDragEnd={() => { setDragOverStage(null); setDraggingId(null); }} />
+                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} onDragEnd={() => { setDragOverStage(null); setDraggingId(null); }} onDelete={deleteDeal} />
                   ))}
 
                   {stageDeals.length === 0 && !isDragOver && (
