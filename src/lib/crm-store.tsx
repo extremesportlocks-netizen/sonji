@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 
 // ════════════════════════════════════════
 // TYPES
@@ -69,52 +69,79 @@ export interface Activity {
 }
 
 // ════════════════════════════════════════
-// SEED DATA
+// API HELPERS
 // ════════════════════════════════════════
 
-const seedContacts: Contact[] = [
-  { id: "c1", firstName: "Mason", lastName: "Thompson", email: "mason@vertexpartners.com", phone: "(305) 555-0142", company: "Vertex Partners", source: "referral", status: "active", tags: ["Hot Lead", "Enterprise"], score: 92, createdAt: "2026-03-01" },
-  { id: "c2", firstName: "Sarah", lastName: "Chen", email: "sarah@dataflowsolutions.com", phone: "(415) 555-0198", company: "DataFlow Solutions", source: "website", status: "active", tags: ["Demo Scheduled"], score: 78, createdAt: "2026-03-03" },
-  { id: "c3", firstName: "Lucas", lastName: "Anderson", email: "lucas@techventures.io", phone: "(212) 555-0167", company: "TechVentures Inc", source: "referral", status: "active", tags: ["Compliance"], score: 65, createdAt: "2026-02-15" },
-  { id: "c4", firstName: "Aiden", lastName: "Parker", email: "aiden@brightdynamics.com", phone: "(678) 555-0134", company: "Bright Dynamics", source: "website", status: "active", tags: ["Closing"], score: 71, createdAt: "2026-02-20" },
-  { id: "c5", firstName: "Daniel", lastName: "Kim", email: "daniel@fusionlabs.co", phone: "(510) 555-0189", company: "Fusion Labs", source: "form", status: "lead", tags: ["Inbound", "GHL Switch"], score: 33, createdAt: "2026-03-10" },
-  { id: "c6", firstName: "Emily", lastName: "Rodriguez", email: "emily@pulsemedia.co", phone: "(323) 555-0156", company: "Pulse Media", source: "social", status: "active", tags: ["Billing"], score: 54, createdAt: "2026-02-10" },
-  { id: "c7", firstName: "Jackson", lastName: "Brooks", email: "jackson@halocollar.com", phone: "(904) 555-0123", company: "Halo Collar", source: "referral", status: "active", tags: ["Pilot", "Won"], score: 88, createdAt: "2026-01-20" },
-];
+async function apiFetch<T>(url: string, options?: RequestInit): Promise<{ data: T | null; error: string | null }> {
+  try {
+    const res = await fetch(url, options);
+    const json = await res.json();
+    if (!res.ok) return { data: null, error: json.error || json.message || "Request failed" };
+    return { data: json.data ?? json, error: null };
+  } catch {
+    return { data: null, error: "Network error" };
+  }
+}
 
-const seedDeals: Deal[] = [
-  { id: "d1", title: "Enterprise Migration", value: 24000, stage: "Proposal Sent", pipeline: "Default", contactId: "c1", contactName: "Mason Thompson", assignedTo: "Orlando", closeDate: "2026-03-30", notes: "", createdAt: "2026-03-01" },
-  { id: "d2", title: "DataFlow Platform", value: 8500, stage: "Meeting Booked", pipeline: "Default", contactId: "c2", contactName: "Sarah Chen", assignedTo: "Orlando", closeDate: "2026-04-15", notes: "", createdAt: "2026-03-03" },
-  { id: "d3", title: "TechVentures SOW", value: 15750, stage: "Negotiation", pipeline: "Default", contactId: "c3", contactName: "Lucas Anderson", assignedTo: "Orlando", closeDate: "2026-03-20", notes: "", createdAt: "2026-02-15" },
-  { id: "d4", title: "Bright Dynamics Retainer", value: 6200, stage: "Proposal Sent", pipeline: "Default", contactId: "c4", contactName: "Aiden Parker", assignedTo: "Orlando", closeDate: "2026-04-01", notes: "", createdAt: "2026-02-20" },
-  { id: "d5", title: "Halo Collar Pilot", value: 31500, stage: "Closed Won", pipeline: "Default", contactId: "c7", contactName: "Jackson Brooks", assignedTo: "Orlando", closeDate: "2026-03-10", notes: "", createdAt: "2026-01-20" },
-  { id: "d6", title: "Fusion Labs CRM Switch", value: 12800, stage: "Lead", pipeline: "Default", contactId: "c5", contactName: "Daniel Kim", assignedTo: "Orlando", closeDate: "2026-05-01", notes: "Switching from GoHighLevel", createdAt: "2026-03-10" },
-];
+function mapContactFromAPI(row: any): Contact {
+  return {
+    id: row.id,
+    firstName: row.firstName || row.first_name || "",
+    lastName: row.lastName || row.last_name || "",
+    email: row.email || "",
+    phone: row.phone || "",
+    company: row.company || "",
+    source: row.source || "",
+    status: row.status || "active",
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    score: row.score || Math.floor(Math.random() * 40) + 30,
+    createdAt: row.createdAt || row.created_at || new Date().toISOString(),
+  };
+}
 
-const seedTasks: Task[] = [
-  { id: "t1", title: "Follow up with Mason on proposal", description: "", priority: "high", status: "todo", assignedTo: "Orlando", contactName: "Mason Thompson", dueDate: "2026-03-13", createdAt: "2026-03-11" },
-  { id: "t2", title: "Prep demo for Sarah Chen", description: "Thursday 2pm EST", priority: "high", status: "in_progress", assignedTo: "Orlando", contactName: "Sarah Chen", dueDate: "2026-03-14", createdAt: "2026-03-11" },
-  { id: "t3", title: "Send SOC 2 docs to Lucas", description: "", priority: "medium", status: "todo", assignedTo: "Orlando", contactName: "Lucas Anderson", dueDate: "2026-03-14", createdAt: "2026-03-12" },
-  { id: "t4", title: "Review Aiden's signed SOW", description: "", priority: "medium", status: "todo", assignedTo: "Orlando", contactName: "Aiden Parker", dueDate: "2026-03-17", createdAt: "2026-03-12" },
-  { id: "t5", title: "Onboard Halo Collar", description: "Set up pilot environment", priority: "high", status: "done", assignedTo: "Orlando", contactName: "Jackson Brooks", dueDate: "2026-03-10", createdAt: "2026-03-08" },
-];
+function mapDealFromAPI(row: any): Deal {
+  return {
+    id: row.id,
+    title: row.title || "",
+    value: Number(row.value) || 0,
+    stage: row.stage || "Lead",
+    pipeline: row.pipeline || "Default",
+    contactId: row.contactId || row.contact_id || "",
+    contactName: row.contactName || "",
+    assignedTo: row.assignedTo || row.assigned_to || "",
+    closeDate: row.expectedClose || row.expected_close || "",
+    notes: row.notes || "",
+    createdAt: row.createdAt || row.created_at || new Date().toISOString(),
+  };
+}
 
-const seedMeetings: Meeting[] = [
-  { id: "m1", title: "Demo — DataFlow Solutions", date: "2026-03-14", startTime: "14:00", endTime: "15:00", type: "virtual", location: "https://meet.google.com/abc", participants: ["Orlando", "Sarah Chen"], contactName: "Sarah Chen", notes: "CTO joining too", createdAt: "2026-03-11" },
-  { id: "m2", title: "Proposal Review — TechVentures", date: "2026-03-15", startTime: "10:00", endTime: "10:30", type: "virtual", location: "", participants: ["Orlando", "Lucas Anderson"], contactName: "Lucas Anderson", notes: "", createdAt: "2026-03-12" },
-];
+function mapTaskFromAPI(row: any): Task {
+  return {
+    id: row.id,
+    title: row.title || "",
+    description: row.description || "",
+    priority: row.priority || "medium",
+    status: row.status || "todo",
+    assignedTo: row.assignedTo || row.assigned_to || "",
+    contactName: row.contactName || "",
+    dueDate: row.dueDate || row.due_date || "",
+    createdAt: row.createdAt || row.created_at || new Date().toISOString(),
+  };
+}
 
 // ════════════════════════════════════════
 // CONTEXT
 // ════════════════════════════════════════
 
 interface CRMStore {
-  // Data
+  // State
   contacts: Contact[];
   deals: Deal[];
   tasks: Task[];
   meetings: Meeting[];
   activities: Activity[];
+  loading: boolean;
+  tenantResolved: boolean;
 
   // Contact CRUD
   addContact: (data: Omit<Contact, "id" | "createdAt" | "score">) => Contact;
@@ -148,6 +175,9 @@ interface CRMStore {
     tasksOverdue: number;
     tasksDone: number;
   };
+
+  // Refetch
+  refresh: () => void;
 }
 
 const CRMContext = createContext<CRMStore | null>(null);
@@ -166,15 +196,47 @@ function genId() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8
 function today() { return new Date().toISOString().split("T")[0]; }
 
 export function CRMProvider({ children }: { children: ReactNode }) {
-  const [contacts, setContacts] = useState<Contact[]>(seedContacts);
-  const [deals, setDeals] = useState<Deal[]>(seedDeals);
-  const [tasks, setTasks] = useState<Task[]>(seedTasks);
-  const [meetings, setMeetings] = useState<Meeting[]>(seedMeetings);
-  const [activities, setActivities] = useState<Activity[]>([
-    { id: "a1", type: "deal_won", description: "Halo Collar Pilot — $31,500 closed", timestamp: "2026-03-10T14:30:00", contactName: "Jackson Brooks" },
-    { id: "a2", type: "contact_created", description: "Daniel Kim added from intake form", timestamp: "2026-03-10T05:30:00", contactName: "Daniel Kim" },
-    { id: "a3", type: "meeting_scheduled", description: "Demo with DataFlow Solutions — Thursday 2pm", timestamp: "2026-03-11T09:15:00", contactName: "Sarah Chen" },
-  ]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tenantResolved, setTenantResolved] = useState(false);
+
+  // Fetch real data from API on mount
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [contactsRes, dealsRes, tasksRes] = await Promise.allSettled([
+        apiFetch<any>("/api/contacts?pageSize=500"),
+        apiFetch<any>("/api/deals?pageSize=500"),
+        apiFetch<any>("/api/tasks?pageSize=500"),
+      ]);
+
+      if (contactsRes.status === "fulfilled" && contactsRes.value.data) {
+        const rows = Array.isArray(contactsRes.value.data) ? contactsRes.value.data : contactsRes.value.data.data || [];
+        setContacts(rows.map(mapContactFromAPI));
+        setTenantResolved(true);
+      }
+
+      if (dealsRes.status === "fulfilled" && dealsRes.value.data) {
+        const rows = Array.isArray(dealsRes.value.data) ? dealsRes.value.data : dealsRes.value.data.data || [];
+        setDeals(rows.map(mapDealFromAPI));
+      }
+
+      if (tasksRes.status === "fulfilled" && tasksRes.value.data) {
+        const rows = Array.isArray(tasksRes.value.data) ? tasksRes.value.data : tasksRes.value.data.data || [];
+        setTasks(rows.map(mapTaskFromAPI));
+      }
+    } catch (err) {
+      console.error("[CRM] Failed to fetch data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const logActivity = useCallback((type: Activity["type"], description: string, contactName?: string) => {
     setActivities((prev) => [{ id: genId(), type, description, timestamp: new Date().toISOString(), contactName }, ...prev]);
@@ -185,6 +247,28 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     const contact: Contact = { ...data, id: genId(), createdAt: today(), score: Math.floor(Math.random() * 40) + 30 };
     setContacts((prev) => [contact, ...prev]);
     logActivity("contact_created", `${data.firstName} ${data.lastName} added`, `${data.firstName} ${data.lastName}`);
+
+    // Persist to API (fire-and-forget)
+    apiFetch("/api/contacts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        company: data.company,
+        source: data.source,
+        status: data.status,
+        tags: data.tags,
+      }),
+    }).then(res => {
+      // Replace temp ID with real DB ID
+      if (res.data && (res.data as any).id) {
+        setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, id: (res.data as any).id } : c));
+      }
+    });
+
     return contact;
   }, [logActivity]);
 
@@ -194,6 +278,7 @@ export function CRMProvider({ children }: { children: ReactNode }) {
 
   const deleteContact = useCallback((id: string) => {
     setContacts((prev) => prev.filter((c) => c.id !== id));
+    apiFetch(`/api/contacts?id=${id}`, { method: "DELETE" });
   }, []);
 
   // ── Deals ──
@@ -201,6 +286,19 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     const deal: Deal = { ...data, id: genId(), createdAt: today() };
     setDeals((prev) => [deal, ...prev]);
     logActivity("deal_created", `${data.title} — $${data.value.toLocaleString()}`, data.contactName);
+
+    apiFetch("/api/deals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: data.title,
+        value: data.value,
+        stage: data.stage,
+        contactName: data.contactName,
+        notes: data.notes,
+      }),
+    });
+
     return deal;
   }, [logActivity]);
 
@@ -226,6 +324,20 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     const task: Task = { ...data, id: genId(), createdAt: today() };
     setTasks((prev) => [task, ...prev]);
     logActivity("task_created", data.title, data.contactName);
+
+    apiFetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        status: data.status,
+        assignedTo: data.assignedTo,
+        dueDate: data.dueDate,
+      }),
+    });
+
     return task;
   }, [logActivity]);
 
@@ -261,12 +373,12 @@ export function CRMProvider({ children }: { children: ReactNode }) {
 
   return (
     <CRMContext.Provider value={{
-      contacts, deals, tasks, meetings, activities,
+      contacts, deals, tasks, meetings, activities, loading, tenantResolved,
       addContact, updateContact, deleteContact,
       addDeal, updateDeal, moveDeal, deleteDeal,
       addTask, updateTask, deleteTask,
       addMeeting, deleteMeeting,
-      logActivity, stats,
+      logActivity, stats, refresh: fetchData,
     }}>
       {children}
     </CRMContext.Provider>

@@ -1,5 +1,8 @@
 import { NextRequest } from "next/server";
-import { unauthorized, forbidden } from "./responses";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
+import { users, tenants } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 // ════════════════════════════════════════
 // TYPES
@@ -8,6 +11,7 @@ import { unauthorized, forbidden } from "./responses";
 export interface AuthContext {
   tenantId: string;
   tenantSlug: string;
+  tenantName: string;
   userId: string;
   userEmail: string;
   userName: string;
@@ -21,51 +25,34 @@ export type TenantRole = "owner" | "admin" | "member" | "viewer";
  * Each action maps to the minimum roles that can perform it.
  */
 const PERMISSIONS: Record<string, TenantRole[]> = {
-  // Contacts
   "contacts:read":    ["owner", "admin", "member", "viewer"],
   "contacts:create":  ["owner", "admin", "member"],
   "contacts:update":  ["owner", "admin", "member"],
   "contacts:delete":  ["owner", "admin"],
   "contacts:import":  ["owner", "admin"],
   "contacts:export":  ["owner", "admin", "member"],
-
-  // Deals
   "deals:read":       ["owner", "admin", "member", "viewer"],
   "deals:create":     ["owner", "admin", "member"],
   "deals:update":     ["owner", "admin", "member"],
   "deals:delete":     ["owner", "admin"],
-
-  // Tasks
   "tasks:read":       ["owner", "admin", "member", "viewer"],
   "tasks:create":     ["owner", "admin", "member"],
   "tasks:update":     ["owner", "admin", "member"],
   "tasks:delete":     ["owner", "admin", "member"],
-
-  // Activities
   "activities:read":  ["owner", "admin", "member", "viewer"],
   "activities:create":["owner", "admin", "member"],
-
-  // Email/SMS
   "messages:read":    ["owner", "admin", "member", "viewer"],
   "messages:send":    ["owner", "admin", "member"],
   "campaigns:manage": ["owner", "admin"],
-
-  // Workflows
   "workflows:read":   ["owner", "admin", "member", "viewer"],
   "workflows:manage": ["owner", "admin"],
-
-  // Reports
   "reports:read":     ["owner", "admin", "member", "viewer"],
   "reports:export":   ["owner", "admin"],
-
-  // Settings & Billing
   "settings:read":    ["owner", "admin"],
   "settings:update":  ["owner", "admin"],
   "billing:manage":   ["owner"],
   "team:manage":      ["owner", "admin"],
   "team:read":        ["owner", "admin", "member", "viewer"],
-
-  // Integrations & API
   "integrations:manage": ["owner", "admin"],
   "apikeys:manage":      ["owner"],
 };
@@ -75,40 +62,61 @@ const PERMISSIONS: Record<string, TenantRole[]> = {
 // ════════════════════════════════════════
 
 /**
- * Resolve auth context from request.
+ * Resolve auth context from Clerk session → database lookup.
  *
- * In production, this reads from Clerk's JWT + our middleware headers.
- * In dev mode, it can use mock headers or a dev token.
- *
- * Returns the auth context or throws an HTTP error response.
+ * Flow: Clerk JWT → userId → query users table → get tenant → return full context.
+ * This is the bridge between Clerk auth and Sonji's multi-tenant data layer.
  */
 export async function getAuthContext(req: NextRequest): Promise<AuthContext | null> {
-  // ── DEV MODE: Check for mock auth headers ──
-  if (process.env.NODE_ENV === "development" || process.env.MOCK_AUTH === "true") {
-    const mockTenantId = req.headers.get("x-mock-tenant-id");
-    const mockUserId = req.headers.get("x-mock-user-id");
+  try {
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) return null;
 
-    if (mockTenantId && mockUserId) {
-      return {
-        tenantId: mockTenantId,
-        tenantSlug: req.headers.get("x-tenant-slug") || "demo",
-        userId: mockUserId,
-        userEmail: req.headers.get("x-mock-user-email") || "dev@sonji.io",
-        userName: req.headers.get("x-mock-user-name") || "Dev User",
-        userRole: (req.headers.get("x-mock-user-role") as TenantRole) || "owner",
-      };
-    }
+    // Look up the Sonji user by Clerk ID
+    const userRows = await db
+      .select({
+        id: users.id,
+        tenantId: users.tenantId,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
+    if (userRows.length === 0) return null;
+
+    const user = userRows[0];
+
+    // Get tenant info
+    const tenantRows = await db
+      .select({
+        id: tenants.id,
+        slug: tenants.slug,
+        name: tenants.name,
+      })
+      .from(tenants)
+      .where(eq(tenants.id, user.tenantId))
+      .limit(1);
+
+    if (tenantRows.length === 0) return null;
+
+    const tenant = tenantRows[0];
+
+    return {
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      tenantName: tenant.name,
+      userId: user.id,
+      userEmail: user.email,
+      userName: user.name,
+      userRole: user.role as TenantRole,
+    };
+  } catch (err) {
+    console.error("[AuthContext] Failed to resolve:", err);
+    return null;
   }
-
-  // ── PRODUCTION: Resolve from Clerk JWT ──
-  // TODO: Wire Clerk auth when we add the package
-  // const { userId } = auth();
-  // const user = await currentUser();
-  // const tenantSlug = req.headers.get("x-tenant-slug");
-  // Query users table: SELECT * FROM users WHERE clerk_id = userId AND tenant_id = (SELECT id FROM tenants WHERE slug = tenantSlug)
-
-  // For now, return null if no mock headers
-  return null;
 }
 
 /**
