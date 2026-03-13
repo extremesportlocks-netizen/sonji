@@ -227,9 +227,19 @@ function StripeIntegration() {
                     <label className="text-xs font-medium text-gray-600 mb-1.5 block">Stripe Secret Key</label>
                     <div className="relative">
                       <input
-                        type={showKey ? "text" : "password"}
-                        value={apiKey}
+                        type="text"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        data-1p-ignore
+                        data-lpignore="true"
+                        data-form-type="other"
+                        name="stripe_api_key_sonji"
+                        id="stripe_api_key_sonji"
+                        value={showKey ? apiKey : apiKey ? "•".repeat(Math.max(0, apiKey.length - 8)) + apiKey.slice(-8) : ""}
                         onChange={(e) => { setApiKey(e.target.value); setError(""); }}
+                        onFocus={() => setShowKey(true)}
                         placeholder="sk_live_..."
                         className="w-full px-3.5 py-2.5 pr-20 text-sm font-mono border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-300"
                       />
