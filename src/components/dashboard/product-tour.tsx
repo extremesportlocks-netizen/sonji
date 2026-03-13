@@ -270,13 +270,15 @@ export function useTour() {
   const [showTour, setShowTour] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
 
-  // In production, this would check localStorage or a user_settings table
   useEffect(() => {
-    // Simulate first-time visit detection
-    // In production: check if user has completed the tour via API
-    const hasSeenTour = false; // would be: await getUserSetting('tour_completed')
-    if (!hasSeenTour && !tourCompleted) {
-      // Small delay so the dashboard renders first
+    try {
+      const seen = localStorage.getItem("sonji_tour_completed");
+      if (seen === "true") {
+        setTourCompleted(true);
+        return;
+      }
+    } catch {}
+    if (!tourCompleted) {
       const timer = setTimeout(() => setShowTour(true), 1500);
       return () => clearTimeout(timer);
     }
@@ -286,11 +288,12 @@ export function useTour() {
   const completeTour = () => {
     setShowTour(false);
     setTourCompleted(true);
-    // In production: await setUserSetting('tour_completed', true)
+    try { localStorage.setItem("sonji_tour_completed", "true"); } catch {}
   };
   const dismissTour = () => {
     setShowTour(false);
-    // Don't mark as completed — they might want to see it later
+    setTourCompleted(true);
+    try { localStorage.setItem("sonji_tour_completed", "true"); } catch {}
   };
 
   return { showTour, startTour, completeTour, dismissTour };
