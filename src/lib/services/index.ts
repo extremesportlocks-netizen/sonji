@@ -9,3 +9,5 @@ export { executeWorkflow, executeStep, matchesTrigger, findMatchingWorkflows, ev
 export { getAllIndustries, getIndustryTemplate, getIndustryPipeline, INDUSTRY_TEMPLATES } from "./industry-templates";
 export { scoreContact, scoreContacts, getScoreDisplay, DEFAULT_SCORING_PROFILE } from "./lead-scoring";
 export { computeDashboardMetrics, computePipelineMetrics, computeRevenueTrends, computeTeamMetrics, computeFunnel, exportToCSV, EXPORT_COLUMNS } from "./analytics";
+export { runSync, formatSyncSummary, computeStripeMetrics, mapCustomerToContact, mapSubscriptionToDeal, mapStripeInvoice, mapChargeToPayment, handleWebhookEvent } from "./stripe-sync";
+export { formatNewLead, formatDealWon, formatDealLost, formatDealStageChanged, formatInvoicePaid, formatAppointmentScheduled, formatTaskOverdue, formatStripePayment, formatDailyDigest } from "./slack-notifications";
