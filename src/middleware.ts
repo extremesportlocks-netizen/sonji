@@ -67,10 +67,10 @@ export function middleware(request: NextRequest) {
 
   // ─── PASSWORD GATE ───
   // If SITE_PASSWORD is set, require password before showing anything
-  if (SITE_PASSWORD && url.pathname !== "/_password" && url.pathname !== "/api/auth-password") {
+  if (SITE_PASSWORD && url.pathname !== "/password-gate" && url.pathname !== "/api/auth-password") {
     const authed = request.cookies.get("site_auth")?.value;
     if (authed !== SITE_PASSWORD) {
-      url.pathname = "/_password";
+      url.pathname = "/password-gate";
       return NextResponse.rewrite(url);
     }
   }
