@@ -3,15 +3,37 @@
 import { useState } from "react";
 import Modal from "@/components/ui/modal";
 import { Calendar, Clock, Video, MapPin, Users, Save } from "lucide-react";
+import { useCRM } from "@/lib/crm-store";
 
 interface ScheduleMeetingModalProps { open: boolean; onClose: () => void; }
 
 export default function ScheduleMeetingModal({ open, onClose }: ScheduleMeetingModalProps) {
+  const { addMeeting, contacts } = useCRM();
+  const contactNames = contacts.map((c) => `${c.firstName} ${c.lastName}`);
   const [form, setForm] = useState({ title: "", date: "", startTime: "10:00", endTime: "11:00", type: "virtual", location: "", contact: "", notes: "" });
   const [participants, setParticipants] = useState<string[]>(["Orlando"]);
   const [saving, setSaving] = useState(false);
   const update = (k: string, v: string) => setForm({ ...form, [k]: v });
-  const handleSave = () => { setSaving(true); setTimeout(() => { setSaving(false); onClose(); }, 800); };
+  const handleSave = () => {
+    setSaving(true);
+    addMeeting({
+      title: form.title,
+      date: form.date,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      type: form.type as "virtual" | "in-person" | "phone",
+      location: form.location,
+      participants,
+      contactName: form.contact || participants.find((p) => p !== "Orlando") || "",
+      notes: form.notes,
+    });
+    setTimeout(() => {
+      setSaving(false);
+      setForm({ title: "", date: "", startTime: "10:00", endTime: "11:00", type: "virtual", location: "", contact: "", notes: "" });
+      setParticipants(["Orlando"]);
+      onClose();
+    }, 500);
+  };
 
   const addParticipant = (name: string) => { if (name && !participants.includes(name)) setParticipants([...participants, name]); };
   const removeParticipant = (name: string) => setParticipants(participants.filter((p) => p !== name));
@@ -88,7 +110,7 @@ export default function ScheduleMeetingModal({ open, onClose }: ScheduleMeetingM
           <select onChange={(e) => { addParticipant(e.target.value); e.target.value = ""; }}
             className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
             <option value="">Add participant...</option>
-            {["Mason Thompson", "Sarah Chen", "Marcus Rivera", "Emily Rodriguez", "Lucas Anderson"].filter((c) => !participants.includes(c)).map((c) => <option key={c}>{c}</option>)}
+            {["Orlando", ...contactNames].filter((c) => !participants.includes(c)).map((c) => <option key={c}>{c}</option>)}
           </select>
         </div>
         <div>

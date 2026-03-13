@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/ui/modal";
 import { Handshake, DollarSign, Calendar, User, Save } from "lucide-react";
+import { useCRM } from "@/lib/crm-store";
 
 interface CreateDealModalProps {
   open: boolean;
@@ -11,15 +12,34 @@ interface CreateDealModalProps {
 
 const stages = ["Lead", "Sales Qualified", "Meeting Booked", "Proposal Sent", "Negotiation", "Closed Won", "Closed Lost"];
 const pipelines = ["Default Pipeline", "Enterprise Pipeline", "Inbound Pipeline"];
-const contacts = ["Mason Thompson", "Sarah Chen", "Lucas Anderson", "Aiden Parker", "Daniel Kim", "Emily Rodriguez", "Jackson Brooks"];
-const teamMembers = ["Orlando", "Sarah Chen", "Marcus Rivera", "Emily Rodriguez"];
 
 export default function CreateDealModal({ open, onClose }: CreateDealModalProps) {
+  const { addDeal, contacts } = useCRM();
+  const contactNames = contacts.map((c) => `${c.firstName} ${c.lastName}`);
+  const teamMembers = ["Orlando", "Sarah Chen", "Marcus Rivera", "Emily Rodriguez"];
   const [form, setForm] = useState({ title: "", value: "", stage: "Lead", pipeline: "Default Pipeline", contact: "", assignee: "Orlando", closeDate: "", notes: "" });
   const [saving, setSaving] = useState(false);
 
   const update = (k: string, v: string) => setForm({ ...form, [k]: v });
-  const handleSave = () => { setSaving(true); setTimeout(() => { setSaving(false); onClose(); }, 800); };
+  const handleSave = () => {
+    setSaving(true);
+    addDeal({
+      title: form.title,
+      value: parseFloat(form.value) || 0,
+      stage: form.stage,
+      pipeline: form.pipeline,
+      contactId: "",
+      contactName: form.contact,
+      assignedTo: form.assignee,
+      closeDate: form.closeDate,
+      notes: form.notes,
+    });
+    setTimeout(() => {
+      setSaving(false);
+      setForm({ title: "", value: "", stage: "Lead", pipeline: "Default Pipeline", contact: "", assignee: "Orlando", closeDate: "", notes: "" });
+      onClose();
+    }, 500);
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Create Deal" subtitle="Add a new deal to your pipeline" size="lg">
@@ -72,7 +92,7 @@ export default function CreateDealModal({ open, onClose }: CreateDealModalProps)
             <select value={form.contact} onChange={(e) => update("contact", e.target.value)}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
               <option value="">Select contact...</option>
-              {contacts.map((c) => <option key={c} value={c}>{c}</option>)}
+              {contactNames.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>

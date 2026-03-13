@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/ui/modal";
 import { User, Building2, Mail, Phone, Tag, Globe, Save } from "lucide-react";
+import { useCRM } from "@/lib/crm-store";
 
 interface CreateContactModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface CreateContactModalProps {
 }
 
 export default function CreateContactModal({ open, onClose }: CreateContactModalProps) {
+  const { addContact } = useCRM();
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", company: "", source: "manual", status: "lead", tags: "" });
   const [saving, setSaving] = useState(false);
 
@@ -17,7 +19,21 @@ export default function CreateContactModal({ open, onClose }: CreateContactModal
 
   const handleSave = () => {
     setSaving(true);
-    setTimeout(() => { setSaving(false); onClose(); }, 800);
+    addContact({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone,
+      company: form.company,
+      source: form.source,
+      status: form.status,
+      tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+    });
+    setTimeout(() => {
+      setSaving(false);
+      setForm({ firstName: "", lastName: "", email: "", phone: "", company: "", source: "manual", status: "lead", tags: "" });
+      onClose();
+    }, 500);
   };
 
   return (

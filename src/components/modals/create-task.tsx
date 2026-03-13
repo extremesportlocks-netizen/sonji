@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/ui/modal";
 import { CheckSquare, Calendar, User, Flag, Save } from "lucide-react";
+import { useCRM } from "@/lib/crm-store";
 
 interface CreateTaskModalProps { open: boolean; onClose: () => void; }
 
@@ -13,10 +14,28 @@ const priorities = [
 ];
 
 export default function CreateTaskModal({ open, onClose }: CreateTaskModalProps) {
+  const { addTask, contacts } = useCRM();
+  const contactNames = contacts.map((c) => `${c.firstName} ${c.lastName}`);
   const [form, setForm] = useState({ title: "", description: "", priority: "medium", assignee: "Orlando", dueDate: "", contact: "", status: "todo" });
   const [saving, setSaving] = useState(false);
   const update = (k: string, v: string) => setForm({ ...form, [k]: v });
-  const handleSave = () => { setSaving(true); setTimeout(() => { setSaving(false); onClose(); }, 800); };
+  const handleSave = () => {
+    setSaving(true);
+    addTask({
+      title: form.title,
+      description: form.description,
+      priority: form.priority as "high" | "medium" | "low",
+      status: "todo",
+      assignedTo: form.assignee,
+      contactName: form.contact,
+      dueDate: form.dueDate,
+    });
+    setTimeout(() => {
+      setSaving(false);
+      setForm({ title: "", description: "", priority: "medium", assignee: "Orlando", dueDate: "", contact: "", status: "todo" });
+      onClose();
+    }, 500);
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Add Task" subtitle="Create a new task" size="md">
@@ -64,7 +83,7 @@ export default function CreateTaskModal({ open, onClose }: CreateTaskModalProps)
             <select value={form.contact} onChange={(e) => update("contact", e.target.value)}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
               <option value="">None</option>
-              {["Mason Thompson", "Sarah Chen", "Lucas Anderson", "Aiden Parker"].map((c) => <option key={c}>{c}</option>)}
+              {contactNames.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
         </div>
