@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   ArrowLeft,
@@ -21,14 +23,16 @@ import {
   Car,
   HandHeart,
   ShoppingCart,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 const steps = ["Account", "Plan", "Brand", "Industry", "Ready"];
 
 const plans = [
-  { name: "Starter", price: "$99", period: "/mo", desc: "For small teams getting started", features: ["2,500 contacts", "3 team members", "Email marketing (5K/mo)", "1 pipeline", "Basic analytics"], popular: false },
-  { name: "Growth", price: "$199", period: "/mo", desc: "For growing businesses", features: ["25,000 contacts", "15 team members", "Email + SMS", "Unlimited pipelines", "Advanced analytics", "Custom domain", "AI assistant"], popular: true },
-  { name: "Scale", price: "$349", period: "/mo", desc: "For agencies & enterprises", features: ["Unlimited contacts", "Unlimited team", "Everything in Growth", "Full white-label", "API access", "Affiliate system", "Priority support"], popular: false },
+  { name: "Starter", price: "$99", period: "/mo", value: "starter", desc: "For small teams getting started", features: ["2,500 contacts", "3 team members", "Email marketing (5K/mo)", "1 pipeline", "Basic analytics"], popular: false },
+  { name: "Growth", price: "$199", period: "/mo", value: "growth", desc: "For growing businesses", features: ["25,000 contacts", "15 team members", "Email + SMS", "Unlimited pipelines", "Advanced analytics", "Custom domain", "AI assistant"], popular: true },
+  { name: "Scale", price: "$349", period: "/mo", value: "scale", desc: "For agencies & enterprises", features: ["Unlimited contacts", "Unlimited team", "Everything in Growth", "Full white-label", "API access", "Affiliate system", "Priority support"], popular: false },
 ];
 
 const industries = [
@@ -48,28 +52,94 @@ const industries = [
 
 const presetColors = ["#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#0f172a", "#0ea5e9"];
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+}
+
 export default function OnboardingPage() {
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
   const [step, setStep] = useState(0);
+  const [provisioning, setProvisioning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [provisionResult, setProvisionResult] = useState<{ tenantId: string; slug: string } | null>(null);
+
   const [formData, setFormData] = useState({
     businessName: "",
     email: "",
-    password: "",
-    plan: "Growth",
+    ownerName: "",
+    plan: "growth",
     brandColor: "#6366f1",
     logo: null as string | null,
     industry: "",
   });
 
-  const next = () => setStep((s) => Math.min(s + 1, steps.length - 1));
-  const prev = () => setStep((s) => Math.max(s - 1, 0));
+  // Pre-fill from Clerk user data
+  useEffect(() => {
+    if (isLoaded && user) {
+      setFormData((prev) => ({
+        ...prev,
+        email: user.emailAddresses[0]?.emailAddress || prev.email,
+        ownerName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || prev.ownerName,
+      }));
+    }
+  }, [isLoaded, user]);
+
+  const slug = slugify(formData.businessName);
 
   const canProceed = () => {
-    if (step === 0) return formData.businessName && formData.email && formData.password;
+    if (step === 0) return formData.businessName.length >= 2;
     if (step === 1) return formData.plan;
     if (step === 2) return formData.brandColor;
     if (step === 3) return formData.industry;
     return true;
   };
+
+  const handleLaunch = async () => {
+    setProvisioning(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/tenants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.businessName,
+          slug,
+          plan: formData.plan,
+          industry: formData.industry,
+          ownerEmail: formData.email,
+          ownerName: formData.ownerName,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || data.message || "Something went wrong. Please try again.");
+        setProvisioning(false);
+        return;
+      }
+
+      setProvisionResult({ tenantId: data.tenantId, slug: data.slug });
+      setStep(4); // Move to "Ready" step
+    } catch (err) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setProvisioning(false);
+    }
+  };
+
+  const next = () => {
+    if (step === 3) {
+      // Step 4 transition = "Launch My CRM" → calls the API
+      handleLaunch();
+    } else {
+      setStep((s) => Math.min(s + 1, steps.length - 1));
+    }
+  };
+
+  const prev = () => { setStep((s) => Math.max(s - 1, 0)); setError(null); };
 
   return (
     <div className="min-h-screen bg-gray-50/50 flex flex-col">
@@ -106,28 +176,27 @@ export default function OnboardingPage() {
           {/* ═══ STEP 1: Account ═══ */}
           {step === 0 && (
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
-              <p className="text-gray-500 mb-8">Let's get your CRM set up in under 5 minutes.</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Set up your workspace</h1>
+              <p className="text-gray-500 mb-8">Signed in as <span className="font-medium text-gray-700">{formData.email || "..."}</span></p>
 
               <div className="bg-white rounded-2xl border border-gray-100 p-8 space-y-5">
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1.5 block">Business Name</label>
-                  <input type="text" placeholder="e.g. Vertex Partners" value={formData.businessName}
+                  <input type="text" placeholder="e.g. Extreme Sport Locks" value={formData.businessName}
                     onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                     className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition" />
                 </div>
+                {formData.businessName.length >= 2 && (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-gray-500">Your workspace URL:</span>
+                    <span className="text-sm font-semibold text-indigo-600">{slug}.sonji.io</span>
+                  </div>
+                )}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Email</label>
-                  <input type="email" placeholder="you@yourbusiness.com" value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Your Name</label>
+                  <input type="text" placeholder="Your full name" value={formData.ownerName}
+                    onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
                     className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Password</label>
-                  <input type="password" placeholder="Create a strong password" value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition" />
-                  <p className="text-xs text-gray-400 mt-1.5">Must be at least 8 characters</p>
                 </div>
               </div>
             </div>
@@ -142,9 +211,9 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-3 gap-4">
                 {plans.map((plan) => (
                   <button key={plan.name}
-                    onClick={() => setFormData({ ...formData, plan: plan.name })}
+                    onClick={() => setFormData({ ...formData, plan: plan.value })}
                     className={`relative text-left p-6 rounded-2xl border-2 transition ${
-                      formData.plan === plan.name
+                      formData.plan === plan.value
                         ? "border-indigo-600 bg-indigo-50/50 shadow-lg shadow-indigo-500/10"
                         : "border-gray-200 bg-white hover:border-gray-300"
                     }`}>
@@ -153,7 +222,7 @@ export default function OnboardingPage() {
                         Most Popular
                       </span>
                     )}
-                    <p className={`text-sm font-semibold mb-1 ${formData.plan === plan.name ? "text-indigo-700" : "text-gray-900"}`}>{plan.name}</p>
+                    <p className={`text-sm font-semibold mb-1 ${formData.plan === plan.value ? "text-indigo-700" : "text-gray-900"}`}>{plan.name}</p>
                     <div className="flex items-baseline gap-0.5 mb-2">
                       <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
                       <span className="text-sm text-gray-400">{plan.period}</span>
@@ -162,12 +231,12 @@ export default function OnboardingPage() {
                     <ul className="space-y-2">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-center gap-2 text-xs text-gray-600">
-                          <Check className={`w-3.5 h-3.5 flex-shrink-0 ${formData.plan === plan.name ? "text-indigo-600" : "text-gray-400"}`} />
+                          <Check className={`w-3.5 h-3.5 flex-shrink-0 ${formData.plan === plan.value ? "text-indigo-600" : "text-gray-400"}`} />
                           {f}
                         </li>
                       ))}
                     </ul>
-                    {formData.plan === plan.name && (
+                    {formData.plan === plan.value && (
                       <div className="absolute top-4 right-4 w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
                         <Check className="w-4 h-4 text-white" />
                       </div>
@@ -175,10 +244,6 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
-
-              <p className="text-center text-xs text-gray-400 mt-4">
-                Annual billing available (save 2 months). All prices in USD.
-              </p>
             </div>
           )}
 
@@ -186,30 +251,9 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Brand your CRM</h1>
-              <p className="text-gray-500 mb-8">Make it yours. Upload a logo and pick your brand color.</p>
+              <p className="text-gray-500 mb-8">Make it yours. Pick your brand color.</p>
 
               <div className="bg-white rounded-2xl border border-gray-100 p-8 space-y-6">
-                {/* Logo */}
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-3 block">Logo</label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50/50 transition cursor-pointer">
-                      {formData.logo ? (
-                        <span className="text-2xl font-bold" style={{ color: formData.brandColor }}>{formData.businessName?.[0] || "S"}</span>
-                      ) : (
-                        <Upload className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div>
-                      <button className="px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
-                        Upload Logo
-                      </button>
-                      <p className="text-xs text-gray-400 mt-1.5">PNG, JPG, or SVG. Max 2MB.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Color */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-3 block">Brand Color</label>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -238,7 +282,7 @@ export default function OnboardingPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{formData.businessName || "Your Business"}</p>
-                          <p className="text-xs text-gray-400">{formData.businessName?.toLowerCase().replace(/\s+/g, "") || "yourbusiness"}.sonji.io</p>
+                          <p className="text-xs text-gray-400">{slug || "yourbusiness"}.sonji.io</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -261,6 +305,13 @@ export default function OnboardingPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">What's your industry?</h1>
               <p className="text-gray-500 mb-8">We'll set up pipeline stages, form templates, and email templates tailored to your business.</p>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-4">
                 {industries.map((ind) => {
@@ -305,7 +356,7 @@ export default function OnboardingPage() {
 
               <h1 className="text-3xl font-bold text-gray-900 mb-2">You're all set!</h1>
               <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                Your CRM is ready at <span className="font-semibold text-gray-900">{formData.businessName?.toLowerCase().replace(/\s+/g, "") || "yourbusiness"}.sonji.io</span>
+                Your CRM is live at <span className="font-semibold text-gray-900">{provisionResult?.slug || slug}.sonji.io</span>
               </p>
 
               <div className="bg-white rounded-2xl border border-gray-100 p-6 max-w-sm mx-auto mb-8 text-left">
@@ -313,12 +364,12 @@ export default function OnboardingPage() {
                 <div className="space-y-3">
                   {[
                     { label: "Account created", done: true },
-                    { label: `${formData.plan} plan selected`, done: true },
+                    { label: `${plans.find(p => p.value === formData.plan)?.name || "Growth"} plan selected`, done: true },
                     { label: "Brand colors applied", done: true },
                     { label: `${industries.find(i => i.id === formData.industry)?.name || "Industry"} templates loaded`, done: true },
                     { label: "Import your contacts", done: false },
+                    { label: "Connect Stripe", done: false },
                     { label: "Send your first email", done: false },
-                    { label: "Create your first deal", done: false },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center gap-3">
                       <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -332,11 +383,12 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              <a href="/dashboard"
+              <button
+                onClick={() => router.push("/dashboard")}
                 className="inline-flex items-center gap-2 px-8 py-3.5 text-sm font-medium text-white rounded-xl transition shadow-lg shadow-indigo-500/25"
                 style={{ backgroundColor: formData.brandColor }}>
                 Go to Dashboard <ArrowRight className="w-4 h-4" />
-              </a>
+              </button>
             </div>
           )}
         </div>
@@ -350,7 +402,7 @@ export default function OnboardingPage() {
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition ${
                 step === 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-600 hover:bg-gray-100"
               }`}
-              disabled={step === 0}>
+              disabled={step === 0 || provisioning}>
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
 
@@ -361,13 +413,19 @@ export default function OnboardingPage() {
             </div>
 
             <button onClick={next}
-              disabled={!canProceed()}
+              disabled={!canProceed() || provisioning}
               className={`flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg transition ${
-                canProceed()
+                canProceed() && !provisioning
                   ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}>
-              {step === 3 ? "Launch My CRM" : "Continue"} <ArrowRight className="w-4 h-4" />
+              {provisioning ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Creating workspace...</>
+              ) : step === 3 ? (
+                <><Rocket className="w-4 h-4" /> Launch My CRM</>
+              ) : (
+                <>Continue <ArrowRight className="w-4 h-4" /></>
+              )}
             </button>
           </div>
         </div>
