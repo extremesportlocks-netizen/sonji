@@ -100,7 +100,7 @@ export function withErrorHandler(
         if (authErr.status === 403) return forbidden(authErr.message);
       }
       
-      return serverError(process.env.NODE_ENV === "development" ? message : "Internal server error");
+      return serverError(message);
     }
   };
 }
