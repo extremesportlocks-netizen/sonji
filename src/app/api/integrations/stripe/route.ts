@@ -82,12 +82,12 @@ export async function POST(req: NextRequest) {
       const dryRun = body.dryRun ?? false;
       const t0 = Date.now();
 
-      // Pull everything in parallel — customers and subs are unlimited,
-      // charges: 80 pages = up to 8,000 charges (covers most business histories)
+      // Pull everything in parallel — charges at 50 pages (5K records)
+      // covers ~70% of ESL's 7,219 charges. Full history needs background job.
       const [customers, subscriptions, charges] = await Promise.all([
         stripeFetch<any>(sk, "/customers", {}, 50),
         stripeFetch<any>(sk, "/subscriptions", { status: "all" }, 20),
-        stripeFetch<any>(sk, "/charges", {}, 80),
+        stripeFetch<any>(sk, "/charges", {}, 50),
       ]);
 
       // Index charges + subs by customer
