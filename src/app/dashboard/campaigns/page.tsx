@@ -160,11 +160,72 @@ export default function CampaignsPage() {
     setError("");
   };
 
+  const [testEmail, setTestEmail] = useState("");
+  const [testSubject, setTestSubject] = useState("Test from Sonji");
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  const handleTestSend = async () => {
+    if (!testEmail.includes("@")) { setTestResult("Enter a valid email"); return; }
+    setTestSending(true); setTestResult(null);
+    try {
+      const res = await fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send",
+          to: testEmail,
+          subject: testSubject,
+          html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
+<h2 style="color: #1a1a2e;">Hey there 👋</h2>
+<p style="color: #555; line-height: 1.6;">This is a test email from <strong>Sonji CRM</strong>.</p>
+<p style="color: #555; line-height: 1.6;">If you're reading this, your email pipeline is working end-to-end — Sonji → Resend → your inbox.</p>
+<div style="margin: 24px 0; padding: 16px; background: #f3f0ff; border-radius: 12px;">
+<p style="color: #6d28d9; font-weight: 600; margin: 0;">✓ Resend API connected</p>
+<p style="color: #6d28d9; font-weight: 600; margin: 4px 0 0;">✓ sonji.io domain verified</p>
+<p style="color: #6d28d9; font-weight: 600; margin: 4px 0 0;">✓ Email delivery confirmed</p>
+</div>
+<p style="color: #999; font-size: 13px;">Sent from sonji.io</p>
+</div>`,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) setTestResult("✓ Sent! Check your inbox (and spam folder).");
+      else setTestResult(`Failed: ${data.error || "Unknown error"}`);
+    } catch { setTestResult("Failed to send. Check Resend API key in Settings."); }
+    finally { setTestSending(false); }
+  };
+
   return (
     <>
       <Header title="Campaigns" />
       <div className="p-6">
 
+        {/* Quick Test Send */}
+        {step === "segment" && (
+          <div className="bg-white rounded-xl border border-gray-100 p-5 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Quick Send</h3>
+                <p className="text-xs text-gray-400">Send a test email or a quick message to anyone</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="Email address"
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+              <input value={testSubject} onChange={(e) => setTestSubject(e.target.value)} placeholder="Subject"
+                className="w-48 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+              <button onClick={handleTestSend} disabled={testSending}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-lg transition whitespace-nowrap">
+                {testSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {testSending ? "Sending..." : "Send Test"}
+              </button>
+            </div>
+            {testResult && (
+              <p className={`text-xs mt-2 ${testResult.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>{testResult}</p>
+            )}
+          </div>
+        )}
         {/* Progress bar */}
         <div className="flex items-center gap-2 mb-6">
           {(["segment", "template", "compose", "preview"] as Step[]).map((s, i) => (
