@@ -216,10 +216,19 @@ export default function Sidebar() {
       {/* Search */}
       {!collapsed && (
         <div className="px-3 py-3">
-          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <button onClick={() => document.dispatchEvent(new CustomEvent("sonji:open-command-palette"))}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
             <Search className="w-4 h-4" />
             <span>Search</span>
             <kbd className="ml-auto text-[10px] font-mono bg-white border border-gray-200 rounded px-1.5 py-0.5 text-gray-400">⌘K</kbd>
+          </button>
+        </div>
+      )}
+      {collapsed && (
+        <div className="px-3 py-3 flex justify-center">
+          <button onClick={() => document.dispatchEvent(new CustomEvent("sonji:open-command-palette"))}
+            className="w-10 h-10 flex items-center justify-center text-gray-400 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+            <Search className="w-4 h-4" />
           </button>
         </div>
       )}
