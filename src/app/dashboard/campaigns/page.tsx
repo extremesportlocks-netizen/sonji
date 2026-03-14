@@ -211,8 +211,8 @@ export default function CampaignsPage() {
         body: JSON.stringify({ action: "send", to: formatted, body: testSmsBody }),
       });
       const data = await res.json();
-      if (data.success) setTestResult("✓ SMS sent! Check your phone.");
-      else setTestResult(`Failed: ${data.error || "Unknown error"}`);
+      if (data.success) setTestResult(`✓ SMS sent! SID: ${data.sid || "none"} | From: ${data._debug?.phoneNumber || "none"} | Mode: ${data._debug?.mode || "none"}`);
+      else setTestResult(`Failed: ${data.error || "Unknown error"} | Config: ${data._debug?.smsConfigExists ? "yes" : "NO CONFIG"} | Phone: ${data._debug?.phoneNumber || "none"}`);
     } catch { setTestResult("Failed to send. Check Twilio config in Settings → Integrations."); }
     finally { setTestSending(false); }
   };
