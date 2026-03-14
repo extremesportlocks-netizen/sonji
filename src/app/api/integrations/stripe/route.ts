@@ -82,12 +82,12 @@ export async function POST(req: NextRequest) {
       const dryRun = body.dryRun ?? false;
       const t0 = Date.now();
 
-      // Pull everything in parallel — charges at 50 pages (5K records)
-      // covers ~70% of ESL's 7,219 charges. Full history needs background job.
+      // Pull everything in parallel — charges at 20 pages (2K records).
+      // Full charge history (7K+) needs background job — serverless can't handle it.
       const [customers, subscriptions, charges] = await Promise.all([
         stripeFetch<any>(sk, "/customers", {}, 50),
         stripeFetch<any>(sk, "/subscriptions", { status: "all" }, 20),
-        stripeFetch<any>(sk, "/charges", {}, 50),
+        stripeFetch<any>(sk, "/charges", {}, 20),
       ]);
 
       // Index charges + subs by customer
