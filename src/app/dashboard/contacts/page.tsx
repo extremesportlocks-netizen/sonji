@@ -65,7 +65,7 @@ export default function ContactsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [menuId, setMenuId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const per = 10;
+  const [per, setPer] = useState(25);
 
   const filtered = contacts.filter((c) => {
     const q = search.toLowerCase();
@@ -273,27 +273,70 @@ export default function ContactsPage() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {sorted.length > 0 && (
             <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-              <p className="text-sm text-gray-500">
-                Showing {(page - 1) * per + 1}–{Math.min(page * per, sorted.length)} of {sorted.length}
-              </p>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed">
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button key={p} onClick={() => setPage(p)}
-                    className={`w-8 h-8 text-sm font-medium rounded-lg transition ${page === p ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
-                    {p}
-                  </button>
-                ))}
-                <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed">
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-gray-500">
+                  Showing {(page - 1) * per + 1}–{Math.min(page * per, sorted.length)} of {sorted.length.toLocaleString()}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-400">Show</span>
+                  <select
+                    value={per}
+                    onChange={(e) => { setPer(Number(e.target.value)); setPage(1); }}
+                    className="text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  >
+                    {[10, 25, 50, 100, 250].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-400">per page</span>
+                </div>
               </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setPage(1)} disabled={page === 1}
+                    className="px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    First
+                  </button>
+                  <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  {(() => {
+                    const pages: (number | "...")[] = [];
+                    if (totalPages <= 7) {
+                      for (let i = 1; i <= totalPages; i++) pages.push(i);
+                    } else {
+                      pages.push(1);
+                      if (page > 3) pages.push("...");
+                      const start = Math.max(2, page - 1);
+                      const end = Math.min(totalPages - 1, page + 1);
+                      for (let i = start; i <= end; i++) pages.push(i);
+                      if (page < totalPages - 2) pages.push("...");
+                      pages.push(totalPages);
+                    }
+                    return pages.map((p, i) =>
+                      p === "..." ? (
+                        <span key={`dot-${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400">...</span>
+                      ) : (
+                        <button key={p} onClick={() => setPage(p as number)}
+                          className={`w-8 h-8 text-xs font-medium rounded-lg transition ${page === p ? "bg-indigo-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}>
+                          {p}
+                        </button>
+                      )
+                    );
+                  })()}
+                  <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                    className="px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition disabled:opacity-30 disabled:cursor-not-allowed">
+                    Last
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
