@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Header from "@/components/dashboard/header";
 import {
   Settings,
@@ -114,11 +114,79 @@ function StripeIntegration() {
     } catch {}
   };
 
+  // Poll for sync status
+  const pollInterval = React.useRef<NodeJS.Timeout | null>(null);
+
+  const pollSyncStatus = () => {
+    pollInterval.current = setInterval(async () => {
+      try {
+        const res = await fetch("/api/integrations/stripe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "sync-status" }),
+        });
+        const data = await res.json();
+        const p = data.progress;
+
+        if (!p) return;
+
+        if (p.status === "pulling_customers") {
+          setSyncPhase("Pulling customers from Stripe...");
+        } else if (p.status === "customers_done") {
+          setSyncPhase(`Found ${(p.customersFound || 0).toLocaleString()} customers...`);
+        } else if (p.status === "pulling_subscriptions") {
+          setSyncPhase(`Pulling subscriptions (${(p.customersFound || 0).toLocaleString()} customers found)...`);
+        } else if (p.status === "pulling_charges") {
+          setSyncPhase(`Pulling charges... ${(p.chargesSoFar || 0).toLocaleString()} so far (batch ${p.batch || 0})`);
+        } else if (p.status === "enriching") {
+          setSyncPhase(`Processing ${(p.chargesTotal || 0).toLocaleString()} charges...`);
+        } else if (p.status === "complete") {
+          setSyncing(false);
+          setSyncPhase("");
+          setSyncResult({
+            success: true,
+            imported: p.imported,
+            metrics: { totalRevenue: p.totalRevenue },
+            stripeData: { chargesFound: p.chargesProcessed },
+            duration: null,
+          });
+          if (pollInterval.current) clearInterval(pollInterval.current);
+
+          // Also grab the full last result
+          const r2 = await fetch("/api/integrations/stripe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "sync-status" }),
+          });
+          const d2 = await r2.json();
+          if (d2.lastResult) {
+            setSyncResult({
+              success: true,
+              imported: d2.lastResult.contacts,
+              stripeData: { chargesFound: d2.lastResult.charges },
+              metrics: {
+                totalRevenue: d2.lastResult.totalRevenue,
+                activeSubscribers: d2.lastResult.active,
+                lapsedCustomers: d2.lastResult.lapsed,
+              },
+              duration: null,
+            });
+          }
+        }
+      } catch {}
+    }, 2000);
+  };
+
+  // Cleanup poll on unmount
+  React.useEffect(() => {
+    return () => { if (pollInterval.current) clearInterval(pollInterval.current); };
+  }, []);
+
   const handleSync = async () => {
     setSyncing(true);
     setError("");
     setSyncResult(null);
-    setSyncPhase("Pulling customers, subscriptions & charges from Stripe...");
+    setSyncPhase("Starting Stripe sync...");
     try {
       const res = await fetch("/api/integrations/stripe", {
         method: "POST",
@@ -126,37 +194,18 @@ function StripeIntegration() {
         body: JSON.stringify({ action: "sync" }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Sync failed"); return; }
-      setSyncResult(data);
+      if (!res.ok) { setError(data.error || "Sync failed"); setSyncing(false); return; }
+
+      // Start polling for progress
+      pollSyncStatus();
     } catch (err) {
-      setError("Sync timed out. Try again — it may need a second attempt.");
-    } finally {
+      setError("Failed to start sync.");
       setSyncing(false);
       setSyncPhase("");
     }
   };
 
-  const handleDryRun = async () => {
-    setSyncing(true);
-    setError("");
-    setSyncResult(null);
-    setSyncPhase("Previewing...");
-    try {
-      const res = await fetch("/api/integrations/stripe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sync", syncCustomers: true, dryRun: true }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Preview failed"); return; }
-      setSyncResult(data);
-    } catch (err) {
-      setError("Preview failed.");
-    } finally {
-      setSyncing(false);
-      setSyncPhase("");
-    }
-  };
+  const handleDryRun = handleSync; // Dry run removed — sync is now background and instant
 
   return (
     <div className="space-y-4">

@@ -19,6 +19,7 @@
     "autoprefixer": "^10.4.21",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.41.0",
+    "inngest": "^3.52.6",
     "lucide-react": "^0.474.0",
     "nanoid": "^5.1.6",
     "next": "14.2.29",
