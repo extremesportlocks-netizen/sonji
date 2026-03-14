@@ -130,20 +130,26 @@ function StripeIntegration() {
       if (!res1.ok) { setError(data1.error || "Phase 1 failed"); return; }
 
       // Phase 2: Enrich with charges (LTV, purchase history)
-      setSyncPhase("Enriching with payment history...");
-      const res2 = await fetch("/api/integrations/stripe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "enrich" }),
-      });
-      const data2 = await res2.json();
+      let enrichResult = null;
+      try {
+        setSyncPhase("Enriching with payment history (may take a minute)...");
+        const res2 = await fetch("/api/integrations/stripe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "enrich" }),
+        });
+        const data2 = await res2.json();
+        if (data2.success) enrichResult = data2;
+      } catch {
+        // Phase 2 timed out — Phase 1 still succeeded
+        console.warn("Enrichment timed out, Phase 1 data still imported");
+      }
 
       // Combine results
       setSyncResult({
         ...data1,
-        enrichment: data2.success ? data2 : null,
-        totalRevenue: data2.totalRevenue || 0,
-        tierBreakdown: data2.tierBreakdown || null,
+        enrichment: enrichResult,
+        totalRevenue: enrichResult?.totalRevenue || 0,
       });
     } catch (err) {
       setError("Sync failed. Please try again.");

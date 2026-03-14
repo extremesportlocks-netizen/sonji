@@ -186,9 +186,9 @@ export async function POST(req: NextRequest) {
       if (!stripeKey) return NextResponse.json({ error: "Stripe not connected." }, { status: 400 });
       const t0 = Date.now();
 
-      // Pull charges — go back to 2023 as requested
+      // Pull charges — 2023+ but cap at 30 pages (3,000 charges) to stay within timeout
       const since2023 = Math.floor(new Date("2023-01-01").getTime() / 1000);
-      const charges = await stripeList<any>(stripeKey, "/charges", { "created[gte]": String(since2023) }, 100);
+      const charges = await stripeList<any>(stripeKey, "/charges", { "created[gte]": String(since2023) }, 30);
 
       // Index by customer
       const chargesByCustomer = new Map<string, any[]>();
@@ -197,14 +197,16 @@ export async function POST(req: NextRequest) {
         (chargesByCustomer.get(ch.customer) || (chargesByCustomer.set(ch.customer, []), chargesByCustomer.get(ch.customer)!)).push(ch);
       }
 
-      // Get all stripe-imported contacts
+      // Get stripe-imported contacts that have charges
       await setTenantContext(ctx.tenantId);
-      const existingContacts = await db.select({ id: contacts.id, customFields: contacts.customFields, tags: contacts.tags })
+      const existingContacts = await db.select({ id: contacts.id, customFields: contacts.customFields, tags: contacts.tags, status: contacts.status })
         .from(contacts)
         .where(and(eq(contacts.tenantId, ctx.tenantId), eq(contacts.source, "stripe_import")));
 
+      // Build batch updates
       let enrichedCount = 0;
       let totalRevenue = 0;
+      const updates: { id: string; data: any }[] = [];
 
       for (const contact of existingContacts) {
         const cf = (contact.customFields as any) || {};
@@ -223,7 +225,6 @@ export async function POST(req: NextRequest) {
         const firstPurchaseDate = new Date(chargeDates[chargeDates.length - 1] * 1000).toISOString();
         const daysSince = Math.floor((Date.now() - chargeDates[0] * 1000) / 86400000);
 
-        // Build tags
         const existingTags = (contact.tags as string[]) || [];
         const newTags = [...existingTags.filter(t => !["Whale","Mid-Tier","Low-Tier","High Frequency","Recently Active","Win-Back"].includes(t))];
         if (ltv >= 500) newTags.push("Whale");
@@ -233,34 +234,39 @@ export async function POST(req: NextRequest) {
         if (daysSince <= 30) newTags.push("Recently Active");
         if (daysSince > 90 && ltv > 0) newTags.push("Win-Back");
 
-        // Update status based on recency if not already active subscriber
-        let newStatus: string | undefined;
+        let newStatus = contact.status;
         if (cf.subscriptionStatus !== "active") {
           if (daysSince <= 30) newStatus = "active";
           else if (daysSince <= 90) newStatus = "lead";
           else newStatus = "inactive";
         }
 
-        // Update the contact
-        const updateData: any = {
-          tags: newTags,
-          customFields: {
-            ...cf,
-            ltv: Math.round(ltv * 100) / 100,
-            purchaseCount,
-            avgOrderValue: Math.round((ltv / purchaseCount) * 100) / 100,
-            lastPurchaseDate,
-            firstPurchaseDate,
-            daysSinceLastPurchase: daysSince,
-            highestCharge: Math.max(...amounts),
-            totalCharges: purchaseCount,
+        updates.push({
+          id: contact.id,
+          data: {
+            tags: newTags,
+            status: newStatus,
+            customFields: {
+              ...cf,
+              ltv: Math.round(ltv * 100) / 100,
+              purchaseCount,
+              avgOrderValue: Math.round((ltv / purchaseCount) * 100) / 100,
+              lastPurchaseDate, firstPurchaseDate,
+              daysSinceLastPurchase: daysSince,
+              highestCharge: Math.max(...amounts),
+              totalCharges: purchaseCount,
+            },
           },
-          updatedAt: new Date(),
-        };
-        if (newStatus) updateData.status = newStatus;
-
-        await db.update(contacts).set(updateData).where(eq(contacts.id, contact.id));
+        });
         enrichedCount++;
+      }
+
+      // Batch update — 25 at a time using Promise.all
+      for (let i = 0; i < updates.length; i += 25) {
+        const batch = updates.slice(i, i + 25);
+        await Promise.all(batch.map((u) =>
+          db.update(contacts).set({ ...u.data, updatedAt: new Date() }).where(eq(contacts.id, u.id))
+        ));
       }
 
       return NextResponse.json({
@@ -269,11 +275,6 @@ export async function POST(req: NextRequest) {
         contactsEnriched: enrichedCount,
         totalRevenue: Math.round(totalRevenue * 100) / 100,
         avgLTV: enrichedCount > 0 ? Math.round((totalRevenue / enrichedCount) * 100) / 100 : 0,
-        tierBreakdown: {
-          whales: existingContacts.filter(c => { const ltv = chargesByCustomer.get((c.customFields as any)?.stripeCustomerId)?.reduce((s: number, ch: any) => s + ch.amount/100, 0) || 0; return ltv >= 500; }).length,
-          mid: existingContacts.filter(c => { const ltv = chargesByCustomer.get((c.customFields as any)?.stripeCustomerId)?.reduce((s: number, ch: any) => s + ch.amount/100, 0) || 0; return ltv >= 200 && ltv < 500; }).length,
-          low: existingContacts.filter(c => { const ltv = chargesByCustomer.get((c.customFields as any)?.stripeCustomerId)?.reduce((s: number, ch: any) => s + ch.amount/100, 0) || 0; return ltv > 0 && ltv < 200; }).length,
-        },
         duration: Date.now() - t0,
       });
     }
