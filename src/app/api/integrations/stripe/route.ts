@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, setTenantContext } from "@/lib/db";
 import { tenants, contacts } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "@/lib/api/auth-context";
-import {
-  runSync,
-  formatSyncSummary,
-  computeStripeMetrics,
-  type StripeCustomer,
-  type StripeSubscription,
-  type StripeInvoice,
-  type StripeCharge,
-  type SyncConfig,
-} from "@/lib/services/stripe-sync";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
@@ -43,7 +33,7 @@ async function verifyStripeKey(key: string): Promise<{ valid: boolean; accountNa
       valid: true,
       accountName: account.settings?.dashboard?.display_name || account.business_profile?.name || account.email || "Stripe Account",
     };
-  } catch (err) {
+  } catch {
     return { valid: false, error: "Failed to reach Stripe API" };
   }
 }
@@ -70,7 +60,7 @@ async function stripeListAll<T>(key: string, endpoint: string, params: Record<st
     all.push(...data.data);
     hasMore = data.has_more;
     if (data.data.length > 0) {
-      startingAfter = data.data[data.data.length - 1].id;
+      startingAfter = (data.data[data.data.length - 1] as any).id;
     }
   }
 
@@ -94,193 +84,279 @@ export async function GET(req: NextRequest) {
       accountName: verification.accountName,
       error: verification.error,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 }
 
-// ─── POST — Connect Stripe (save key) or trigger sync ───
+// ─── POST — Connect, disconnect, or full sync ───
 
 export async function POST(req: NextRequest) {
   try {
     const ctx = await requireAuth(req);
     const body = await req.json();
 
-    // ── CONNECT: Save Stripe API key ──
+    // ── CONNECT ──
     if (body.action === "connect") {
       const key = body.stripeSecretKey;
       if (!key || !key.startsWith("sk_")) {
         return NextResponse.json({ error: "Invalid Stripe secret key. Must start with sk_" }, { status: 400 });
       }
 
-      // Verify the key works
       const verification = await verifyStripeKey(key);
       if (!verification.valid) {
-        return NextResponse.json({ error: verification.error || "Invalid Stripe key" }, { status: 400 });
+        return NextResponse.json({ error: verification.error || "Invalid key" }, { status: 400 });
       }
 
-      // Save to tenant settings
-      const rows = await db
-        .select({ settings: tenants.settings })
-        .from(tenants)
-        .where(eq(tenants.id, ctx.tenantId))
-        .limit(1);
-
+      const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
       const currentSettings = (rows[0]?.settings as Record<string, any>) || {};
-      const updatedSettings = {
-        ...currentSettings,
-        stripeSecretKey: key,
-        stripeAccountName: verification.accountName,
-        stripeConnectedAt: new Date().toISOString(),
-      };
 
-      await db
-        .update(tenants)
-        .set({ settings: updatedSettings, updatedAt: new Date() })
-        .where(eq(tenants.id, ctx.tenantId));
+      await db.update(tenants).set({
+        settings: {
+          ...currentSettings,
+          stripeSecretKey: key,
+          stripeAccountName: verification.accountName,
+          stripeConnectedAt: new Date().toISOString(),
+        },
+        updatedAt: new Date(),
+      }).where(eq(tenants.id, ctx.tenantId));
 
-      return NextResponse.json({
-        success: true,
-        accountName: verification.accountName,
-        message: `Connected to ${verification.accountName}`,
-      });
+      return NextResponse.json({ success: true, accountName: verification.accountName });
     }
 
-    // ── DISCONNECT: Remove Stripe key ──
+    // ── DISCONNECT ──
     if (body.action === "disconnect") {
-      const rows = await db
-        .select({ settings: tenants.settings })
-        .from(tenants)
-        .where(eq(tenants.id, ctx.tenantId))
-        .limit(1);
-
-      const currentSettings = (rows[0]?.settings as Record<string, any>) || {};
-      delete currentSettings.stripeSecretKey;
-      delete currentSettings.stripeAccountName;
-      delete currentSettings.stripeConnectedAt;
-
-      await db
-        .update(tenants)
-        .set({ settings: currentSettings, updatedAt: new Date() })
-        .where(eq(tenants.id, ctx.tenantId));
-
-      return NextResponse.json({ success: true, message: "Stripe disconnected" });
+      const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
+      const s = (rows[0]?.settings as Record<string, any>) || {};
+      delete s.stripeSecretKey; delete s.stripeAccountName; delete s.stripeConnectedAt;
+      delete s.lastStripeSync; delete s.lastStripeSyncResult;
+      await db.update(tenants).set({ settings: s, updatedAt: new Date() }).where(eq(tenants.id, ctx.tenantId));
+      return NextResponse.json({ success: true });
     }
 
-    // ── SYNC: Pull data from Stripe and import into CRM ──
+    // ══════════════════════════════════════════
+    // ── FULL SYNC: Pull EVERYTHING from Stripe ──
+    // ══════════════════════════════════════════
     if (body.action === "sync") {
       const stripeKey = await getTenantStripeKey(ctx.tenantId);
       if (!stripeKey) {
-        return NextResponse.json({ error: "Stripe not connected. Add your API key first." }, { status: 400 });
+        return NextResponse.json({ error: "Stripe not connected." }, { status: 400 });
       }
 
-      const config: SyncConfig = {
-        tenantId: ctx.tenantId,
-        syncCustomers: body.syncCustomers ?? true,
-        syncSubscriptions: body.syncSubscriptions ?? false,
-        syncInvoices: body.syncInvoices ?? false,
-        syncPayments: body.syncPayments ?? false,
-        dryRun: body.dryRun ?? false,
-        sinceTimestamp: body.sinceTimestamp,
-      };
+      const dryRun = body.dryRun ?? false;
+      const startTime = Date.now();
 
-      // Fetch from Stripe
-      const [customers, subscriptions, invoices, charges] = await Promise.all([
-        config.syncCustomers ? stripeListAll<StripeCustomer>(stripeKey, "/customers") : Promise.resolve([]),
-        config.syncSubscriptions ? stripeListAll<StripeSubscription>(stripeKey, "/subscriptions", { status: "all" }) : Promise.resolve([]),
-        config.syncInvoices ? stripeListAll<StripeInvoice>(stripeKey, "/invoices") : Promise.resolve([]),
-        config.syncPayments ? stripeListAll<StripeCharge>(stripeKey, "/charges") : Promise.resolve([]),
+      // ── STEP 1: Pull customers, charges, and subscriptions in parallel ──
+      const [customers, charges, subscriptions] = await Promise.all([
+        stripeListAll<any>(stripeKey, "/customers"),
+        stripeListAll<any>(stripeKey, "/charges"),
+        stripeListAll<any>(stripeKey, "/subscriptions", { status: "all" }),
       ]);
 
-      // Map through sync engine
-      const { result, contacts: mappedContacts, deals, invoices: mappedInvoices, payments } = runSync(config, {
-        customers,
-        subscriptions,
-        invoices,
-        charges,
-      });
+      // ── STEP 2: Index charges by customer ──
+      const chargesByCustomer = new Map<string, any[]>();
+      for (const charge of charges) {
+        if (!charge.customer || charge.status !== "succeeded") continue;
+        const existing = chargesByCustomer.get(charge.customer) || [];
+        existing.push(charge);
+        chargesByCustomer.set(charge.customer, existing);
+      }
 
-      // ── INSERT CONTACTS INTO DATABASE ──
-      if (!config.dryRun && mappedContacts.length > 0) {
-        await setTenantContext(ctx.tenantId);
+      // ── STEP 3: Index subscriptions by customer ──
+      const subsByCustomer = new Map<string, any[]>();
+      for (const sub of subscriptions) {
+        const custId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+        if (!custId) continue;
+        const existing = subsByCustomer.get(custId) || [];
+        existing.push(sub);
+        subsByCustomer.set(custId, existing);
+      }
 
-        // Batch insert — 50 at a time to avoid query size limits
-        const batchSize = 50;
-        let insertedCount = 0;
+      // ── STEP 4: Build enriched contact records ──
+      const enrichedContacts: any[] = [];
+      let totalRevenue = 0;
+      let activeCount = 0;
+      let lapsedCount = 0;
 
-        for (let i = 0; i < mappedContacts.length; i += batchSize) {
-          const batch = mappedContacts.slice(i, i + batchSize);
-          const values = batch.map((c) => ({
-            tenantId: ctx.tenantId,
-            firstName: c.firstName,
-            lastName: c.lastName || "",
-            email: c.email || "",
-            phone: c.phone || "",
-            company: c.company || "",
-            tags: c.tags,
-            customFields: c.customFields,
-            source: "stripe_import",
-            status: c.status,
-          }));
+      for (const customer of customers) {
+        const custCharges = chargesByCustomer.get(customer.id) || [];
+        const custSubs = subsByCustomer.get(customer.id) || [];
 
-          try {
-            await db.insert(contacts).values(values);
-            insertedCount += batch.length;
-          } catch (err) {
-            console.error(`[StripeSync] Batch insert error at offset ${i}:`, err);
-            result.contacts.errors.push(`Batch at offset ${i} failed: ${err instanceof Error ? err.message : "Unknown"}`);
-          }
+        // LTV from charges
+        const ltv = custCharges.reduce((sum: number, c: any) => sum + (c.amount / 100), 0);
+        totalRevenue += ltv;
+        const purchaseCount = custCharges.length;
+        const amounts = custCharges.map((c: any) => c.amount / 100);
+
+        // Dates
+        const chargeDates = custCharges.map((c: any) => c.created).sort((a: number, b: number) => b - a);
+        const lastPurchaseDate = chargeDates.length > 0 ? new Date(chargeDates[0] * 1000).toISOString() : null;
+        const firstPurchaseDate = chargeDates.length > 0 ? new Date(chargeDates[chargeDates.length - 1] * 1000).toISOString() : null;
+
+        // Days since last purchase
+        const daysSinceLastPurchase = lastPurchaseDate
+          ? Math.floor((Date.now() - new Date(lastPurchaseDate).getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+
+        // Subscription status
+        const activeSub = custSubs.find((s: any) => s.status === "active" || s.status === "trialing");
+        const hasAnySub = custSubs.length > 0;
+        const canceledSub = custSubs.find((s: any) => s.status === "canceled");
+
+        // Determine status
+        let status = "lead";
+        if (activeSub) {
+          status = "active";
+          activeCount++;
+        } else if (canceledSub || (hasAnySub && !activeSub)) {
+          status = "inactive";
+          lapsedCount++;
+        } else if (purchaseCount > 0 && daysSinceLastPurchase !== null) {
+          if (daysSinceLastPurchase <= 30) { status = "active"; activeCount++; }
+          else if (daysSinceLastPurchase <= 90) { status = "lead"; }
+          else { status = "inactive"; lapsedCount++; }
         }
 
-        result.contacts.imported = insertedCount;
+        // Tier tagging
+        const tags: string[] = ["Stripe Import"];
+        if (ltv >= 500) tags.push("Whale");
+        else if (ltv >= 200) tags.push("Mid-Tier");
+        else if (ltv > 0) tags.push("Low-Tier");
+        if (activeSub) tags.push("Active Subscriber");
+        if (canceledSub && !activeSub) tags.push("Lapsed");
+        if (purchaseCount >= 10) tags.push("High Frequency");
+        if (daysSinceLastPurchase !== null && daysSinceLastPurchase <= 30 && !activeSub) tags.push("Recently Active");
+        if (daysSinceLastPurchase !== null && daysSinceLastPurchase > 90 && ltv > 0) tags.push("Win-Back");
+
+        // Subscription details
+        let subscriptionPlan = null;
+        let subscriptionInterval = null;
+        let subscriptionAmount = null;
+        if (activeSub) {
+          const item = activeSub.items?.data?.[0];
+          subscriptionPlan = item?.price?.nickname || item?.price?.product || activeSub.id;
+          subscriptionInterval = item?.price?.recurring?.interval || "month";
+          subscriptionAmount = item?.price?.unit_amount ? item.price.unit_amount / 100 : null;
+        }
+
+        // Parse name
+        const nameParts = (customer.name || "").trim().split(/\s+/);
+        const firstName = nameParts[0] || customer.email?.split("@")[0] || "Unknown";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        enrichedContacts.push({
+          tenantId: ctx.tenantId,
+          firstName,
+          lastName,
+          email: customer.email || "",
+          phone: customer.phone || "",
+          company: customer.metadata?.company || customer.description || "",
+          tags,
+          customFields: {
+            stripeCustomerId: customer.id,
+            ltv: Math.round(ltv * 100) / 100,
+            purchaseCount,
+            avgOrderValue: purchaseCount > 0 ? Math.round((ltv / purchaseCount) * 100) / 100 : 0,
+            lastPurchaseDate,
+            firstPurchaseDate,
+            daysSinceLastPurchase,
+            subscriptionStatus: activeSub ? "active" : canceledSub ? "canceled" : hasAnySub ? "expired" : purchaseCount > 0 ? "one-time" : "never",
+            subscriptionPlan,
+            subscriptionInterval,
+            subscriptionAmount,
+            totalCharges: purchaseCount,
+            highestCharge: amounts.length > 0 ? Math.max(...amounts) : 0,
+            stripeCurrency: customer.currency || "usd",
+            stripeCreated: new Date(customer.created * 1000).toISOString(),
+          },
+          source: "stripe_import",
+          status,
+        });
       }
 
-      // Save last sync timestamp to tenant settings
-      if (!config.dryRun) {
-        const rows = await db
-          .select({ settings: tenants.settings })
-          .from(tenants)
-          .where(eq(tenants.id, ctx.tenantId))
-          .limit(1);
+      // ── STEP 5: Insert into database ──
+      let insertedCount = 0;
+      if (!dryRun && enrichedContacts.length > 0) {
+        await setTenantContext(ctx.tenantId);
 
+        // Delete existing stripe imports first (clean re-sync)
+        await db.delete(contacts).where(
+          and(eq(contacts.tenantId, ctx.tenantId), eq(contacts.source, "stripe_import"))
+        );
+
+        // Batch insert
+        const batchSize = 50;
+        for (let i = 0; i < enrichedContacts.length; i += batchSize) {
+          const batch = enrichedContacts.slice(i, i + batchSize);
+          try {
+            await db.insert(contacts).values(batch);
+            insertedCount += batch.length;
+          } catch (err) {
+            console.error(`[StripeSync] Batch error at ${i}:`, err);
+          }
+        }
+      }
+
+      // ── STEP 6: Save sync metadata ──
+      if (!dryRun) {
+        const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
         const currentSettings = (rows[0]?.settings as Record<string, any>) || {};
-        await db
-          .update(tenants)
-          .set({
-            settings: {
-              ...currentSettings,
-              lastStripeSync: new Date().toISOString(),
-              lastStripeSyncResult: {
-                contacts: result.contacts.imported,
-                deals: result.deals.imported,
-                invoices: result.invoices.imported,
-                payments: result.payments.imported,
-                duration: result.syncDuration,
-              },
+        await db.update(tenants).set({
+          settings: {
+            ...currentSettings,
+            lastStripeSync: new Date().toISOString(),
+            lastStripeSyncResult: {
+              contacts: insertedCount,
+              charges: charges.length,
+              subscriptions: subscriptions.length,
+              totalRevenue: Math.round(totalRevenue * 100) / 100,
+              activeSubscribers: activeCount,
+              lapsedCustomers: lapsedCount,
+              duration: Date.now() - startTime,
             },
-            updatedAt: new Date(),
-          })
-          .where(eq(tenants.id, ctx.tenantId));
+          },
+          updatedAt: new Date(),
+        }).where(eq(tenants.id, ctx.tenantId));
       }
 
-      // Compute metrics
-      const metrics = computeStripeMetrics(mappedContacts, deals, mappedInvoices, payments);
+      // ── Build tier breakdown ──
+      const tierBreakdown = {
+        whales: enrichedContacts.filter((c) => (c.customFields.ltv || 0) >= 500).length,
+        mid: enrichedContacts.filter((c) => (c.customFields.ltv || 0) >= 200 && (c.customFields.ltv || 0) < 500).length,
+        low: enrichedContacts.filter((c) => (c.customFields.ltv || 0) > 0 && (c.customFields.ltv || 0) < 200).length,
+        noPurchase: enrichedContacts.filter((c) => (c.customFields.ltv || 0) === 0).length,
+      };
+
+      const subBreakdown = {
+        active: enrichedContacts.filter((c) => c.customFields.subscriptionStatus === "active").length,
+        canceled: enrichedContacts.filter((c) => c.customFields.subscriptionStatus === "canceled").length,
+        expired: enrichedContacts.filter((c) => c.customFields.subscriptionStatus === "expired").length,
+        oneTime: enrichedContacts.filter((c) => c.customFields.subscriptionStatus === "one-time").length,
+        never: enrichedContacts.filter((c) => c.customFields.subscriptionStatus === "never").length,
+      };
 
       return NextResponse.json({
         success: true,
-        result,
-        summary: formatSyncSummary(result),
-        metrics,
-        stripeStats: {
+        dryRun,
+        stripeData: {
           customersFound: customers.length,
-          subscriptionsFound: subscriptions.length,
-          invoicesFound: invoices.length,
           chargesFound: charges.length,
+          subscriptionsFound: subscriptions.length,
         },
+        imported: dryRun ? 0 : insertedCount,
+        metrics: {
+          totalRevenue: Math.round(totalRevenue * 100) / 100,
+          avgLTV: customers.length > 0 ? Math.round((totalRevenue / customers.length) * 100) / 100 : 0,
+          activeSubscribers: activeCount,
+          lapsedCustomers: lapsedCount,
+          tierBreakdown,
+          subBreakdown,
+        },
+        duration: Date.now() - startTime,
       });
     }
 
-    return NextResponse.json({ error: "Invalid action. Use: connect, disconnect, or sync" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[StripeIntegration]", message);
@@ -288,32 +364,18 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ─── DELETE — Disconnect Stripe ───
+// ─── DELETE ───
 
 export async function DELETE(req: NextRequest) {
   try {
     const ctx = await requireAuth(req);
-
-    const rows = await db
-      .select({ settings: tenants.settings })
-      .from(tenants)
-      .where(eq(tenants.id, ctx.tenantId))
-      .limit(1);
-
-    const currentSettings = (rows[0]?.settings as Record<string, any>) || {};
-    delete currentSettings.stripeSecretKey;
-    delete currentSettings.stripeAccountName;
-    delete currentSettings.stripeConnectedAt;
-    delete currentSettings.lastStripeSync;
-    delete currentSettings.lastStripeSyncResult;
-
-    await db
-      .update(tenants)
-      .set({ settings: currentSettings, updatedAt: new Date() })
-      .where(eq(tenants.id, ctx.tenantId));
-
+    const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
+    const s = (rows[0]?.settings as Record<string, any>) || {};
+    delete s.stripeSecretKey; delete s.stripeAccountName; delete s.stripeConnectedAt;
+    delete s.lastStripeSync; delete s.lastStripeSyncResult;
+    await db.update(tenants).set({ settings: s, updatedAt: new Date() }).where(eq(tenants.id, ctx.tenantId));
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 }

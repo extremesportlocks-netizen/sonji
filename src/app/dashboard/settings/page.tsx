@@ -278,30 +278,58 @@ function StripeIntegration() {
 
           {/* Sync Result */}
           {syncResult && (
-            <div className={`mt-3 p-4 rounded-lg border ${syncResult.result?.dryRun ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
-              <div className="flex items-center gap-2 mb-2">
-                {syncResult.result?.dryRun ? (
+            <div className={`mt-3 p-4 rounded-lg border ${syncResult.dryRun ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
+              <div className="flex items-center gap-2 mb-3">
+                {syncResult.dryRun ? (
                   <span className="text-xs font-semibold text-amber-700 uppercase">Preview (no data imported)</span>
                 ) : (
                   <span className="text-xs font-semibold text-emerald-700 uppercase">Import Complete</span>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white/70 rounded-lg px-3 py-2">
-                  <p className="text-2xl font-bold text-gray-900">{syncResult.stripeStats?.customersFound?.toLocaleString() || 0}</p>
-                  <p className="text-xs text-gray-500">Stripe customers found</p>
+                  <p className="text-xl font-bold text-gray-900">{(syncResult.stripeData?.customersFound || 0).toLocaleString()}</p>
+                  <p className="text-[10px] text-gray-500">Customers</p>
                 </div>
                 <div className="bg-white/70 rounded-lg px-3 py-2">
-                  <p className="text-2xl font-bold text-gray-900">{syncResult.result?.contacts?.imported?.toLocaleString() || 0}</p>
-                  <p className="text-xs text-gray-500">{syncResult.result?.dryRun ? "Would be imported" : "Contacts imported"}</p>
+                  <p className="text-xl font-bold text-gray-900">{(syncResult.stripeData?.chargesFound || 0).toLocaleString()}</p>
+                  <p className="text-[10px] text-gray-500">Charges</p>
+                </div>
+                <div className="bg-white/70 rounded-lg px-3 py-2">
+                  <p className="text-xl font-bold text-gray-900">{(syncResult.stripeData?.subscriptionsFound || 0).toLocaleString()}</p>
+                  <p className="text-[10px] text-gray-500">Subscriptions</p>
+                </div>
+                <div className="bg-white/70 rounded-lg px-3 py-2">
+                  <p className="text-xl font-bold text-emerald-700">${(syncResult.metrics?.totalRevenue || 0).toLocaleString()}</p>
+                  <p className="text-[10px] text-gray-500">Total Revenue</p>
                 </div>
               </div>
-              {syncResult.result?.syncDuration && (
-                <p className="text-xs text-gray-500 mt-2">Completed in {(syncResult.result.syncDuration / 1000).toFixed(1)}s</p>
+              {syncResult.metrics?.tierBreakdown && (
+                <div className="grid grid-cols-4 gap-2 mt-3">
+                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
+                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.tierBreakdown.whales}</p>
+                    <p className="text-[10px] text-gray-400">Whales ($500+)</p>
+                  </div>
+                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
+                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.tierBreakdown.mid}</p>
+                    <p className="text-[10px] text-gray-400">Mid ($200-499)</p>
+                  </div>
+                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
+                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.tierBreakdown.low}</p>
+                    <p className="text-[10px] text-gray-400">Low (&lt;$200)</p>
+                  </div>
+                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
+                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.subBreakdown?.active || 0}</p>
+                    <p className="text-[10px] text-gray-400">Active Subs</p>
+                  </div>
+                </div>
               )}
-              {!syncResult.result?.dryRun && syncResult.result?.contacts?.imported > 0 && (
+              {syncResult.duration && (
+                <p className="text-xs text-gray-500 mt-2">Completed in {(syncResult.duration / 1000).toFixed(1)}s</p>
+              )}
+              {!syncResult.dryRun && syncResult.imported > 0 && (
                 <a href="/dashboard/contacts" className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 mt-3">
-                  View contacts →
+                  View {syncResult.imported.toLocaleString()} contacts →
                 </a>
               )}
             </div>
