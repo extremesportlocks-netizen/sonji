@@ -83,11 +83,11 @@ export async function POST(req: NextRequest) {
       const t0 = Date.now();
 
       // Pull everything in parallel — customers and subs are unlimited,
-      // charges capped at 20 pages (2,000 most recent)
+      // charges: 80 pages = up to 8,000 charges (covers most business histories)
       const [customers, subscriptions, charges] = await Promise.all([
         stripeFetch<any>(sk, "/customers", {}, 50),
         stripeFetch<any>(sk, "/subscriptions", { status: "all" }, 20),
-        stripeFetch<any>(sk, "/charges", {}, 20),
+        stripeFetch<any>(sk, "/charges", {}, 80),
       ]);
 
       // Index charges + subs by customer
@@ -140,12 +140,21 @@ export async function POST(req: NextRequest) {
         if (daysSince !== null && daysSince <= 30 && !activeSub) tags.push("Recently Active");
         if (daysSince !== null && daysSince > 90 && ltv > 0) tags.push("Win-Back");
 
-        let subPlan = null, subInt = null, subAmt = null;
+        let subPlan = null, subInt = null, subAmt = null, subStart = null, subEnd = null;
         if (activeSub) {
           const it = activeSub.items?.data?.[0];
-          subPlan = it?.price?.nickname || it?.price?.product || null;
+          subPlan = it?.price?.nickname || (it?.price?.unit_amount ? `$${(it.price.unit_amount/100).toFixed(0)}/${it?.price?.recurring?.interval || "mo"}` : null);
           subInt = it?.price?.recurring?.interval || "month";
           subAmt = it?.price?.unit_amount ? it.price.unit_amount / 100 : null;
+          subStart = activeSub.start_date ? new Date(activeSub.start_date * 1000).toISOString() : new Date(activeSub.created * 1000).toISOString();
+          subEnd = activeSub.current_period_end ? new Date(activeSub.current_period_end * 1000).toISOString() : null;
+        } else if (canceledSub) {
+          const it = canceledSub.items?.data?.[0];
+          subPlan = it?.price?.nickname || (it?.price?.unit_amount ? `$${(it.price.unit_amount/100).toFixed(0)}/${it?.price?.recurring?.interval || "mo"} (canceled)` : "Canceled");
+          subInt = it?.price?.recurring?.interval || "month";
+          subAmt = it?.price?.unit_amount ? it.price.unit_amount / 100 : null;
+          subStart = canceledSub.start_date ? new Date(canceledSub.start_date * 1000).toISOString() : new Date(canceledSub.created * 1000).toISOString();
+          subEnd = canceledSub.canceled_at ? new Date(canceledSub.canceled_at * 1000).toISOString() : null;
         }
 
         const nm = (cust.name || "").trim().split(/\s+/);
@@ -162,6 +171,7 @@ export async function POST(req: NextRequest) {
             lastPurchaseDate: lastDate, firstPurchaseDate: firstDate, daysSinceLastPurchase: daysSince,
             subscriptionStatus: activeSub ? "active" : canceledSub ? "canceled" : hasSub ? "expired" : pc > 0 ? "one-time" : "never",
             subscriptionPlan: subPlan, subscriptionInterval: subInt, subscriptionAmount: subAmt,
+            subscriptionStart: subStart, subscriptionEnd: subEnd,
             highestCharge: cc.length ? Math.max(...cc.map((c: any) => c.amount / 100)) : 0,
             totalCharges: pc, stripeCreated: new Date(cust.created * 1000).toISOString(),
           },

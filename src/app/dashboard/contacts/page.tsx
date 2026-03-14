@@ -151,6 +151,24 @@ const ALL_COLUMNS: ColumnDef[] = [
     },
   },
   {
+    key: "plan", label: "Plan", defaultOn: false,
+    render: (c) => {
+      const plan = c.customFields?.subscriptionPlan;
+      const amt = c.customFields?.subscriptionAmount;
+      if (!plan && !amt) return <span className="text-xs text-gray-400">—</span>;
+      return (
+        <div>
+          <span className="text-xs font-medium text-gray-700">{plan || "—"}</span>
+          {amt && <span className="text-[10px] text-gray-400 ml-1">{formatCurrency(amt)}</span>}
+        </div>
+      );
+    },
+  },
+  {
+    key: "highestCharge", label: "Top Charge", defaultOn: false,
+    render: (c) => <span className="text-sm font-medium text-gray-700">{c.customFields?.highestCharge ? formatCurrency(c.customFields.highestCharge) : "—"}</span>,
+  },
+  {
     key: "lastPurchase", label: "Last Purchase", defaultOn: false,
     render: (c) => <span className="text-xs text-gray-500">{formatDate(c.customFields?.lastPurchaseDate)}</span>,
   },
