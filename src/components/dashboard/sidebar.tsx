@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useSidebar } from "@/lib/sidebar-context";
 import {
   LayoutDashboard, Building2, Users, Handshake, CheckSquare, Calendar,
   BarChart3, Workflow, Activity, FileText, Settings, ChevronDown, Search,
@@ -74,7 +75,7 @@ function saveSidebarState(order: string[], favorites: string[]) {
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
+  const { collapsed, setCollapsed } = useSidebar();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [order, setOrder] = useState<string[]>(defaultOrder);
   const [favorites, setFavorites] = useState<string[]>([]);
