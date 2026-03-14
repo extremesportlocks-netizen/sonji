@@ -73,6 +73,38 @@ function StripeIntegration() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    // Check if a sync is already running (user navigated away and came back)
+    fetch("/api/integrations/stripe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync-status" }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const p = data.progress;
+        if (p && p.status && p.status !== "complete") {
+          setSyncing(true);
+          setSyncPhase("Sync in progress...");
+          pollSyncStatus();
+        } else if (p && p.status === "complete") {
+          // Show last result
+          if (data.lastResult) {
+            setSyncResult({
+              success: true,
+              imported: data.lastResult.contacts,
+              stripeData: { chargesFound: data.lastResult.charges },
+              metrics: {
+                totalRevenue: data.lastResult.totalRevenue,
+                activeSubscribers: data.lastResult.active,
+                lapsedCustomers: data.lastResult.lapsed,
+              },
+              duration: null,
+            });
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleConnect = async () => {
@@ -247,16 +279,20 @@ function StripeIntegration() {
               </div>
 
               {/* Sync Controls */}
-              <div className="flex items-center gap-2">
-                <button onClick={handleSync} disabled={syncing}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-lg transition">
-                  {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  {syncing ? syncPhase || "Syncing..." : "Import Customers"}
-                </button>
-                <button onClick={handleDryRun} disabled={syncing}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:border-gray-300 disabled:opacity-50 rounded-lg transition">
-                  Preview First
-                </button>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <button onClick={handleSync} disabled={syncing}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-lg transition">
+                    {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    {syncing ? syncPhase || "Syncing..." : "Import Customers"}
+                  </button>
+                </div>
+                {syncing && (
+                  <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    This runs in the background — feel free to navigate away. Your data will be ready when you come back.
+                  </p>
+                )}
               </div>
             </div>
           )}
