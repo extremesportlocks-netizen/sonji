@@ -3,164 +3,174 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/dashboard/header";
-import { useCRM } from "@/lib/crm-store";
 import {
-  Users,
-  CheckCircle2,
-  Handshake,
-  TrendingUp,
-  Target,
-  Upload,
-  Search,
-  Zap,
-  ChevronRight,
-  Loader2,
+  Users, DollarSign, TrendingUp, ShoppingCart, Crown, UserCheck, UserX,
+  ChevronRight, Loader2, Search, Handshake, Zap, Upload, Target,
+  BarChart3, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 
-interface DashboardStats {
-  totalContacts: number;
-  totalDeals: number;
-  activeDeals: number;
-  wonDeals: number;
-  totalTasks: number;
-  openTasks: number;
-  recentContacts: { id: string; firstName: string; lastName: string; email: string; status: string; source: string | null; createdAt: string }[];
+interface Stats {
+  totalContacts: number; totalDeals: number; activeDeals: number; wonDeals: number;
+  totalTasks: number; openTasks: number;
+  recentContacts: any[];
   statusBreakdown: { status: string; count: number }[];
   sourceBreakdown: { source: string; count: number }[];
-  tenantName: string;
-  tenantSlug: string;
+  revenue: { total: number; totalPurchases: number; avgLTV: number; avgOrder: number; contactsWithPurchases: number };
+  ltvBuckets: { whale: number; mid: number; low: number; zero: number };
+  subscriptionBreakdown: Record<string, number>;
+  topCustomers: { id: string; name: string; email: string; ltv: number; purchases: number; subStatus: string }[];
+  tenantName: string; tenantSlug: string;
 }
 
-function formatNumber(n: number) {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
-}
-
-function formatCurrency(n: number) {
-  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `$${(n / 1000).toFixed(0)}K`;
-  return `$${n}`;
-}
-
+function fmt(n: number) { return n >= 1e6 ? `$${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n.toFixed(0)}`; }
+function num(n: number) { return n.toLocaleString(); }
 function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return `${Math.floor(days / 30)}mo ago`;
+  const d = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(d/60000);
+  if (m < 1) return "Just now"; if (m < 60) return `${m}m`; const h = Math.floor(m/60);
+  if (h < 24) return `${h}h`; return `${Math.floor(h/24)}d`;
 }
 
-const statusColors: Record<string, string> = {
-  active: "bg-emerald-500", lead: "bg-indigo-500", inactive: "bg-gray-400",
-  lost: "bg-red-400", "at-risk": "bg-amber-500",
-};
-
-function StatCard({ label, value, sublabel, icon: Icon, color, href }: {
-  label: string; value: string; sublabel: string; icon: React.ElementType; color: string; href?: string;
-}) {
-  const inner = (
-    <div className={`bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:shadow-gray-100/50 transition ${href ? "cursor-pointer" : ""}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-gray-500">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
-          <p className="text-xs text-gray-400 mt-1.5">{sublabel}</p>
-        </div>
-        <div className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center`}>
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-      </div>
-    </div>
-  );
-  return href ? <Link href={href}>{inner}</Link> : inner;
-}
+const statusColors: Record<string,string> = { active:"bg-emerald-500", lead:"bg-indigo-500", inactive:"bg-gray-400", lost:"bg-red-400" };
+const subColors: Record<string,string> = { active:"bg-emerald-500", canceled:"bg-red-400", expired:"bg-amber-400", "one-time":"bg-blue-400", never:"bg-gray-300" };
+const subLabels: Record<string,string> = { active:"Active", canceled:"Canceled", expired:"Expired", "one-time":"One-Time", never:"No Sub" };
 
 export default function DashboardPage() {
-  const { deals, tasks } = useCRM();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [s, setS] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then((r) => r.json())
-      .then((data) => { if (data.ok && data.data) setStats(data.data); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    fetch("/api/dashboard").then(r => r.json()).then(d => { if (d.ok) setS(d.data); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const activeDeals = deals.filter((d) => d.stage !== "Closed Won" && d.stage !== "Closed Lost");
-  const wonDeals = deals.filter((d) => d.stage === "Closed Won");
-  const wonValue = wonDeals.reduce((sum, d) => sum + d.value, 0);
-  const pipelineValue = activeDeals.reduce((sum, d) => sum + d.value, 0);
-  const upcomingTasks = [...tasks].filter((t) => t.status !== "done")
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).slice(0, 5);
+  if (loading) return (<><Header title="Dashboard" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);
+  if (!s) return (<><Header title="Dashboard" /><div className="p-6 text-center py-32 text-gray-500">Unable to load dashboard</div></>);
 
-  if (loading) {
-    return (
-      <>
-        <Header title="Dashboard" />
-        <div className="flex items-center justify-center py-32">
-          <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
-        </div>
-      </>
-    );
-  }
+  const hasRevenue = s.revenue.total > 0;
+  const totalSubs = Object.values(s.subscriptionBreakdown).reduce((a, b) => a + b, 0);
 
   return (
     <>
       <Header title="Dashboard" />
       <div className="p-6 space-y-6">
 
-        {stats && (
+        {/* Welcome */}
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Welcome back</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Here&apos;s what&apos;s happening with {stats.tenantName}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{s.tenantName} &middot; {num(s.totalContacts)} contacts{hasRevenue ? ` · ${fmt(s.revenue.total)} revenue` : ""}</p>
           </div>
-        )}
+          <Link href="/dashboard/analytics" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-2 rounded-lg transition">
+            <BarChart3 className="w-3.5 h-3.5" /> Full Analytics
+          </Link>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Contacts" value={stats ? formatNumber(stats.totalContacts) : "0"}
-            sublabel={stats ? `${stats.totalContacts.toLocaleString()} in your CRM` : "Import from Stripe"}
-            icon={Users} color="bg-indigo-500" href="/dashboard/contacts" />
-          <StatCard label="Active Deals" value={String(activeDeals.length)}
-            sublabel={pipelineValue > 0 ? `${formatCurrency(pipelineValue)} in pipeline` : "Create your first deal"}
-            icon={Target} color="bg-blue-500" href="/dashboard/deals" />
-          <StatCard label="Won Deals" value={String(wonDeals.length)}
-            sublabel={wonValue > 0 ? `${formatCurrency(wonValue)} revenue` : "Close deals to track revenue"}
-            icon={TrendingUp} color="bg-emerald-500" href="/dashboard/deals" />
-          <StatCard label="Open Tasks" value={stats ? String(stats.openTasks) : String(upcomingTasks.length)}
-            sublabel={stats && stats.openTasks > 0 ? `${stats.openTasks} need attention` : "All caught up"}
-            icon={CheckCircle2} color="bg-violet-500" href="/dashboard/tasks" />
+        {/* Stat Cards — 2 rows of 4 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Total Revenue", value: fmt(s.revenue.total), sub: `${num(s.revenue.totalPurchases)} transactions`, icon: DollarSign, color: "bg-emerald-500", show: hasRevenue },
+            { label: "Total Contacts", value: num(s.totalContacts), sub: `${num(s.revenue.contactsWithPurchases)} paying`, icon: Users, color: "bg-indigo-500", show: true },
+            { label: "Avg Customer LTV", value: fmt(s.revenue.avgLTV), sub: `${fmt(s.revenue.avgOrder)} avg order`, icon: TrendingUp, color: "bg-violet-500", show: hasRevenue },
+            { label: "Active Subscribers", value: num(s.subscriptionBreakdown.active || 0), sub: `${num(s.subscriptionBreakdown.canceled || 0)} canceled`, icon: UserCheck, color: "bg-blue-500", show: true },
+          ].filter(c => c.show).map((c) => (
+            <div key={c.label} className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:shadow-gray-100/50 transition">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{c.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1.5">{c.value}</p>
+                  <p className="text-xs text-gray-400 mt-1">{c.sub}</p>
+                </div>
+                <div className={`w-10 h-10 rounded-xl ${c.color} flex items-center justify-center`}>
+                  <c.icon className="w-5 h-5 text-white" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left — 2/3 */}
           <div className="lg:col-span-2 space-y-6">
 
-            {stats && stats.statusBreakdown.length > 0 && (
+            {/* Customer Value + Subscription — side by side */}
+            {hasRevenue && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* LTV Tiers */}
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h2 className="text-sm font-semibold text-gray-900 mb-3">Customer Value</h2>
+                  <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
+                    {[
+                      { k: "whale", c: "bg-violet-500", n: s.ltvBuckets.whale },
+                      { k: "mid", c: "bg-blue-500", n: s.ltvBuckets.mid },
+                      { k: "low", c: "bg-amber-400", n: s.ltvBuckets.low },
+                      { k: "zero", c: "bg-gray-300", n: s.ltvBuckets.zero },
+                    ].filter(b => b.n > 0).map(b => (
+                      <div key={b.k} className={`h-full ${b.c}`} style={{ width: `${(b.n / s.totalContacts) * 100}%` }} />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: "Whales ($500+)", n: s.ltvBuckets.whale, color: "text-violet-600", dot: "bg-violet-500" },
+                      { label: "Mid ($200-499)", n: s.ltvBuckets.mid, color: "text-blue-600", dot: "bg-blue-500" },
+                      { label: "Low (<$200)", n: s.ltvBuckets.low, color: "text-amber-600", dot: "bg-amber-400" },
+                      { label: "No purchase", n: s.ltvBuckets.zero, color: "text-gray-500", dot: "bg-gray-300" },
+                    ].map(t => (
+                      <div key={t.label} className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${t.dot}`} />
+                        <span className="text-xs text-gray-500">{t.label}</span>
+                        <span className={`text-xs font-bold ${t.color} ml-auto`}>{num(t.n)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subscription Breakdown */}
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h2 className="text-sm font-semibold text-gray-900 mb-3">Subscriptions</h2>
+                  <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
+                    {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
+                      <div key={k} className={`h-full ${subColors[k] || "bg-gray-400"}`} style={{ width: `${totalSubs > 0 ? (v/totalSubs)*100 : 0}%` }} />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).slice(0, 4).map(([k,v]) => (
+                      <div key={k} className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${subColors[k] || "bg-gray-400"}`} />
+                        <span className="text-xs text-gray-500">{subLabels[k] || k}</span>
+                        <span className="text-xs font-bold text-gray-700 ml-auto">{num(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Top Customers */}
+            {s.topCustomers.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-gray-900">Contact Breakdown</h2>
-                  <span className="text-xs text-gray-400">{stats.totalContacts.toLocaleString()} total</span>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-gray-900">Top Customers</h2>
+                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
                 </div>
-                <div className="h-3 rounded-full bg-gray-100 overflow-hidden flex mb-4">
-                  {stats.statusBreakdown.sort((a, b) => b.count - a.count).map((s) => (
-                    <div key={s.status} className={`h-full ${statusColors[s.status.toLowerCase()] || "bg-gray-400"}`}
-                      style={{ width: `${(s.count / stats.totalContacts) * 100}%` }}
-                      title={`${s.status}: ${s.count.toLocaleString()}`} />
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {stats.statusBreakdown.sort((a, b) => b.count - a.count).map((s) => (
-                    <div key={s.status} className="flex items-center gap-2">
-                      <div className={`w-2.5 h-2.5 rounded-full ${statusColors[s.status.toLowerCase()] || "bg-gray-400"}`} />
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{s.count.toLocaleString()}</p>
-                        <p className="text-xs text-gray-400 capitalize">{s.status}</p>
+                <div className="space-y-1">
+                  {s.topCustomers.map((c, i) => (
+                    <div key={c.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 transition">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? "bg-violet-500" : i === 1 ? "bg-blue-500" : "bg-gray-400"}`}>
+                          {i + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                          <p className="text-xs text-gray-400">{c.email} &middot; {c.purchases} purchases</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-sm font-bold ${c.ltv >= 500 ? "text-violet-600" : "text-gray-900"}`}>{fmt(c.ltv)}</p>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize ${
+                          c.subStatus === "active" ? "bg-emerald-50 text-emerald-700" :
+                          c.subStatus === "canceled" ? "bg-red-50 text-red-500" :
+                          "bg-gray-100 text-gray-500"
+                        }`}>{c.subStatus}</span>
                       </div>
                     </div>
                   ))}
@@ -168,20 +178,42 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {stats && stats.recentContacts.length > 0 && (
+            {/* Contact Status Breakdown */}
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-gray-900">Contact Status</h2>
+                <span className="text-xs text-gray-400">{num(s.totalContacts)} total</span>
+              </div>
+              <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-3">
+                {s.statusBreakdown.sort((a,b) => b.count-a.count).map(st => (
+                  <div key={st.status} className={`h-full ${statusColors[st.status.toLowerCase()] || "bg-gray-400"}`}
+                    style={{ width: `${(st.count / s.totalContacts) * 100}%` }} />
+                ))}
+              </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                {s.statusBreakdown.sort((a,b) => b.count-a.count).map(st => (
+                  <div key={st.status} className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${statusColors[st.status.toLowerCase()] || "bg-gray-400"}`} />
+                    <span className="text-xs text-gray-500 capitalize">{st.status}</span>
+                    <span className="text-xs font-bold text-gray-700">{num(st.count)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recently Added */}
+            {s.recentContacts.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-gray-900">Recently Added</h2>
-                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-                    View all <ChevronRight className="w-3 h-3" />
-                  </Link>
+                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
                 </div>
                 <div className="space-y-1">
-                  {stats.recentContacts.map((c) => (
+                  {s.recentContacts.map((c: any) => (
                     <div key={c.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-semibold text-gray-600">{c.firstName?.[0] || "?"}{c.lastName?.[0] || ""}</span>
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-600">{c.firstName?.[0]||"?"}{c.lastName?.[0]||""}</span>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">{c.firstName} {c.lastName}</p>
@@ -189,35 +221,13 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                        {c.ltv > 0 && <span className="text-xs font-semibold text-gray-700">{fmt(c.ltv)}</span>}
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${
                           c.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                          c.status === "lead" ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
-                          "bg-gray-50 text-gray-500 border-gray-200"
+                          c.status === "inactive" ? "bg-gray-50 text-gray-500 border-gray-200" :
+                          "bg-indigo-50 text-indigo-700 border-indigo-200"
                         }`}>{c.status}</span>
-                        <span className="text-xs text-gray-400">{timeAgo(c.createdAt)}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {deals.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-gray-900">Recent Deals</h2>
-                  <Link href="/dashboard/deals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-                    View all <ChevronRight className="w-3 h-3" />
-                  </Link>
-                </div>
-                <div className="space-y-1">
-                  {deals.slice(0, 5).map((deal) => (
-                    <div key={deal.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 transition cursor-pointer">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{deal.title}</p>
-                        <p className="text-xs text-gray-400">{deal.contactName} &middot; {deal.stage}</p>
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900">{formatCurrency(deal.value)}</span>
                     </div>
                   ))}
                 </div>
@@ -225,68 +235,65 @@ export default function DashboardPage() {
             )}
           </div>
 
+          {/* Right — 1/3 */}
           <div className="space-y-6">
+
+            {/* Revenue Card */}
+            {hasRevenue && (
+              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-5 text-white">
+                <p className="text-xs font-medium text-white/50 uppercase tracking-wide">Lifetime Revenue</p>
+                <p className="text-3xl font-bold mt-2">{fmt(s.revenue.total)}</p>
+                <div className="mt-4 pt-4 border-t border-white/10 space-y-2.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/50">Avg LTV</span>
+                    <span className="font-semibold">{fmt(s.revenue.avgLTV)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/50">Avg Order</span>
+                    <span className="font-semibold">{fmt(s.revenue.avgOrder)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/50">Transactions</span>
+                    <span className="font-semibold">{num(s.revenue.totalPurchases)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/50">Paying Customers</span>
+                    <span className="font-semibold">{num(s.revenue.contactsWithPurchases)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Actions */}
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h2>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {[
-                  { href: "/dashboard/contacts", icon: Search, color: "bg-indigo-50 group-hover:bg-indigo-100", iconColor: "text-indigo-600", label: "Search Contacts", desc: "Find anyone in your CRM" },
-                  { href: "/dashboard/deals", icon: Handshake, color: "bg-blue-50 group-hover:bg-blue-100", iconColor: "text-blue-600", label: "Create Deal", desc: "Add a deal to your pipeline" },
-                  { href: "/dashboard/settings", icon: Zap, color: "bg-violet-50 group-hover:bg-violet-100", iconColor: "text-violet-600", label: "Integrations", desc: "Connect Stripe, Resend, Twilio" },
-                  { href: "/dashboard/forms", icon: Upload, color: "bg-emerald-50 group-hover:bg-emerald-100", iconColor: "text-emerald-600", label: "Build a Form", desc: "Capture leads from your website" },
-                ].map((a) => (
-                  <Link key={a.href} href={a.href} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition group">
-                    <div className={`w-9 h-9 rounded-lg ${a.color} flex items-center justify-center transition`}>
-                      <a.icon className={`w-4 h-4 ${a.iconColor}`} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{a.label}</p>
-                      <p className="text-xs text-gray-400">{a.desc}</p>
-                    </div>
+                  { href: "/dashboard/contacts", icon: Search, c: "bg-indigo-50 group-hover:bg-indigo-100", ic: "text-indigo-600", l: "Search Contacts" },
+                  { href: "/dashboard/deals", icon: Handshake, c: "bg-blue-50 group-hover:bg-blue-100", ic: "text-blue-600", l: "Create Deal" },
+                  { href: "/dashboard/analytics", icon: BarChart3, c: "bg-violet-50 group-hover:bg-violet-100", ic: "text-violet-600", l: "View Analytics" },
+                  { href: "/dashboard/settings", icon: Zap, c: "bg-emerald-50 group-hover:bg-emerald-100", ic: "text-emerald-600", l: "Integrations" },
+                ].map(a => (
+                  <Link key={a.href} href={a.href} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition group">
+                    <div className={`w-8 h-8 rounded-lg ${a.c} flex items-center justify-center transition`}><a.icon className={`w-4 h-4 ${a.ic}`} /></div>
+                    <span className="text-sm font-medium text-gray-700">{a.l}</span>
                   </Link>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-100 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-gray-900">Upcoming Tasks</h2>
-                <Link href="/dashboard/tasks" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">View all</Link>
-              </div>
-              {upcomingTasks.length > 0 ? (
-                <div className="space-y-2">
-                  {upcomingTasks.map((task) => (
-                    <div key={task.id} className="p-3 border border-gray-100 rounded-lg hover:border-gray-200 transition">
-                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          task.priority === "high" ? "bg-red-50 text-red-600" :
-                          task.priority === "medium" ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-500"
-                        }`}>{task.priority}</span>
-                        <span className="text-[10px] text-gray-400">Due {task.dueDate}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <CheckCircle2 className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">No pending tasks</p>
-                </div>
-              )}
-            </div>
-
-            {stats && stats.sourceBreakdown.length > 0 && (
+            {/* Data Sources */}
+            {s.sourceBreakdown.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-100 p-5">
                 <h2 className="text-sm font-semibold text-gray-900 mb-3">Data Sources</h2>
                 <div className="space-y-2.5">
-                  {stats.sourceBreakdown.map((s) => (
-                    <div key={s.source} className="flex items-center justify-between">
+                  {s.sourceBreakdown.map(src => (
+                    <div key={src.source} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-violet-500" />
-                        <span className="text-sm text-gray-700 capitalize">{s.source.replace(/_/g, " ")}</span>
+                        <span className="text-sm text-gray-600 capitalize">{src.source.replace(/_/g, " ")}</span>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900">{s.count.toLocaleString()}</span>
+                      <span className="text-sm font-bold text-gray-900">{num(src.count)}</span>
                     </div>
                   ))}
                 </div>
