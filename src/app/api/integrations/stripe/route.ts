@@ -64,9 +64,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // ══════════════════════════════════════════
+    // ── RESET SYNC (clear stale state) ──
+    if (body.action === "reset-sync") {
+      const r = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
+      const s = (r[0]?.settings as any) || {};
+      delete s.syncProgress;
+      await db.update(tenants).set({ settings: s, updatedAt: new Date() }).where(eq(tenants.id, ctx.tenantId));
+      return NextResponse.json({ success: true, message: "Sync state cleared" });
+    }
+
     // ── SYNC: Fire Inngest background job ──
-    // ══════════════════════════════════════════
     if (body.action === "sync") {
       const stripeKey = await getTenantStripeKey(ctx.tenantId);
       if (!stripeKey) return NextResponse.json({ error: "Stripe not connected." }, { status: 400 });
@@ -79,23 +86,44 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       }).where(eq(tenants.id, ctx.tenantId));
 
-      // Fire Inngest event — returns immediately
-      await inngest.send({
-        name: "stripe/sync.requested",
-        data: {
-          tenantId: ctx.tenantId,
-          stripeKey,
-        },
-      });
-
-      return NextResponse.json({ success: true, status: "started", message: "Stripe sync started in background" });
+      // Fire Inngest event
+      try {
+        await inngest.send({
+          name: "stripe/sync.requested",
+          data: { tenantId: ctx.tenantId, stripeKey },
+        });
+        return NextResponse.json({ success: true, status: "started" });
+      } catch (err) {
+        // If Inngest fails, clear progress and return error
+        await db.update(tenants).set({
+          settings: { ...current, syncProgress: { status: "error", error: "Failed to start background job", failedAt: new Date().toISOString() } },
+          updatedAt: new Date(),
+        }).where(eq(tenants.id, ctx.tenantId));
+        return NextResponse.json({ error: `Failed to start sync: ${err instanceof Error ? err.message : "Unknown"}` }, { status: 500 });
+      }
     }
 
-    // ── SYNC STATUS: Poll for progress ──
+    // ── SYNC STATUS ──
     if (body.action === "sync-status") {
       const settings = await getTenantSettings(ctx.tenantId);
+      const progress = settings.syncProgress || null;
+
+      // Auto-reset stale syncs (stuck for more than 10 minutes)
+      if (progress && progress.status && progress.status !== "complete" && progress.status !== "error" && progress.startedAt) {
+        const elapsed = Date.now() - new Date(progress.startedAt).getTime();
+        if (elapsed > 10 * 60 * 1000) {
+          const updated = { ...settings, syncProgress: { status: "error", error: "Sync timed out after 10 minutes", startedAt: progress.startedAt, failedAt: new Date().toISOString() } };
+          await db.update(tenants).set({ settings: updated, updatedAt: new Date() }).where(eq(tenants.id, ctx.tenantId));
+          return NextResponse.json({
+            progress: updated.syncProgress,
+            lastSync: settings.lastStripeSync || null,
+            lastResult: settings.lastStripeSyncResult || null,
+          });
+        }
+      }
+
       return NextResponse.json({
-        progress: settings.syncProgress || null,
+        progress,
         lastSync: settings.lastStripeSync || null,
         lastResult: settings.lastStripeSyncResult || null,
       });

@@ -83,12 +83,15 @@ function StripeIntegration() {
       .then((r) => r.json())
       .then((data) => {
         const p = data.progress;
-        if (p && p.status && p.status !== "complete") {
-          setSyncing(true);
-          setSyncPhase("Sync in progress...");
-          pollSyncStatus();
-        } else if (p && p.status === "complete") {
-          // Show last result
+        if (!p) return;
+
+        if (p.status === "error") {
+          // Stale/failed sync — show error, let user retry
+          setError(p.error || "Previous sync failed. Click Import to try again.");
+          return;
+        }
+
+        if (p.status === "complete") {
           if (data.lastResult) {
             setSyncResult({
               success: true,
@@ -102,7 +105,28 @@ function StripeIntegration() {
               duration: null,
             });
           }
+          return;
         }
+
+        // Check if the sync is stale (started more than 5 min ago with no progress updates)
+        if (p.startedAt) {
+          const elapsed = Date.now() - new Date(p.startedAt).getTime();
+          if (elapsed > 5 * 60 * 1000) {
+            // Stale — auto-reset
+            fetch("/api/integrations/stripe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "reset-sync" }),
+            }).catch(() => {});
+            setError("Previous sync timed out. Click Import to try again.");
+            return;
+          }
+        }
+
+        // Active sync — show progress and start polling
+        setSyncing(true);
+        setSyncPhase("Sync in progress...");
+        pollSyncStatus();
       })
       .catch(() => {});
   }, []);
@@ -162,16 +186,25 @@ function StripeIntegration() {
 
         if (!p) return;
 
-        if (p.status === "pulling_customers") {
+        if (p.status === "starting") {
+          setSyncPhase("Starting Stripe sync...");
+        } else if (p.status === "pulling_customers") {
           setSyncPhase("Pulling customers from Stripe...");
         } else if (p.status === "customers_done") {
           setSyncPhase(`Found ${(p.customersFound || 0).toLocaleString()} customers...`);
         } else if (p.status === "pulling_subscriptions") {
           setSyncPhase(`Pulling subscriptions (${(p.customersFound || 0).toLocaleString()} customers found)...`);
+        } else if (p.status === "subscriptions_done") {
+          setSyncPhase(`Found ${(p.customersFound || 0).toLocaleString()} customers + ${(p.subscriptionsFound || 0).toLocaleString()} subscriptions...`);
         } else if (p.status === "pulling_charges") {
           setSyncPhase(`Pulling charges... ${(p.chargesSoFar || 0).toLocaleString()} so far (batch ${p.batch || 0})`);
         } else if (p.status === "enriching") {
           setSyncPhase(`Processing ${(p.chargesTotal || 0).toLocaleString()} charges...`);
+        } else if (p.status === "error") {
+          setSyncing(false);
+          setSyncPhase("");
+          setError(p.error || "Sync failed. Click Import to try again.");
+          if (pollInterval.current) clearInterval(pollInterval.current);
         } else if (p.status === "complete") {
           setSyncing(false);
           setSyncPhase("");
@@ -220,6 +253,13 @@ function StripeIntegration() {
     setSyncResult(null);
     setSyncPhase("Starting Stripe sync...");
     try {
+      // Clear any stale state first
+      await fetch("/api/integrations/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset-sync" }),
+      });
+
       const res = await fetch("/api/integrations/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
