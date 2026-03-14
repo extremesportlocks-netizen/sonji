@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useCRM } from "@/lib/crm-store";
 import { useModal } from "@/components/modals/modal-provider";
@@ -53,11 +53,14 @@ function getInitials(company: string) {
 }
 
 export default function ContactsPage() {
-  const { contacts, deleteContact } = useCRM();
+  const { contacts, deleteContact, refresh } = useCRM();
   const { openModal } = useModal();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState("All");
+
+  // Re-fetch contacts on mount (picks up imports from Settings/Stripe)
+  useEffect(() => { refresh(); }, []);
   const [sortField, setSortField] = useState("lastName");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [menuId, setMenuId] = useState<string | null>(null);
