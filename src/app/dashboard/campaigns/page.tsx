@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import {
-  Send, Users, Mail, Plus, ChevronRight, Loader2, Eye, X,
+  Send, Users, Mail, Plus, ChevronRight, Loader2, Eye, X, MessageSquare,
   Crown, UserX, UserCheck, Zap, ShoppingCart, ArrowRight, Check,
 } from "lucide-react";
 
@@ -162,10 +162,13 @@ export default function CampaignsPage() {
 
   const [testEmail, setTestEmail] = useState("");
   const [testSubject, setTestSubject] = useState("Test from Sonji");
+  const [testPhone, setTestPhone] = useState("");
+  const [testSmsBody, setTestSmsBody] = useState("Test SMS from Sonji CRM 🚀");
   const [testSending, setTestSending] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [quickMode, setQuickMode] = useState<"email" | "sms">("email");
 
-  const handleTestSend = async () => {
+  const handleTestEmail = async () => {
     if (!testEmail.includes("@")) { setTestResult("Enter a valid email"); return; }
     setTestSending(true); setTestResult(null);
     try {
@@ -190,9 +193,27 @@ export default function CampaignsPage() {
         }),
       });
       const data = await res.json();
-      if (data.success) setTestResult("✓ Sent! Check your inbox (and spam folder).");
+      if (data.success) setTestResult("✓ Email sent! Check your inbox (and spam folder).");
       else setTestResult(`Failed: ${data.error || "Unknown error"}`);
-    } catch { setTestResult("Failed to send. Check Resend API key in Settings."); }
+    } catch { setTestResult("Failed to send. Check Resend config in Settings → Integrations."); }
+    finally { setTestSending(false); }
+  };
+
+  const handleTestSms = async () => {
+    const cleaned = testPhone.replace(/\D/g, "");
+    if (cleaned.length < 10) { setTestResult("Enter a valid phone number"); return; }
+    const formatted = cleaned.startsWith("1") ? `+${cleaned}` : `+1${cleaned}`;
+    setTestSending(true); setTestResult(null);
+    try {
+      const res = await fetch("/api/sms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", to: formatted, body: testSmsBody }),
+      });
+      const data = await res.json();
+      if (data.success) setTestResult("✓ SMS sent! Check your phone.");
+      else setTestResult(`Failed: ${data.error || "Unknown error"}`);
+    } catch { setTestResult("Failed to send. Check Twilio config in Settings → Integrations."); }
     finally { setTestSending(false); }
   };
 
@@ -201,26 +222,54 @@ export default function CampaignsPage() {
       <Header title="Campaigns" />
       <div className="p-6">
 
-        {/* Quick Test Send */}
+        {/* Quick Send */}
         {step === "segment" && (
           <div className="bg-white rounded-xl border border-gray-100 p-5 mb-6">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">Quick Send</h3>
-                <p className="text-xs text-gray-400">Send a test email or a quick message to anyone</p>
+                <p className="text-xs text-gray-400">Send a test or one-off message to anyone</p>
+              </div>
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+                <button onClick={() => { setQuickMode("email"); setTestResult(null); }}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${quickMode === "email" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>
+                  Email
+                </button>
+                <button onClick={() => { setQuickMode("sms"); setTestResult(null); }}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${quickMode === "sms" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>
+                  SMS
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="Email address"
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-              <input value={testSubject} onChange={(e) => setTestSubject(e.target.value)} placeholder="Subject"
-                className="w-48 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-              <button onClick={handleTestSend} disabled={testSending}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-lg transition whitespace-nowrap">
-                {testSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                {testSending ? "Sending..." : "Send Test"}
-              </button>
-            </div>
+
+            {quickMode === "email" && (
+              <div className="flex items-center gap-2">
+                <input value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="Email address"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                <input value={testSubject} onChange={(e) => setTestSubject(e.target.value)} placeholder="Subject"
+                  className="w-48 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                <button onClick={handleTestEmail} disabled={testSending}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-lg transition whitespace-nowrap">
+                  {testSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {testSending ? "Sending..." : "Send Email"}
+                </button>
+              </div>
+            )}
+
+            {quickMode === "sms" && (
+              <div className="flex items-center gap-2">
+                <input value={testPhone} onChange={(e) => setTestPhone(e.target.value)} placeholder="Phone number (e.g. 239-555-1234)"
+                  className="w-56 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                <input value={testSmsBody} onChange={(e) => setTestSmsBody(e.target.value)} placeholder="Message"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                <button onClick={handleTestSms} disabled={testSending}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg transition whitespace-nowrap">
+                  {testSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
+                  {testSending ? "Sending..." : "Send SMS"}
+                </button>
+              </div>
+            )}
+
             {testResult && (
               <p className={`text-xs mt-2 ${testResult.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>{testResult}</p>
             )}
