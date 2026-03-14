@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Building2, Users, Handshake, CheckSquare, Calendar,
   BarChart3, Workflow, Activity, FileText, Settings, ChevronDown, Search,
@@ -74,6 +73,7 @@ function saveSidebarState(order: string[], favorites: string[]) {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [order, setOrder] = useState<string[]>(defaultOrder);
@@ -159,9 +159,9 @@ export default function Sidebar() {
           {editMode && !collapsed && draggable && (
             <GripVertical className="w-3.5 h-3.5 text-gray-300 cursor-grab flex-shrink-0 mr-0.5 hover:text-gray-500" />
           )}
-          <Link href={item.href}
+          <div onClick={() => router.push(item.href)}
             className={`
-              flex items-center gap-3 rounded-lg text-sm font-medium transition-all flex-1
+              flex items-center gap-3 rounded-lg text-sm font-medium transition-all flex-1 cursor-pointer
               ${collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2"}
               ${active ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}
             `}
@@ -176,7 +176,7 @@ export default function Sidebar() {
                 )}
               </>
             )}
-          </Link>
+          </div>
           {!collapsed && !editMode && (
             <button onClick={(e) => { e.preventDefault(); toggleFavorite(item.id); }}
               className={`p-1 rounded transition flex-shrink-0 ${isFav ? "text-amber-400 hover:text-amber-500" : "text-transparent group-hover:text-gray-300 hover:!text-amber-400"}`}>
@@ -263,13 +263,13 @@ export default function Sidebar() {
               return (
                 <li key={`fav-${item.id}`}>
                   <div className="flex items-center group">
-                    <Link href={item.href}
-                      className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all flex-1 px-3 py-1.5 ${
+                    <div onClick={() => router.push(item.href)}
+                      className={`flex items-center gap-3 rounded-lg text-sm font-medium transition-all flex-1 px-3 py-1.5 cursor-pointer ${
                         active ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50"
                       }`}>
                       <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" fill="currentColor" />
                       <span className="flex-1 text-xs">{item.label}</span>
-                    </Link>
+                    </div>
                     <button onClick={() => toggleFavorite(item.id)}
                       className="p-1 text-transparent group-hover:text-gray-300 hover:!text-red-400 rounded transition">
                       <X className="w-3 h-3" />
