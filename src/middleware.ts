@@ -44,7 +44,7 @@ export default clerkMiddleware(async (auth, request) => {
   const hostname = request.headers.get("host") || "";
 
   // ─── PASSWORD GATE ───
-  if (SITE_PASSWORD && url.pathname !== "/password-gate" && url.pathname !== "/api/auth-password") {
+  if (SITE_PASSWORD && url.pathname !== "/password-gate" && url.pathname !== "/api/auth-password" && !url.pathname.startsWith("/api/inngest")) {
     const authed = request.cookies.get("site_auth")?.value;
     if (authed !== SITE_PASSWORD) {
       url.pathname = "/password-gate";
