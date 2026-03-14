@@ -6,7 +6,7 @@ import Header from "@/components/dashboard/header";
 import {
   Users, DollarSign, TrendingUp, ShoppingCart, Crown, UserCheck, UserX,
   ChevronRight, Loader2, Search, Handshake, Zap, Upload, Target,
-  BarChart3, ArrowUpRight, ArrowDownRight,
+  BarChart3, ArrowUpRight, ArrowDownRight, Send,
 } from "lucide-react";
 
 interface Stats {
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-1">
                   {s.topCustomers.map((c, i) => (
-                    <div key={c.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 transition">
+                    <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 transition cursor-pointer">
                       <div className="flex items-center gap-3">
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? "bg-violet-500" : i === 1 ? "bg-blue-500" : "bg-gray-400"}`}>
                           {i + 1}
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                           "bg-gray-100 text-gray-500"
                         }`}>{c.subStatus}</span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -210,7 +210,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="space-y-1">
                   {s.recentContacts.map((c: any) => (
-                    <div key={c.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
+                    <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition cursor-pointer">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                           <span className="text-xs font-semibold text-gray-600">{c.firstName?.[0]||"?"}{c.lastName?.[0]||""}</span>
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                           "bg-indigo-50 text-indigo-700 border-indigo-200"
                         }`}>{c.status}</span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -269,10 +269,11 @@ export default function DashboardPage() {
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h2>
               <div className="space-y-1.5">
                 {[
-                  { href: "/dashboard/contacts", icon: Search, c: "bg-indigo-50 group-hover:bg-indigo-100", ic: "text-indigo-600", l: "Search Contacts" },
-                  { href: "/dashboard/deals", icon: Handshake, c: "bg-blue-50 group-hover:bg-blue-100", ic: "text-blue-600", l: "Create Deal" },
-                  { href: "/dashboard/analytics", icon: BarChart3, c: "bg-violet-50 group-hover:bg-violet-100", ic: "text-violet-600", l: "View Analytics" },
-                  { href: "/dashboard/settings", icon: Zap, c: "bg-emerald-50 group-hover:bg-emerald-100", ic: "text-emerald-600", l: "Integrations" },
+                  { href: "/dashboard/campaigns", icon: Send, c: "bg-violet-50 group-hover:bg-violet-100", ic: "text-violet-600", l: "Send Campaign" },
+                  { href: "/dashboard/contacts", icon: Users, c: "bg-indigo-50 group-hover:bg-indigo-100", ic: "text-indigo-600", l: "Browse Contacts" },
+                  { href: "/dashboard/deals", icon: Handshake, c: "bg-blue-50 group-hover:bg-blue-100", ic: "text-blue-600", l: "Manage Deals" },
+                  { href: "/dashboard/analytics", icon: BarChart3, c: "bg-emerald-50 group-hover:bg-emerald-100", ic: "text-emerald-600", l: "View Analytics" },
+                  { href: "/dashboard/settings?tab=integrations", icon: Zap, c: "bg-amber-50 group-hover:bg-amber-100", ic: "text-amber-600", l: "Integrations" },
                 ].map(a => (
                   <Link key={a.href} href={a.href} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition group">
                     <div className={`w-8 h-8 rounded-lg ${a.c} flex items-center justify-center transition`}><a.icon className={`w-4 h-4 ${a.ic}`} /></div>
