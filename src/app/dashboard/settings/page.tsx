@@ -791,7 +791,9 @@ function TwilioIntegration() {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("general");
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const initialTab = searchParams?.get("tab") || "general";
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   return (
     <>
