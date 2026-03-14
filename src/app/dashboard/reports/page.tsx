@@ -1,287 +1,326 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
+import Link from "next/link";
 import {
-  Search,
-  Plus,
-  FileText,
-  BarChart3,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Calendar,
-  Download,
-  Star,
-  Clock,
-  ChevronRight,
-  PieChart,
-  Target,
-  Handshake,
-  Mail,
-  X,
-  ArrowUpRight,
-  ArrowDownRight,
+  BarChart3, TrendingUp, Users, DollarSign, Crown, UserCheck, UserX,
+  Star, ChevronRight, Loader2, Download, PieChart, Target, ShoppingCart,
 } from "lucide-react";
 
-interface Report {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-  lastRun: string;
-  starred: boolean;
+interface AnalyticsData {
+  overview: {
+    totalContacts: number; totalRevenue: number; totalPurchases: number;
+    avgLTV: number; avgOrderValue: number; activeSubscribers: number;
+    canceledSubscribers: number; oneTimeBuyers: number; neverPurchased: number;
+    contactsWithPurchases: number;
+  };
+  ltvBuckets: { whale: number; mid: number; low: number; zero: number };
+  subscriptionBreakdown: Record<string, number>;
+  statusBreakdown: Record<string, number>;
+  tagBreakdown: { tag: string; count: number }[];
+  topCustomers: { id: string; name: string; email: string; ltv: number; purchases: number; subscriptionStatus: string; daysSince: number | null }[];
 }
 
-const mockReports: Report[] = [
-  { id: "r1", name: "Pipeline Summary", description: "Overview of all deals by stage with values and conversion rates", category: "Sales", icon: BarChart3, iconBg: "bg-indigo-50", iconColor: "text-indigo-600", lastRun: "Today", starred: true },
-  { id: "r2", name: "Revenue by Month", description: "Monthly revenue trends with year-over-year comparison", category: "Revenue", icon: TrendingUp, iconBg: "bg-emerald-50", iconColor: "text-emerald-600", lastRun: "Today", starred: true },
-  { id: "r3", name: "Contact Growth", description: "New contacts added over time by source and channel", category: "Contacts", icon: Users, iconBg: "bg-blue-50", iconColor: "text-blue-600", lastRun: "Yesterday", starred: false },
-  { id: "r4", name: "Deal Velocity", description: "Average time deals spend in each pipeline stage", category: "Sales", icon: Clock, iconBg: "bg-amber-50", iconColor: "text-amber-600", lastRun: "3 days ago", starred: false },
-  { id: "r5", name: "Win/Loss Analysis", description: "Breakdown of won vs lost deals by reason, owner, and value", category: "Sales", icon: Target, iconBg: "bg-rose-50", iconColor: "text-rose-500", lastRun: "1 week ago", starred: true },
-  { id: "r6", name: "Team Performance", description: "Individual team member metrics: calls, emails, meetings, deals closed", category: "Team", icon: Users, iconBg: "bg-violet-50", iconColor: "text-violet-600", lastRun: "Today", starred: false },
-  { id: "r7", name: "Email Campaign Results", description: "Open rates, click rates, and conversions across all campaigns", category: "Marketing", icon: Mail, iconBg: "bg-cyan-50", iconColor: "text-cyan-600", lastRun: "2 days ago", starred: false },
-  { id: "r8", name: "Forecast Report", description: "Projected revenue based on current pipeline and historical close rates", category: "Revenue", icon: DollarSign, iconBg: "bg-emerald-50", iconColor: "text-emerald-600", lastRun: "Yesterday", starred: false },
-  { id: "r9", name: "Activity Summary", description: "Total activities logged by type across all team members", category: "Team", icon: PieChart, iconBg: "bg-orange-50", iconColor: "text-orange-600", lastRun: "Today", starred: false },
-  { id: "r10", name: "Meeting Analytics", description: "Meeting frequency, duration, and outcomes by contact and company", category: "Sales", icon: Calendar, iconBg: "bg-teal-50", iconColor: "text-teal-600", lastRun: "Yesterday", starred: false },
-];
+function fmt(n: number) { return n >= 1e6 ? `$${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n.toFixed(0)}`; }
+function num(n: number) { return n.toLocaleString(); }
+function pct(a: number, b: number) { return b > 0 ? `${((a/b)*100).toFixed(1)}%` : "0%"; }
 
-// Featured report data
-const pipelineData = [
-  { stage: "Lead", count: 145, value: "$1,450,000", avgDays: 3, conversion: "100%" },
-  { stage: "Qualified", count: 89, value: "$890,000", avgDays: 7, conversion: "61.4%" },
-  { stage: "Meeting Booked", count: 52, value: "$624,000", avgDays: 5, conversion: "58.4%" },
-  { stage: "Proposal Sent", count: 31, value: "$496,000", avgDays: 12, conversion: "59.6%" },
-  { stage: "Negotiation", count: 18, value: "$342,000", avgDays: 8, conversion: "58.1%" },
-  { stage: "Closed Won", count: 12, value: "$228,000", avgDays: 4, conversion: "66.7%" },
-  { stage: "Closed Lost", count: 6, value: "$114,000", avgDays: 2, conversion: "33.3%" },
-];
+const subColors: Record<string,string> = { active:"bg-emerald-500", canceled:"bg-red-400", expired:"bg-amber-400", "one-time":"bg-blue-400", never:"bg-gray-300" };
+const subLabels: Record<string,string> = { active:"Active", canceled:"Canceled", expired:"Expired", "one-time":"One-Time", never:"Never" };
 
-const stageColors: Record<string, string> = {
-  "Lead": "bg-indigo-500",
-  "Qualified": "bg-blue-500",
-  "Meeting Booked": "bg-amber-500",
-  "Proposal Sent": "bg-violet-500",
-  "Negotiation": "bg-orange-500",
-  "Closed Won": "bg-emerald-500",
-  "Closed Lost": "bg-red-500",
-};
+type ReportView = "overview" | "revenue" | "customers" | "subscriptions" | "segments";
+
+const reportTabs = [
+  { key: "overview" as ReportView, label: "Overview", icon: BarChart3 },
+  { key: "revenue" as ReportView, label: "Revenue", icon: DollarSign },
+  { key: "customers" as ReportView, label: "Top Customers", icon: Crown },
+  { key: "subscriptions" as ReportView, label: "Subscriptions", icon: UserCheck },
+  { key: "segments" as ReportView, label: "Segments", icon: Target },
+];
 
 export default function ReportsPage() {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [activeReport, setActiveReport] = useState<string | null>("r1");
-  const categories = ["All", "Sales", "Revenue", "Contacts", "Marketing", "Team"];
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<ReportView>("overview");
 
-  const filtered = mockReports.filter((r) => {
-    const matchSearch = search === "" || `${r.name} ${r.description}`.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = category === "All" || r.category === category;
-    return matchSearch && matchCategory;
-  });
+  useEffect(() => {
+    fetch("/api/analytics").then(r => r.json()).then(d => { if (d.ok) setData(d.data); }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
 
-  const starred = filtered.filter((r) => r.starred);
-  const other = filtered.filter((r) => !r.starred);
+  if (loading) return (<><Header title="Reports" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);
+  if (!data) return (<><Header title="Reports" /><div className="p-6 text-center py-32"><p className="text-gray-500">Connect Stripe to generate reports</p><Link href="/dashboard/settings" className="text-indigo-600 text-sm font-medium mt-2 inline-block">Go to Settings →</Link></div></>);
+
+  const o = data.overview;
+  const totalSubs = Object.values(data.subscriptionBreakdown).reduce((a, b) => a + b, 0);
+  const churnRate = (o.activeSubscribers + o.canceledSubscribers) > 0
+    ? ((o.canceledSubscribers / (o.activeSubscribers + o.canceledSubscribers)) * 100).toFixed(1) : "0";
 
   return (
     <>
-      <Header title="Reports" subtitle={`${mockReports.length} reports available`} />
-
+      <Header title="Reports" />
       <div className="p-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* ═══ LEFT: Report Library ═══ */}
-          <div className="col-span-4">
-            {/* Search + Filters */}
-            <div className="mb-4">
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" placeholder="Search reports..." value={search} onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition" />
-                {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>}
-              </div>
-              <div className="flex items-center gap-1 flex-wrap">
-                {categories.map((c) => (
-                  <button key={c} onClick={() => setCategory(c)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${category === c ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-100 bg-white border border-gray-200"}`}>
-                    {c}
+        <div className="flex gap-6">
+          {/* Left nav */}
+          <div className="w-56 flex-shrink-0">
+            <nav className="space-y-1">
+              {reportTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button key={tab.key} onClick={() => setView(tab.key)}
+                    className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                      view === tab.key ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50"
+                    }`}>
+                    <Icon className={`w-4 h-4 ${view === tab.key ? "text-indigo-600" : "text-gray-400"}`} />
+                    {tab.label}
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Starred */}
-            {starred.length > 0 && (
-              <div className="mb-4">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Starred</p>
-                <div className="space-y-1.5">
-                  {starred.map((r) => {
-                    const Icon = r.icon;
-                    return (
-                      <button key={r.id} onClick={() => setActiveReport(r.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition ${
-                          activeReport === r.id ? "bg-indigo-50 border border-indigo-200" : "bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm"
-                        }`}>
-                        <div className={`w-9 h-9 rounded-lg ${r.iconBg} flex items-center justify-center flex-shrink-0`}>
-                          <Icon className={`w-4 h-4 ${r.iconColor}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${activeReport === r.id ? "text-indigo-700" : "text-gray-900"}`}>{r.name}</p>
-                          <p className="text-xs text-gray-400 truncate">{r.description}</p>
-                        </div>
-                        <Star className={`w-3.5 h-3.5 flex-shrink-0 ${activeReport === r.id ? "text-indigo-400" : "text-amber-400"} fill-current`} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* All Reports */}
-            <div>
-              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">All Reports</p>
-              <div className="space-y-1.5">
-                {other.map((r) => {
-                  const Icon = r.icon;
-                  return (
-                    <button key={r.id} onClick={() => setActiveReport(r.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition ${
-                        activeReport === r.id ? "bg-indigo-50 border border-indigo-200" : "bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm"
-                      }`}>
-                      <div className={`w-9 h-9 rounded-lg ${r.iconBg} flex items-center justify-center flex-shrink-0`}>
-                        <Icon className={`w-4 h-4 ${r.iconColor}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${activeReport === r.id ? "text-indigo-700" : "text-gray-900"}`}>{r.name}</p>
-                        <p className="text-xs text-gray-400 truncate">{r.description}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition border border-indigo-100">
-              <Plus className="w-4 h-4" /> Create Custom Report
-            </button>
+                );
+              })}
+            </nav>
           </div>
 
-          {/* ═══ RIGHT: Report Detail ═══ */}
-          <div className="col-span-8">
-            {activeReport === "r1" && (
-              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                {/* Report Header */}
-                <div className="px-6 py-5 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-                        <BarChart3 className="w-5 h-5 text-indigo-600" />
+          {/* Content */}
+          <div className="flex-1 max-w-4xl">
+
+            {/* OVERVIEW */}
+            {view === "overview" && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl border border-gray-100 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Business Overview</h2>
+                  <p className="text-sm text-gray-500 mb-6">Key metrics from your Stripe data</p>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { label: "Total Revenue", value: fmt(o.totalRevenue), icon: DollarSign, color: "bg-emerald-500" },
+                      { label: "Paying Customers", value: num(o.contactsWithPurchases), icon: Users, color: "bg-indigo-500" },
+                      { label: "Avg LTV", value: fmt(o.avgLTV), icon: TrendingUp, color: "bg-violet-500" },
+                      { label: "Avg Order", value: fmt(o.avgOrderValue), icon: ShoppingCart, color: "bg-blue-500" },
+                    ].map((s) => (
+                      <div key={s.label} className="bg-gray-50 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={`w-8 h-8 rounded-lg ${s.color} flex items-center justify-center`}>
+                            <s.icon className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-xs text-gray-500">{s.label}</span>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">{s.value}</p>
                       </div>
-                      <div>
-                        <h2 className="text-lg font-semibold text-gray-900">Pipeline Summary</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">Last updated: Today at 2:30 PM &middot; Auto-refreshes hourly</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                        <Download className="w-4 h-4" /> Export
-                      </button>
-                      <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                        <Calendar className="w-4 h-4" /> This Month
-                      </button>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-4 gap-4 px-6 py-5 border-b border-gray-100 bg-gray-50/50">
-                  <div className="bg-white rounded-xl border border-gray-100 p-4">
-                    <p className="text-xs text-gray-500 mb-1">Total Deals</p>
-                    <p className="text-2xl font-bold text-gray-900">353</p>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600"><ArrowUpRight className="w-3 h-3" /> 12% vs last month</div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-100 p-4">
-                    <p className="text-xs text-gray-500 mb-1">Pipeline Value</p>
-                    <p className="text-2xl font-bold text-gray-900">$4.1M</p>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600"><ArrowUpRight className="w-3 h-3" /> 8% vs last month</div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-100 p-4">
-                    <p className="text-xs text-gray-500 mb-1">Avg Deal Size</p>
-                    <p className="text-2xl font-bold text-gray-900">$19K</p>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-red-500"><ArrowDownRight className="w-3 h-3" /> 3% vs last month</div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-100 p-4">
-                    <p className="text-xs text-gray-500 mb-1">Win Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">66.7%</p>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600"><ArrowUpRight className="w-3 h-3" /> 5% vs last month</div>
-                  </div>
-                </div>
-
-                {/* Pipeline Table */}
-                <div className="px-6 py-5">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">Pipeline Breakdown by Stage</h3>
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-100">
-                        <th className="text-left py-3 pr-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stage</span></th>
-                        <th className="text-right py-3 px-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Deals</span></th>
-                        <th className="text-right py-3 px-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Value</span></th>
-                        <th className="text-right py-3 px-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Avg Days</span></th>
-                        <th className="text-right py-3 px-3"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Conversion</span></th>
-                        <th className="py-3 pl-4 w-32"><span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Distribution</span></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {pipelineData.map((row) => (
-                        <tr key={row.stage} className="hover:bg-gray-50/50 transition">
-                          <td className="py-3 pr-3">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2.5 h-2.5 rounded-full ${stageColors[row.stage]}`} />
-                              <span className="text-sm font-medium text-gray-900">{row.stage}</span>
-                            </div>
-                          </td>
-                          <td className="text-right py-3 px-3"><span className="text-sm font-semibold text-gray-900">{row.count}</span></td>
-                          <td className="text-right py-3 px-3"><span className="text-sm text-gray-700">{row.value}</span></td>
-                          <td className="text-right py-3 px-3"><span className="text-sm text-gray-500">{row.avgDays}d</span></td>
-                          <td className="text-right py-3 px-3"><span className="text-sm text-gray-500">{row.conversion}</span></td>
-                          <td className="py-3 pl-4">
-                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${stageColors[row.stage]}`}
-                                style={{ width: `${(row.count / 145) * 100}%` }} />
-                            </div>
-                          </td>
-                        </tr>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Tiers</h3>
+                    <div className="space-y-3">
+                      {[
+                        { label: "Whales ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500" },
+                        { label: "Mid ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500" },
+                        { label: "Low (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400" },
+                        { label: "No purchase", n: data.ltvBuckets.zero, color: "bg-gray-300" },
+                      ].map((t) => (
+                        <div key={t.label} className="flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full ${t.color}`} />
+                          <span className="text-sm text-gray-600 flex-1">{t.label}</span>
+                          <span className="text-sm font-bold text-gray-900">{num(t.n)}</span>
+                          <span className="text-xs text-gray-400 w-12 text-right">{pct(t.n, o.totalContacts)}</span>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Subscription Health</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm"><span className="text-gray-600">Active</span><span className="font-bold text-emerald-600">{num(o.activeSubscribers)}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-600">Canceled</span><span className="font-bold text-red-500">{num(o.canceledSubscribers)}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-600">One-Time Buyers</span><span className="font-bold text-blue-600">{num(o.oneTimeBuyers)}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-600">Churn Rate</span><span className="font-bold text-gray-900">{churnRate}%</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-gray-600">Never Purchased</span><span className="font-bold text-gray-400">{num(o.neverPurchased)}</span></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {activeReport && activeReport !== "r1" && (
-              <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {mockReports.find((r) => r.id === activeReport)?.name}
-                </h3>
-                <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
-                  {mockReports.find((r) => r.id === activeReport)?.description}
-                </p>
-                <button className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
-                  <BarChart3 className="w-4 h-4" /> Generate Report
-                </button>
+            {/* REVENUE */}
+            {view === "revenue" && (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 text-white">
+                  <p className="text-sm text-white/50">Total Lifetime Revenue</p>
+                  <p className="text-4xl font-bold mt-2">{fmt(o.totalRevenue)}</p>
+                  <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-white/10">
+                    <div><p className="text-2xl font-bold">{num(o.totalPurchases)}</p><p className="text-xs text-white/50">Transactions</p></div>
+                    <div><p className="text-2xl font-bold">{fmt(o.avgLTV)}</p><p className="text-xs text-white/50">Avg LTV</p></div>
+                    <div><p className="text-2xl font-bold">{fmt(o.avgOrderValue)}</p><p className="text-xs text-white/50">Avg Order</p></div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">Revenue by Customer Tier</h3>
+                  <div className="space-y-4">
+                    {[
+                      { label: "Whales ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500", est: data.ltvBuckets.whale * 750 },
+                      { label: "Mid-Tier ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500", est: data.ltvBuckets.mid * 320 },
+                      { label: "Low-Tier (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400", est: data.ltvBuckets.low * 80 },
+                    ].map((t) => (
+                      <div key={t.label}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm font-medium text-gray-700">{t.label}</span>
+                          <div className="text-right">
+                            <span className="text-sm font-bold text-gray-900">{num(t.n)} customers</span>
+                          </div>
+                        </div>
+                        <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                          <div className={`h-full rounded-full ${t.color}`} style={{ width: `${o.totalContacts > 0 ? (t.n / o.totalContacts) * 100 : 0}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {!activeReport && (
-              <div className="bg-white rounded-xl border border-gray-100 p-16 text-center">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-500">Select a report to view</h3>
-                <p className="text-sm text-gray-400 mt-1">Choose from the report library on the left</p>
+            {/* TOP CUSTOMERS */}
+            {view === "customers" && (
+              <div className="bg-white rounded-xl border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Top Customers by LTV</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Your highest value customers ranked by lifetime spending</p>
+                  </div>
+                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all contacts <ChevronRight className="w-3 h-3" /></Link>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left py-2.5 text-xs font-semibold text-gray-500 uppercase w-8">#</th>
+                      <th className="text-left py-2.5 text-xs font-semibold text-gray-500 uppercase">Customer</th>
+                      <th className="text-right py-2.5 text-xs font-semibold text-gray-500 uppercase">LTV</th>
+                      <th className="text-right py-2.5 text-xs font-semibold text-gray-500 uppercase">Orders</th>
+                      <th className="text-center py-2.5 text-xs font-semibold text-gray-500 uppercase">Sub Status</th>
+                      <th className="text-right py-2.5 text-xs font-semibold text-gray-500 uppercase">Last Active</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {data.topCustomers.map((c, i) => (
+                      <tr key={c.id} className="hover:bg-gray-50/70 transition">
+                        <td className="py-3 text-sm text-gray-400">{i + 1}</td>
+                        <td className="py-3">
+                          <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                          <p className="text-xs text-gray-400">{c.email}</p>
+                        </td>
+                        <td className="py-3 text-right">
+                          <span className={`text-sm font-bold ${c.ltv >= 500 ? "text-violet-700" : c.ltv >= 200 ? "text-blue-600" : "text-gray-700"}`}>{fmt(c.ltv)}</span>
+                        </td>
+                        <td className="py-3 text-right text-sm text-gray-600">{c.purchases}</td>
+                        <td className="py-3 text-center">
+                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${
+                            c.subscriptionStatus === "active" ? "bg-emerald-50 text-emerald-700" :
+                            c.subscriptionStatus === "canceled" ? "bg-red-50 text-red-600" :
+                            "bg-gray-100 text-gray-500"
+                          }`}>{c.subscriptionStatus}</span>
+                        </td>
+                        <td className="py-3 text-right">
+                          {c.daysSince !== null ? (
+                            <span className={`text-xs font-medium ${c.daysSince <= 30 ? "text-emerald-600" : c.daysSince <= 90 ? "text-amber-600" : "text-red-500"}`}>{c.daysSince}d ago</span>
+                          ) : <span className="text-xs text-gray-400">—</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
+
+            {/* SUBSCRIPTIONS */}
+            {view === "subscriptions" && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl border border-gray-100 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription Breakdown</h2>
+                  <div className="h-4 rounded-full bg-gray-100 overflow-hidden flex mb-6">
+                    {Object.entries(data.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
+                      <div key={k} className={`h-full ${subColors[k] || "bg-gray-400"}`} style={{ width: `${totalSubs > 0 ? (v/totalSubs)*100 : 0}%` }} />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    {Object.entries(data.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
+                      <div key={k} className="bg-gray-50 rounded-xl p-4 text-center">
+                        <div className={`w-3 h-3 rounded-full ${subColors[k] || "bg-gray-400"} mx-auto mb-2`} />
+                        <p className="text-2xl font-bold text-gray-900">{num(v)}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{subLabels[k] || k}</p>
+                        <p className="text-[10px] text-gray-400">{pct(v, totalSubs)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Key Metrics</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between"><span className="text-sm text-gray-600">Active Subscribers</span><span className="text-sm font-bold text-emerald-600">{num(o.activeSubscribers)}</span></div>
+                      <div className="flex justify-between"><span className="text-sm text-gray-600">Churn Rate</span><span className="text-sm font-bold text-gray-900">{churnRate}%</span></div>
+                      <div className="flex justify-between"><span className="text-sm text-gray-600">Recovery Potential</span><span className="text-sm font-bold text-amber-600">{num(o.canceledSubscribers)} lapsed</span></div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-gray-100 p-5">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Type</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between"><span className="text-sm text-gray-600">Subscribers (active + canceled)</span><span className="text-sm font-bold">{num(o.activeSubscribers + o.canceledSubscribers)}</span></div>
+                      <div className="flex justify-between"><span className="text-sm text-gray-600">One-Time Buyers</span><span className="text-sm font-bold">{num(o.oneTimeBuyers)}</span></div>
+                      <div className="flex justify-between"><span className="text-sm text-gray-600">Never Purchased</span><span className="text-sm font-bold text-gray-400">{num(o.neverPurchased)}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* SEGMENTS */}
+            {view === "segments" && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl border border-gray-100 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Customer Segments</h2>
+                  <p className="text-sm text-gray-500 mb-6">Auto-generated segments based on Stripe purchase data</p>
+                  <div className="space-y-3">
+                    {data.tagBreakdown.map((t, i) => (
+                      <div key={t.tag} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
+                          t.tag === "Whale" ? "bg-violet-500" :
+                          t.tag === "Active Subscriber" ? "bg-emerald-500" :
+                          t.tag === "Lapsed" ? "bg-red-400" :
+                          t.tag === "Win-Back" ? "bg-amber-500" :
+                          t.tag === "High Frequency" ? "bg-blue-500" :
+                          t.tag === "Recently Active" ? "bg-cyan-500" :
+                          "bg-gray-400"
+                        }`}>{i + 1}</div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{t.tag}</p>
+                          <p className="text-xs text-gray-400">{pct(t.count, o.totalContacts)} of contacts</p>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">{num(t.count)}</span>
+                        <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">View →</Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Contact Status Distribution</h3>
+                  <div className="space-y-3">
+                    {Object.entries(data.statusBreakdown).sort((a,b) => b[1]-a[1]).map(([status, ct]) => (
+                      <div key={status}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-600 capitalize">{status}</span>
+                          <span className="text-sm font-bold text-gray-900">{num(ct)} ({pct(ct, o.totalContacts)})</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                          <div className={`h-full rounded-full ${
+                            status === "active" ? "bg-emerald-500" : status === "lead" ? "bg-indigo-500" : status === "inactive" ? "bg-gray-400" : "bg-red-400"
+                          }`} style={{ width: `${(ct / o.totalContacts) * 100}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
