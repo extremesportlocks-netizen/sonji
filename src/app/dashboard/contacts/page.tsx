@@ -203,9 +203,20 @@ export default function ContactsPage() {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  // Filters
+  // Filter segments — each maps to API query params
+  type Segment = { key: string; label: string; params: Record<string, string> };
+  const segments: Segment[] = [
+    { key: "all", label: "All", params: {} },
+    { key: "active_sub", label: "Active Subscribers", params: { subStatus: "active" } },
+    { key: "whales", label: "Whales ($500+)", params: { minLtv: "500" } },
+    { key: "lapsed", label: "Lapsed", params: { tag: "Lapsed" } },
+    { key: "winback", label: "Win-Back", params: { tag: "Win-Back" } },
+    { key: "inactive", label: "Inactive", params: { status: "inactive" } },
+    { key: "high_freq", label: "High Frequency", params: { tag: "High Frequency" } },
+  ];
+  const [activeSegment, setActiveSegment] = useState("all");
+  const currentSegment = segments.find((s) => s.key === activeSegment) || segments[0];
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
   // Column customization
   const [visibleCols, setVisibleCols] = useState<Set<string>>(() => new Set(ALL_COLUMNS.filter((c) => c.defaultOn).map((c) => c.key)));
@@ -214,11 +225,6 @@ export default function ContactsPage() {
   // Selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [menuId, setMenuId] = useState<string | null>(null);
-
-  // Status counts
-  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
-
-  // ── Fetch contacts from API ──
   const fetchContacts = useCallback(async () => {
     setLoading(true);
     try {
@@ -229,7 +235,10 @@ export default function ContactsPage() {
         sortOrder: sortDir,
       });
       if (search) params.set("q", search);
-      if (statusFilter) params.set("status", statusFilter);
+      // Apply segment filters
+      for (const [k, v] of Object.entries(currentSegment.params)) {
+        params.set(k, v);
+      }
 
       const res = await fetch(`/api/contacts?${params.toString()}`);
       const json = await res.json();
@@ -243,23 +252,9 @@ export default function ContactsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, per, sortBy, sortDir, search, statusFilter]);
+  }, [page, per, sortBy, sortDir, search, activeSegment]);
 
   useEffect(() => { fetchContacts(); }, [fetchContacts]);
-
-  // Fetch status counts once
-  useEffect(() => {
-    fetch("/api/dashboard")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok && data.data?.statusBreakdown) {
-          const counts: Record<string, number> = { "": data.data.totalContacts };
-          data.data.statusBreakdown.forEach((s: any) => { counts[s.status] = s.count; });
-          setStatusCounts(counts);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const totalPages = Math.ceil(total / per);
   const columns = ALL_COLUMNS.filter((c) => visibleCols.has(c.key));
@@ -276,14 +271,6 @@ export default function ContactsPage() {
     setVisibleCols(next);
   };
 
-  const statuses = [
-    { key: "", label: "All" },
-    { key: "active", label: "Active" },
-    { key: "lead", label: "Lead" },
-    { key: "inactive", label: "Inactive" },
-    { key: "lost", label: "Lost" },
-  ];
-
   const handleDelete = async (id: string) => {
     try {
       await fetch(`/api/contacts?id=${id}`, { method: "DELETE" });
@@ -299,14 +286,14 @@ export default function ContactsPage() {
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           {/* Toolbar */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              {statuses.map((s) => (
-                <button key={s.key}
-                  onClick={() => { setStatusFilter(s.key); setPage(1); }}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${
-                    statusFilter === s.key ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              {segments.map((seg) => (
+                <button key={seg.key}
+                  onClick={() => { setActiveSegment(seg.key); setPage(1); }}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition whitespace-nowrap ${
+                    activeSegment === seg.key ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
-                  {s.label} {statusCounts[s.key] !== undefined ? `(${statusCounts[s.key].toLocaleString()})` : ""}
+                  {seg.label} {activeSegment === seg.key && total > 0 ? `(${total.toLocaleString()})` : ""}
                 </button>
               ))}
             </div>

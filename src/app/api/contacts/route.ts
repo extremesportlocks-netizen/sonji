@@ -23,6 +23,8 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   const q = url.searchParams.get("q") || "";
   const status = url.searchParams.get("status");
   const tag = url.searchParams.get("tag");
+  const subStatus = url.searchParams.get("subStatus");
+  const minLtv = url.searchParams.get("minLtv");
 
   // Build where conditions
   const conditions = [eq(contacts.tenantId, ctx.tenantId)];
@@ -43,6 +45,18 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     conditions.push(eq(contacts.status, status));
   }
 
+  if (tag) {
+    conditions.push(sql`${contacts.tags}::jsonb ? ${tag}`);
+  }
+
+  if (subStatus) {
+    conditions.push(sql`${contacts.customFields}->>'subscriptionStatus' = ${subStatus}`);
+  }
+
+  if (minLtv) {
+    conditions.push(sql`(${contacts.customFields}->>'ltv')::numeric >= ${Number(minLtv)}`);
+  }
+
   // Count total
   const [{ total }] = await db
     .select({ total: count() })
@@ -53,6 +67,9 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   const orderCol = sortBy === "name" ? contacts.firstName
     : sortBy === "email" ? contacts.email
     : sortBy === "company" ? contacts.company
+    : sortBy === "status" ? contacts.status
+    : sortBy === "ltv" ? sql`(${contacts.customFields}->>'ltv')::numeric`
+    : sortBy === "purchaseCount" ? sql`(${contacts.customFields}->>'purchaseCount')::int`
     : contacts.createdAt;
 
   const rows = await db
