@@ -118,41 +118,18 @@ function StripeIntegration() {
     setSyncing(true);
     setError("");
     setSyncResult(null);
+    setSyncPhase("Pulling customers, subscriptions & charges from Stripe...");
     try {
-      // Phase 1: Customers + Subscriptions
-      setSyncPhase("Importing customers & subscriptions...");
-      const res1 = await fetch("/api/integrations/stripe", {
+      const res = await fetch("/api/integrations/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "sync", syncCustomers: true }),
+        body: JSON.stringify({ action: "sync" }),
       });
-      const data1 = await res1.json();
-      if (!res1.ok) { setError(data1.error || "Phase 1 failed"); return; }
-
-      // Phase 2: Enrich with charges (LTV, purchase history)
-      let enrichResult = null;
-      try {
-        setSyncPhase("Enriching with payment history (may take a minute)...");
-        const res2 = await fetch("/api/integrations/stripe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "enrich" }),
-        });
-        const data2 = await res2.json();
-        if (data2.success) enrichResult = data2;
-      } catch {
-        // Phase 2 timed out — Phase 1 still succeeded
-        console.warn("Enrichment timed out, Phase 1 data still imported");
-      }
-
-      // Combine results
-      setSyncResult({
-        ...data1,
-        enrichment: enrichResult,
-        totalRevenue: enrichResult?.totalRevenue || 0,
-      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Sync failed"); return; }
+      setSyncResult(data);
     } catch (err) {
-      setError("Sync failed. Please try again.");
+      setError("Sync timed out. Try again — it may need a second attempt.");
     } finally {
       setSyncing(false);
       setSyncPhase("");
@@ -347,26 +324,7 @@ function StripeIntegration() {
                 </div>
               )}
               {syncResult.duration && (
-                <p className="text-xs text-gray-500 mt-2">Completed in {((syncResult.duration + (syncResult.enrichment?.duration || 0)) / 1000).toFixed(1)}s</p>
-              )}
-              {syncResult.enrichment && (
-                <div className="mt-3 p-3 bg-white/60 rounded-lg border border-gray-200">
-                  <p className="text-xs font-semibold text-gray-700 mb-2">Payment History Enrichment</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <p className="text-lg font-bold text-gray-900">{(syncResult.enrichment.chargesFound || 0).toLocaleString()}</p>
-                      <p className="text-[10px] text-gray-400">Charges scanned</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-gray-900">{(syncResult.enrichment.contactsEnriched || 0).toLocaleString()}</p>
-                      <p className="text-[10px] text-gray-400">Contacts enriched</p>
-                    </div>
-                    <div>
-                      <p className="text-lg font-bold text-emerald-700">${(syncResult.enrichment.totalRevenue || 0).toLocaleString()}</p>
-                      <p className="text-[10px] text-gray-400">Revenue tracked</p>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xs text-gray-500 mt-2">Completed in {(syncResult.duration / 1000).toFixed(1)}s</p>
               )}
               {!syncResult.dryRun && syncResult.imported > 0 && (
                 <a href="/dashboard/contacts" className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 mt-3">
