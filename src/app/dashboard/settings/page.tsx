@@ -203,7 +203,7 @@ function StripeIntegration() {
                 <button onClick={handleSync} disabled={syncing}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-lg transition">
                   {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  {syncing ? "Importing..." : "Import Customers"}
+                  {syncing ? "Syncing Stripe data... (may take 1-2 min)" : "Import Customers"}
                 </button>
                 <button onClick={handleDryRun} disabled={syncing}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:border-gray-300 disabled:opacity-50 rounded-lg transition">

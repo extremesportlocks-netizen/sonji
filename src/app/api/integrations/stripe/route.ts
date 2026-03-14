@@ -4,6 +4,9 @@ import { tenants, contacts } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "@/lib/api/auth-context";
 
+// Stripe sync can take a while — extend Vercel function timeout (Pro plan: up to 300s)
+export const maxDuration = 300;
+
 const STRIPE_API = "https://api.stripe.com/v1";
 
 // ─── HELPERS ───
