@@ -22,17 +22,6 @@ export async function POST(req: NextRequest) {
 
       const result = await sendSMS(smsConfig, { to, body: messageBody });
 
-      // DEBUG: Log what happened
-      console.log("[SMS DEBUG]", {
-        smsConfigExists: !!smsConfig,
-        smsMode: smsConfig?.mode,
-        hasPhoneNumber: !!smsConfig?.twilioPhoneNumber,
-        phoneNumber: smsConfig?.twilioPhoneNumber,
-        hasSubAccount: !!smsConfig?.subAccountSid,
-        to,
-        result,
-      });
-
       // Log to messages table
       if (result.success) {
         try {
@@ -53,16 +42,7 @@ export async function POST(req: NextRequest) {
         } catch {}
       }
 
-      return NextResponse.json({
-        ...result,
-        _debug: {
-          smsConfigExists: !!smsConfig,
-          mode: smsConfig?.mode,
-          phoneNumber: smsConfig?.twilioPhoneNumber,
-          hasSubAccount: !!smsConfig?.subAccountSid,
-          to,
-        },
-      });
+      return NextResponse.json(result);
     }
 
     // ── SEND BATCH SMS ──

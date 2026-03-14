@@ -408,7 +408,8 @@ export default function ContactsPage() {
                   </tr>
                 ) : (
                   contactsList.map((c) => (
-                    <tr key={c.id} className={`group transition ${selected.has(c.id) ? "bg-indigo-50/50" : "hover:bg-gray-50/70"}`}>
+                    <tr key={c.id} onClick={() => window.location.href = `/dashboard/contacts/${c.id}`}
+                      className={`group transition cursor-pointer ${selected.has(c.id) ? "bg-indigo-50/50" : "hover:bg-gray-50/70"}`}>
                       <td className="px-4 py-3">
                         <input type="checkbox" checked={selected.has(c.id)}
                           onChange={() => {
