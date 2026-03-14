@@ -59,6 +59,7 @@ function StripeIntegration() {
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncPhase, setSyncPhase] = useState("");
   const [syncResult, setSyncResult] = useState<any>(null);
   const [error, setError] = useState("");
 
@@ -118,21 +119,37 @@ function StripeIntegration() {
     setError("");
     setSyncResult(null);
     try {
-      const res = await fetch("/api/integrations/stripe", {
+      // Phase 1: Customers + Subscriptions
+      setSyncPhase("Importing customers & subscriptions...");
+      const res1 = await fetch("/api/integrations/stripe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "sync", syncCustomers: true }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Sync failed");
-        return;
-      }
-      setSyncResult(data);
+      const data1 = await res1.json();
+      if (!res1.ok) { setError(data1.error || "Phase 1 failed"); return; }
+
+      // Phase 2: Enrich with charges (LTV, purchase history)
+      setSyncPhase("Enriching with payment history...");
+      const res2 = await fetch("/api/integrations/stripe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "enrich" }),
+      });
+      const data2 = await res2.json();
+
+      // Combine results
+      setSyncResult({
+        ...data1,
+        enrichment: data2.success ? data2 : null,
+        totalRevenue: data2.totalRevenue || 0,
+        tierBreakdown: data2.tierBreakdown || null,
+      });
     } catch (err) {
       setError("Sync failed. Please try again.");
     } finally {
       setSyncing(false);
+      setSyncPhase("");
     }
   };
 
@@ -140,6 +157,7 @@ function StripeIntegration() {
     setSyncing(true);
     setError("");
     setSyncResult(null);
+    setSyncPhase("Previewing...");
     try {
       const res = await fetch("/api/integrations/stripe", {
         method: "POST",
@@ -147,15 +165,13 @@ function StripeIntegration() {
         body: JSON.stringify({ action: "sync", syncCustomers: true, dryRun: true }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Preview failed");
-        return;
-      }
+      if (!res.ok) { setError(data.error || "Preview failed"); return; }
       setSyncResult(data);
     } catch (err) {
-      setError("Preview failed. Please try again.");
+      setError("Preview failed.");
     } finally {
       setSyncing(false);
+      setSyncPhase("");
     }
   };
 
@@ -203,7 +219,7 @@ function StripeIntegration() {
                 <button onClick={handleSync} disabled={syncing}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 rounded-lg transition">
                   {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                  {syncing ? "Syncing Stripe data... (may take 1-2 min)" : "Import Customers"}
+                  {syncing ? syncPhase || "Syncing..." : "Import Customers"}
                 </button>
                 <button onClick={handleDryRun} disabled={syncing}
                   className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:border-gray-300 disabled:opacity-50 rounded-lg transition">
@@ -325,7 +341,26 @@ function StripeIntegration() {
                 </div>
               )}
               {syncResult.duration && (
-                <p className="text-xs text-gray-500 mt-2">Completed in {(syncResult.duration / 1000).toFixed(1)}s</p>
+                <p className="text-xs text-gray-500 mt-2">Completed in {((syncResult.duration + (syncResult.enrichment?.duration || 0)) / 1000).toFixed(1)}s</p>
+              )}
+              {syncResult.enrichment && (
+                <div className="mt-3 p-3 bg-white/60 rounded-lg border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Payment History Enrichment</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <p className="text-lg font-bold text-gray-900">{(syncResult.enrichment.chargesFound || 0).toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-400">Charges scanned</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-gray-900">{(syncResult.enrichment.contactsEnriched || 0).toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-400">Contacts enriched</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-emerald-700">${(syncResult.enrichment.totalRevenue || 0).toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-400">Revenue tracked</p>
+                    </div>
+                  </div>
+                </div>
               )}
               {!syncResult.dryRun && syncResult.imported > 0 && (
                 <a href="/dashboard/contacts" className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 mt-3">

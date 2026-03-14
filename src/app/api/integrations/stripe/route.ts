@@ -1,59 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, setTenantContext } from "@/lib/db";
 import { tenants, contacts } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "@/lib/api/auth-context";
 
 export const maxDuration = 300;
-
 const STRIPE_API = "https://api.stripe.com/v1";
 
 async function getTenantStripeKey(tenantId: string): Promise<string | null> {
   const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, tenantId)).limit(1);
-  if (!rows.length) return null;
-  return (rows[0].settings as any)?.stripeSecretKey || null;
+  return (rows[0]?.settings as any)?.stripeSecretKey || null;
 }
 
-async function verifyStripeKey(key: string): Promise<{ valid: boolean; accountName?: string; error?: string }> {
+async function verifyStripeKey(key: string) {
   try {
     const res = await fetch(`${STRIPE_API}/account`, { headers: { Authorization: `Bearer ${key}` } });
-    if (!res.ok) { const err = await res.json(); return { valid: false, error: err.error?.message || "Invalid" }; }
-    const acct = await res.json();
-    return { valid: true, accountName: acct.settings?.dashboard?.display_name || acct.business_profile?.name || acct.email || "Stripe Account" };
+    if (!res.ok) { const e = await res.json(); return { valid: false, error: e.error?.message || "Invalid" }; }
+    const a = await res.json();
+    return { valid: true, accountName: a.settings?.dashboard?.display_name || a.business_profile?.name || a.email || "Stripe" };
   } catch { return { valid: false, error: "Failed to reach Stripe" }; }
 }
 
-async function stripeListAll<T>(key: string, endpoint: string, params: Record<string, string> = {}): Promise<T[]> {
+async function stripeList<T>(key: string, endpoint: string, params: Record<string, string> = {}, maxPages = 200): Promise<T[]> {
   const all: T[] = [];
   let hasMore = true;
-  let startingAfter: string | undefined;
-  while (hasMore) {
+  let after: string | undefined;
+  let pages = 0;
+  while (hasMore && pages < maxPages) {
     const qs = new URLSearchParams({ limit: "100", ...params });
-    if (startingAfter) qs.set("starting_after", startingAfter);
+    if (after) qs.set("starting_after", after);
     const res = await fetch(`${STRIPE_API}${endpoint}?${qs}`, { headers: { Authorization: `Bearer ${key}` } });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || res.statusText); }
-    const data = await res.json();
-    all.push(...data.data);
-    hasMore = data.has_more;
-    if (data.data.length > 0) startingAfter = (data.data[data.data.length - 1] as any).id;
-  }
-  return all;
-}
-
-// Pull charges in pages with a limit to avoid timeout
-async function stripeListLimited<T>(key: string, endpoint: string, maxRecords: number, params: Record<string, string> = {}): Promise<T[]> {
-  const all: T[] = [];
-  let hasMore = true;
-  let startingAfter: string | undefined;
-  while (hasMore && all.length < maxRecords) {
-    const qs = new URLSearchParams({ limit: "100", ...params });
-    if (startingAfter) qs.set("starting_after", startingAfter);
-    const res = await fetch(`${STRIPE_API}${endpoint}?${qs}`, { headers: { Authorization: `Bearer ${key}` } });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || res.statusText); }
-    const data = await res.json();
-    all.push(...data.data);
-    hasMore = data.has_more;
-    if (data.data.length > 0) startingAfter = (data.data[data.data.length - 1] as any).id;
+    const d = await res.json();
+    all.push(...d.data);
+    hasMore = d.has_more;
+    if (d.data.length > 0) after = (d.data[d.data.length - 1] as any).id;
+    pages++;
   }
   return all;
 }
@@ -91,73 +73,40 @@ export async function POST(req: NextRequest) {
     if (body.action === "disconnect") {
       const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
       const s = (rows[0]?.settings as any) || {};
-      delete s.stripeSecretKey; delete s.stripeAccountName; delete s.stripeConnectedAt; delete s.lastStripeSync; delete s.lastStripeSyncResult;
+      for (const k of ["stripeSecretKey","stripeAccountName","stripeConnectedAt","lastStripeSync","lastStripeSyncResult"]) delete s[k];
       await db.update(tenants).set({ settings: s, updatedAt: new Date() }).where(eq(tenants.id, ctx.tenantId));
       return NextResponse.json({ success: true });
     }
 
-    // ══════════════════════════════════════════
-    // ── SYNC ──
-    // ══════════════════════════════════════════
+    // ══════════════════════════════════════
+    // PHASE 1: Import customers + subscriptions
+    // ══════════════════════════════════════
     if (body.action === "sync") {
       const stripeKey = await getTenantStripeKey(ctx.tenantId);
       if (!stripeKey) return NextResponse.json({ error: "Stripe not connected." }, { status: 400 });
       const dryRun = body.dryRun ?? false;
-      const startTime = Date.now();
+      const t0 = Date.now();
 
-      // STEP 1: Customers + Subscriptions (fast — these are small datasets)
+      // Pull customers + subscriptions only (fast)
       const [customers, subscriptions] = await Promise.all([
-        stripeListAll<any>(stripeKey, "/customers"),
-        stripeListAll<any>(stripeKey, "/subscriptions", { status: "all" }),
+        stripeList<any>(stripeKey, "/customers"),
+        stripeList<any>(stripeKey, "/subscriptions", { status: "all" }),
       ]);
 
-      // STEP 2: Charges — pull with a 2-year window to limit volume
-      const twoYearsAgo = Math.floor((Date.now() - 2 * 365 * 86400000) / 1000);
-      let charges: any[] = [];
-      try {
-        charges = await stripeListLimited<any>(stripeKey, "/charges", 10000, { "created[gte]": String(twoYearsAgo) });
-      } catch (err) {
-        // If charges fail, continue without them — still have customers + subs
-        console.error("[StripeSync] Charges fetch failed, continuing:", err);
-      }
-
-      // STEP 3: Index by customer
-      const chargesByCustomer = new Map<string, any[]>();
-      for (const ch of charges) {
-        if (!ch.customer || ch.status !== "succeeded") continue;
-        const arr = chargesByCustomer.get(ch.customer) || [];
-        arr.push(ch);
-        chargesByCustomer.set(ch.customer, arr);
-      }
-
+      // Index subs by customer
       const subsByCustomer = new Map<string, any[]>();
       for (const sub of subscriptions) {
         const cid = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
         if (!cid) continue;
-        const arr = subsByCustomer.get(cid) || [];
-        arr.push(sub);
-        subsByCustomer.set(cid, arr);
+        (subsByCustomer.get(cid) || (subsByCustomer.set(cid, []), subsByCustomer.get(cid)!)).push(sub);
       }
 
-      // STEP 4: Build enriched contacts
+      // Build contacts
       const enriched: any[] = [];
-      let totalRevenue = 0;
-      let activeCount = 0;
-      let lapsedCount = 0;
+      let activeCount = 0, lapsedCount = 0;
 
       for (const cust of customers) {
-        const custCharges = chargesByCustomer.get(cust.id) || [];
         const custSubs = subsByCustomer.get(cust.id) || [];
-
-        const ltv = custCharges.reduce((s: number, c: any) => s + (c.amount / 100), 0);
-        totalRevenue += ltv;
-        const purchaseCount = custCharges.length;
-
-        const chargeDates = custCharges.map((c: any) => c.created).sort((a: number, b: number) => b - a);
-        const lastPurchaseDate = chargeDates[0] ? new Date(chargeDates[0] * 1000).toISOString() : null;
-        const firstPurchaseDate = chargeDates.length > 0 ? new Date(chargeDates[chargeDates.length - 1] * 1000).toISOString() : null;
-        const daysSince = lastPurchaseDate ? Math.floor((Date.now() - new Date(lastPurchaseDate).getTime()) / 86400000) : null;
-
         const activeSub = custSubs.find((s: any) => s.status === "active" || s.status === "trialing");
         const canceledSub = custSubs.find((s: any) => s.status === "canceled");
         const hasAnySub = custSubs.length > 0;
@@ -165,100 +114,167 @@ export async function POST(req: NextRequest) {
         let status = "lead";
         if (activeSub) { status = "active"; activeCount++; }
         else if (canceledSub || (hasAnySub && !activeSub)) { status = "inactive"; lapsedCount++; }
-        else if (purchaseCount > 0 && daysSince !== null) {
-          if (daysSince <= 30) { status = "active"; activeCount++; }
-          else if (daysSince <= 90) { status = "lead"; }
-          else { status = "inactive"; lapsedCount++; }
-        }
 
         const tags: string[] = ["Stripe Import"];
-        if (ltv >= 500) tags.push("Whale");
-        else if (ltv >= 200) tags.push("Mid-Tier");
-        else if (ltv > 0) tags.push("Low-Tier");
         if (activeSub) tags.push("Active Subscriber");
         if (canceledSub && !activeSub) tags.push("Lapsed");
-        if (purchaseCount >= 10) tags.push("High Frequency");
-        if (daysSince !== null && daysSince <= 30 && !activeSub) tags.push("Recently Active");
-        if (daysSince !== null && daysSince > 90 && ltv > 0) tags.push("Win-Back");
 
-        let subscriptionPlan = null, subscriptionInterval = null, subscriptionAmount = null;
+        let subPlan = null, subInterval = null, subAmount = null;
         if (activeSub) {
           const item = activeSub.items?.data?.[0];
-          subscriptionPlan = item?.price?.nickname || item?.price?.product || activeSub.id;
-          subscriptionInterval = item?.price?.recurring?.interval || "month";
-          subscriptionAmount = item?.price?.unit_amount ? item.price.unit_amount / 100 : null;
+          subPlan = item?.price?.nickname || item?.price?.product || null;
+          subInterval = item?.price?.recurring?.interval || "month";
+          subAmount = item?.price?.unit_amount ? item.price.unit_amount / 100 : null;
         }
 
         const nameParts = (cust.name || "").trim().split(/\s+/);
-        const firstName = nameParts[0] || cust.email?.split("@")[0] || "Unknown";
-        const lastName = nameParts.slice(1).join(" ") || "";
-
         enriched.push({
           tenantId: ctx.tenantId,
-          firstName, lastName,
+          firstName: nameParts[0] || cust.email?.split("@")[0] || "Unknown",
+          lastName: nameParts.slice(1).join(" ") || "",
           email: cust.email || "", phone: cust.phone || "",
           company: cust.metadata?.company || cust.description || "",
           tags,
           customFields: {
-            stripeCustomerId: cust.id, ltv: Math.round(ltv * 100) / 100,
-            purchaseCount,
-            avgOrderValue: purchaseCount > 0 ? Math.round((ltv / purchaseCount) * 100) / 100 : 0,
-            lastPurchaseDate, firstPurchaseDate, daysSinceLastPurchase: daysSince,
-            subscriptionStatus: activeSub ? "active" : canceledSub ? "canceled" : hasAnySub ? "expired" : purchaseCount > 0 ? "one-time" : "never",
-            subscriptionPlan, subscriptionInterval, subscriptionAmount,
-            totalCharges: purchaseCount,
-            highestCharge: custCharges.length > 0 ? Math.max(...custCharges.map((c: any) => c.amount / 100)) : 0,
-            stripeCurrency: cust.currency || "usd",
-            stripeCreated: new Date(cust.created * 1000).toISOString(),
+            stripeCustomerId: cust.id,
+            subscriptionStatus: activeSub ? "active" : canceledSub ? "canceled" : hasAnySub ? "expired" : "never",
+            subscriptionPlan: subPlan, subscriptionInterval: subInterval, subscriptionAmount: subAmount,
+            ltv: 0, purchaseCount: 0, avgOrderValue: 0,
+            lastPurchaseDate: null, firstPurchaseDate: null, daysSinceLastPurchase: null,
+            highestCharge: 0, stripeCreated: new Date(cust.created * 1000).toISOString(),
           },
           source: "stripe_import", status,
         });
       }
 
-      // STEP 5: Insert
+      // Insert
       let insertedCount = 0;
       if (!dryRun && enriched.length > 0) {
         await setTenantContext(ctx.tenantId);
         await db.delete(contacts).where(and(eq(contacts.tenantId, ctx.tenantId), eq(contacts.source, "stripe_import")));
-        const batchSize = 50;
-        for (let i = 0; i < enriched.length; i += batchSize) {
-          try {
-            await db.insert(contacts).values(enriched.slice(i, i + batchSize));
-            insertedCount += Math.min(batchSize, enriched.length - i);
-          } catch (err) { console.error(`[StripeSync] Batch ${i}:`, err); }
+        for (let i = 0; i < enriched.length; i += 50) {
+          try { await db.insert(contacts).values(enriched.slice(i, i + 50)); insertedCount += Math.min(50, enriched.length - i); } catch (e) { console.error(`[Sync] batch ${i}:`, e); }
         }
       }
 
-      // STEP 6: Save metadata
+      // Save metadata
       if (!dryRun) {
         const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
-        const s = (rows[0]?.settings as any) || {};
-        await db.update(tenants).set({
-          settings: { ...s, lastStripeSync: new Date().toISOString(), lastStripeSyncResult: { contacts: insertedCount, charges: charges.length, subscriptions: subscriptions.length, totalRevenue: Math.round(totalRevenue * 100) / 100, active: activeCount, lapsed: lapsedCount, duration: Date.now() - startTime } },
-          updatedAt: new Date(),
-        }).where(eq(tenants.id, ctx.tenantId));
+        await db.update(tenants).set({ settings: { ...(rows[0]?.settings as any || {}), lastStripeSync: new Date().toISOString(), lastStripeSyncResult: { contacts: insertedCount, subscriptions: subscriptions.length, active: activeCount, lapsed: lapsedCount, duration: Date.now() - t0 } }, updatedAt: new Date() }).where(eq(tenants.id, ctx.tenantId));
       }
 
-      const tierBreakdown = {
-        whales: enriched.filter((c) => (c.customFields.ltv || 0) >= 500).length,
-        mid: enriched.filter((c) => (c.customFields.ltv || 0) >= 200 && (c.customFields.ltv || 0) < 500).length,
-        low: enriched.filter((c) => (c.customFields.ltv || 0) > 0 && (c.customFields.ltv || 0) < 200).length,
-        noPurchase: enriched.filter((c) => (c.customFields.ltv || 0) === 0).length,
-      };
-      const subBreakdown = {
-        active: enriched.filter((c) => c.customFields.subscriptionStatus === "active").length,
-        canceled: enriched.filter((c) => c.customFields.subscriptionStatus === "canceled").length,
-        expired: enriched.filter((c) => c.customFields.subscriptionStatus === "expired").length,
-        oneTime: enriched.filter((c) => c.customFields.subscriptionStatus === "one-time").length,
-        never: enriched.filter((c) => c.customFields.subscriptionStatus === "never").length,
-      };
+      return NextResponse.json({
+        success: true, dryRun, phase: 1,
+        stripeData: { customersFound: customers.length, subscriptionsFound: subscriptions.length },
+        imported: dryRun ? 0 : insertedCount,
+        metrics: { activeSubscribers: activeCount, lapsedCustomers: lapsedCount, subBreakdown: {
+          active: enriched.filter(c => c.customFields.subscriptionStatus === "active").length,
+          canceled: enriched.filter(c => c.customFields.subscriptionStatus === "canceled").length,
+          expired: enriched.filter(c => c.customFields.subscriptionStatus === "expired").length,
+          never: enriched.filter(c => c.customFields.subscriptionStatus === "never").length,
+        }},
+        duration: Date.now() - t0,
+        nextPhase: "enrich",
+      });
+    }
+
+    // ══════════════════════════════════════
+    // PHASE 2: Enrich with charges (LTV, purchase history)
+    // ══════════════════════════════════════
+    if (body.action === "enrich") {
+      const stripeKey = await getTenantStripeKey(ctx.tenantId);
+      if (!stripeKey) return NextResponse.json({ error: "Stripe not connected." }, { status: 400 });
+      const t0 = Date.now();
+
+      // Pull charges — go back to 2023 as requested
+      const since2023 = Math.floor(new Date("2023-01-01").getTime() / 1000);
+      const charges = await stripeList<any>(stripeKey, "/charges", { "created[gte]": String(since2023) }, 100);
+
+      // Index by customer
+      const chargesByCustomer = new Map<string, any[]>();
+      for (const ch of charges) {
+        if (!ch.customer || ch.status !== "succeeded") continue;
+        (chargesByCustomer.get(ch.customer) || (chargesByCustomer.set(ch.customer, []), chargesByCustomer.get(ch.customer)!)).push(ch);
+      }
+
+      // Get all stripe-imported contacts
+      await setTenantContext(ctx.tenantId);
+      const existingContacts = await db.select({ id: contacts.id, customFields: contacts.customFields, tags: contacts.tags })
+        .from(contacts)
+        .where(and(eq(contacts.tenantId, ctx.tenantId), eq(contacts.source, "stripe_import")));
+
+      let enrichedCount = 0;
+      let totalRevenue = 0;
+
+      for (const contact of existingContacts) {
+        const cf = (contact.customFields as any) || {};
+        const stripeId = cf.stripeCustomerId;
+        if (!stripeId) continue;
+
+        const custCharges = chargesByCustomer.get(stripeId);
+        if (!custCharges || custCharges.length === 0) continue;
+
+        const ltv = custCharges.reduce((s: number, c: any) => s + (c.amount / 100), 0);
+        totalRevenue += ltv;
+        const purchaseCount = custCharges.length;
+        const amounts = custCharges.map((c: any) => c.amount / 100);
+        const chargeDates = custCharges.map((c: any) => c.created).sort((a: number, b: number) => b - a);
+        const lastPurchaseDate = new Date(chargeDates[0] * 1000).toISOString();
+        const firstPurchaseDate = new Date(chargeDates[chargeDates.length - 1] * 1000).toISOString();
+        const daysSince = Math.floor((Date.now() - chargeDates[0] * 1000) / 86400000);
+
+        // Build tags
+        const existingTags = (contact.tags as string[]) || [];
+        const newTags = [...existingTags.filter(t => !["Whale","Mid-Tier","Low-Tier","High Frequency","Recently Active","Win-Back"].includes(t))];
+        if (ltv >= 500) newTags.push("Whale");
+        else if (ltv >= 200) newTags.push("Mid-Tier");
+        else if (ltv > 0) newTags.push("Low-Tier");
+        if (purchaseCount >= 10) newTags.push("High Frequency");
+        if (daysSince <= 30) newTags.push("Recently Active");
+        if (daysSince > 90 && ltv > 0) newTags.push("Win-Back");
+
+        // Update status based on recency if not already active subscriber
+        let newStatus: string | undefined;
+        if (cf.subscriptionStatus !== "active") {
+          if (daysSince <= 30) newStatus = "active";
+          else if (daysSince <= 90) newStatus = "lead";
+          else newStatus = "inactive";
+        }
+
+        // Update the contact
+        const updateData: any = {
+          tags: newTags,
+          customFields: {
+            ...cf,
+            ltv: Math.round(ltv * 100) / 100,
+            purchaseCount,
+            avgOrderValue: Math.round((ltv / purchaseCount) * 100) / 100,
+            lastPurchaseDate,
+            firstPurchaseDate,
+            daysSinceLastPurchase: daysSince,
+            highestCharge: Math.max(...amounts),
+            totalCharges: purchaseCount,
+          },
+          updatedAt: new Date(),
+        };
+        if (newStatus) updateData.status = newStatus;
+
+        await db.update(contacts).set(updateData).where(eq(contacts.id, contact.id));
+        enrichedCount++;
+      }
 
       return NextResponse.json({
-        success: true, dryRun,
-        stripeData: { customersFound: customers.length, chargesFound: charges.length, subscriptionsFound: subscriptions.length },
-        imported: dryRun ? 0 : insertedCount,
-        metrics: { totalRevenue: Math.round(totalRevenue * 100) / 100, avgLTV: customers.length > 0 ? Math.round((totalRevenue / customers.length) * 100) / 100 : 0, activeSubscribers: activeCount, lapsedCustomers: lapsedCount, tierBreakdown, subBreakdown },
-        duration: Date.now() - startTime,
+        success: true, phase: 2,
+        chargesFound: charges.length,
+        contactsEnriched: enrichedCount,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        avgLTV: enrichedCount > 0 ? Math.round((totalRevenue / enrichedCount) * 100) / 100 : 0,
+        tierBreakdown: {
+          whales: existingContacts.filter(c => { const ltv = chargesByCustomer.get((c.customFields as any)?.stripeCustomerId)?.reduce((s: number, ch: any) => s + ch.amount/100, 0) || 0; return ltv >= 500; }).length,
+          mid: existingContacts.filter(c => { const ltv = chargesByCustomer.get((c.customFields as any)?.stripeCustomerId)?.reduce((s: number, ch: any) => s + ch.amount/100, 0) || 0; return ltv >= 200 && ltv < 500; }).length,
+          low: existingContacts.filter(c => { const ltv = chargesByCustomer.get((c.customFields as any)?.stripeCustomerId)?.reduce((s: number, ch: any) => s + ch.amount/100, 0) || 0; return ltv > 0 && ltv < 200; }).length,
+        },
+        duration: Date.now() - t0,
       });
     }
 
@@ -276,7 +292,7 @@ export async function DELETE(req: NextRequest) {
     const ctx = await requireAuth(req);
     const rows = await db.select({ settings: tenants.settings }).from(tenants).where(eq(tenants.id, ctx.tenantId)).limit(1);
     const s = (rows[0]?.settings as any) || {};
-    delete s.stripeSecretKey; delete s.stripeAccountName; delete s.stripeConnectedAt; delete s.lastStripeSync; delete s.lastStripeSyncResult;
+    for (const k of ["stripeSecretKey","stripeAccountName","stripeConnectedAt","lastStripeSync","lastStripeSyncResult"]) delete s[k];
     await db.update(tenants).set({ settings: s, updatedAt: new Date() }).where(eq(tenants.id, ctx.tenantId));
     return NextResponse.json({ success: true });
   } catch { return NextResponse.json({ error: "Auth required" }, { status: 401 }); }
