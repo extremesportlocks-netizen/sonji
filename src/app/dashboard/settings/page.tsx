@@ -31,12 +31,10 @@ const tabs = [
   { key: "integrations", label: "Integrations", icon: Puzzle },
 ];
 
-const otherIntegrations = [
-  { name: "Resend", desc: "Transactional and marketing emails", connected: false, icon: "📧" },
-  { name: "Twilio", desc: "SMS messaging and voice", connected: false, icon: "💬" },
-  { name: "Google Calendar", desc: "Sync meetings and availability", connected: false, icon: "📅" },
-  { name: "Slack", desc: "Team notifications and alerts", connected: false, icon: "💬" },
-  { name: "Zapier", desc: "Connect 5,000+ apps", connected: false, icon: "⚡" },
+const comingSoonIntegrations = [
+  { name: "Google Calendar", desc: "Sync meetings and availability", icon: "📅" },
+  { name: "Slack", desc: "Team notifications and alerts", icon: "💬" },
+  { name: "Zapier", desc: "Connect 5,000+ apps", icon: "⚡" },
 ];
 
 const teamMembers = [
@@ -460,9 +458,15 @@ function StripeIntegration() {
           )}
         </div>
 
-        {/* Other Integrations */}
+        {/* Resend Email Integration */}
+        <ResendIntegration />
+
+        {/* Twilio SMS Integration */}
+        <TwilioIntegration />
+
+        {/* Coming Soon */}
         <div className="mt-4 space-y-3">
-          {otherIntegrations.map((int) => (
+          {comingSoonIntegrations.map((int) => (
             <div key={int.name} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-gray-200 transition">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xl">{int.icon}</div>
@@ -478,6 +482,310 @@ function StripeIntegration() {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// RESEND EMAIL INTEGRATION COMPONENT
+// ═══════════════════════════════════════════
+
+function ResendIntegration() {
+  const [config, setConfig] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [mode, setMode] = useState<"domain" | "byok">("domain");
+  const [domain, setDomain] = useState("");
+  const [fromName, setFromName] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    fetch("/api/integrations/resend").then(r => r.json())
+      .then(d => { setConfig(d); if (d.configured) setExpanded(true); })
+      .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const handleAddDomain = async () => {
+    if (!domain.trim() || !domain.includes(".")) { setError("Enter a valid domain"); return; }
+    setConnecting(true); setError(""); setSuccess("");
+    try {
+      const res = await fetch("/api/integrations/resend", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add-domain", domain: domain.trim(), fromName: fromName.trim() || undefined }) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      setConfig({ ...config, configured: false, domain: domain.trim(), domainVerified: false, dnsRecords: data.records });
+      setSuccess("Domain added! Add the DNS records below to verify.");
+    } catch { setError("Failed to add domain"); } finally { setConnecting(false); }
+  };
+
+  const handleVerify = async () => {
+    setConnecting(true); setError(""); setSuccess("");
+    try {
+      const res = await fetch("/api/integrations/resend", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify-domain" }) });
+      const data = await res.json();
+      if (data.verified) { setSuccess("Domain verified! You can now send emails."); setConfig({ ...config, domainVerified: true, configured: true }); }
+      else { setError("Domain not verified yet. DNS records may take up to 48 hours to propagate."); }
+    } catch { setError("Verification failed"); } finally { setConnecting(false); }
+  };
+
+  const handleByok = async () => {
+    if (!apiKey.startsWith("re_")) { setError("Key must start with re_"); return; }
+    setConnecting(true); setError(""); setSuccess("");
+    try {
+      const res = await fetch("/api/integrations/resend", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "connect-byok", resendApiKey: apiKey }) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      setConfig({ ...config, configured: true, mode: "byok" });
+      setSuccess("Resend connected! You can now add a sending domain.");
+    } catch { setError("Failed to connect"); } finally { setConnecting(false); }
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm("Disconnect email? This will remove your domain configuration.")) return;
+    await fetch("/api/integrations/resend", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "disconnect" }) }).catch(() => {});
+    setConfig(null); setExpanded(false); setSuccess(""); setDomain(""); setApiKey("");
+  };
+
+  const isConnected = config?.configured || config?.domainVerified;
+
+  return (
+    <div className="mt-4 border border-gray-100 rounded-xl overflow-hidden">
+      <button onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full p-4 hover:bg-gray-50 transition">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-xl">📧</div>
+          <div className="text-left">
+            <p className="text-sm font-medium text-gray-900">Resend</p>
+            <p className="text-xs text-gray-400">Transactional and marketing emails</p>
+          </div>
+        </div>
+        {isConnected ? (
+          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">✓ Connected</span>
+        ) : config?.domain ? (
+          <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">Pending Verification</span>
+        ) : (
+          <span className="text-xs font-medium text-gray-500">Configure →</span>
+        )}
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+          {isConnected && (
+            <div className="flex items-center justify-between bg-emerald-50 rounded-lg p-3">
+              <div>
+                <p className="text-sm font-medium text-gray-900">{config.domain || "BYOK Connected"}</p>
+                <p className="text-xs text-gray-500">Sending from: {config.fromEmail || `noreply@${config.domain}`}</p>
+              </div>
+              <button onClick={handleDisconnect} className="text-xs text-red-500 hover:text-red-600 font-medium">Disconnect</button>
+            </div>
+          )}
+
+          {!isConnected && (
+            <>
+              <div className="flex gap-2">
+                <button onClick={() => setMode("domain")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full ${mode === "domain" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+                  Add Sending Domain
+                </button>
+                <button onClick={() => setMode("byok")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full ${mode === "byok" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+                  Use Your Own Resend Key
+                </button>
+              </div>
+
+              {mode === "domain" && (
+                <div className="space-y-2">
+                  <input value={domain} onChange={e => setDomain(e.target.value)} placeholder="yourbusiness.com"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                  <input value={fromName} onChange={e => setFromName(e.target.value)} placeholder="From name (e.g. Glow Med Spa)"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                  <button onClick={handleAddDomain} disabled={connecting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg">
+                    {connecting ? "Adding..." : "Add Domain"}
+                  </button>
+                </div>
+              )}
+
+              {mode === "byok" && (
+                <div className="space-y-2">
+                  <input value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="re_xxxxxxxxx"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                  <button onClick={handleByok} disabled={connecting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg">
+                    {connecting ? "Connecting..." : "Connect Resend"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* DNS Records */}
+          {config?.dnsRecords && !config?.domainVerified && (
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold text-gray-700">Add these DNS records to verify your domain:</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead><tr className="text-gray-500"><th className="text-left py-1 pr-2">Type</th><th className="text-left py-1 pr-2">Name</th><th className="text-left py-1">Value</th></tr></thead>
+                  <tbody>
+                    {config.dnsRecords.map((r: any, i: number) => (
+                      <tr key={i} className="border-t border-gray-200">
+                        <td className="py-1.5 pr-2 font-mono text-gray-600">{r.type || r.record_type}</td>
+                        <td className="py-1.5 pr-2 font-mono text-gray-600 break-all">{r.name || r.host}</td>
+                        <td className="py-1.5 font-mono text-gray-600 break-all">{r.value || r.data}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button onClick={handleVerify} disabled={connecting}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg mt-2">
+                {connecting ? "Checking..." : "Verify Domain"}
+              </button>
+            </div>
+          )}
+
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          {success && <p className="text-xs text-emerald-600">{success}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
+// TWILIO SMS INTEGRATION COMPONENT
+// ═══════════════════════════════════════════
+
+function TwilioIntegration() {
+  const [config, setConfig] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [mode, setMode] = useState<"provision" | "byok">("provision");
+  const [accountSid, setAccountSid] = useState("");
+  const [authToken, setAuthToken] = useState("");
+  const [areaCode, setAreaCode] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    fetch("/api/integrations/twilio").then(r => r.json())
+      .then(d => { setConfig(d); if (d.configured) setExpanded(true); })
+      .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const handleProvision = async () => {
+    setConnecting(true); setError(""); setSuccess("");
+    try {
+      const res = await fetch("/api/integrations/twilio", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "provision", areaCode: areaCode || undefined }) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      setConfig({ ...config, configured: true, phoneNumber: data.phoneNumber, mode: "platform" });
+      setSuccess(`Phone number provisioned: ${data.phoneNumber}`);
+    } catch { setError("Provisioning failed"); } finally { setConnecting(false); }
+  };
+
+  const handleByok = async () => {
+    if (!accountSid.startsWith("AC") || !authToken) { setError("Enter valid Twilio Account SID (starts with AC) and Auth Token"); return; }
+    setConnecting(true); setError(""); setSuccess("");
+    try {
+      const res = await fetch("/api/integrations/twilio", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "connect-byok", accountSid, authToken }) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      setConfig({ ...config, configured: true, phoneNumber: data.phoneNumber, mode: "byok", availableNumbers: data.availableNumbers });
+      setSuccess(`Twilio connected! Using ${data.phoneNumber || "your account"}`);
+    } catch { setError("Connection failed"); } finally { setConnecting(false); }
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm("Disconnect SMS? This will not release your phone number.")) return;
+    await fetch("/api/integrations/twilio", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "disconnect" }) }).catch(() => {});
+    setConfig(null); setExpanded(false); setSuccess(""); setAccountSid(""); setAuthToken("");
+  };
+
+  return (
+    <div className="mt-3 border border-gray-100 rounded-xl overflow-hidden">
+      <button onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full p-4 hover:bg-gray-50 transition">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-xl">💬</div>
+          <div className="text-left">
+            <p className="text-sm font-medium text-gray-900">Twilio</p>
+            <p className="text-xs text-gray-400">SMS messaging and voice</p>
+          </div>
+        </div>
+        {config?.configured ? (
+          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">✓ {config.phoneNumber}</span>
+        ) : (
+          <span className="text-xs font-medium text-gray-500">Configure →</span>
+        )}
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+          {config?.configured && (
+            <div className="flex items-center justify-between bg-emerald-50 rounded-lg p-3">
+              <div>
+                <p className="text-sm font-medium text-gray-900">{config.phoneNumber}</p>
+                <p className="text-xs text-gray-500">{config.mode === "byok" ? "Your Twilio account" : "Sonji-managed number"}</p>
+              </div>
+              <button onClick={handleDisconnect} className="text-xs text-red-500 hover:text-red-600 font-medium">Disconnect</button>
+            </div>
+          )}
+
+          {!config?.configured && (
+            <>
+              <div className="flex gap-2">
+                <button onClick={() => setMode("provision")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full ${mode === "provision" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+                  Get a Number (Included)
+                </button>
+                <button onClick={() => setMode("byok")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full ${mode === "byok" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+                  Use Your Own Twilio
+                </button>
+              </div>
+
+              {mode === "provision" && (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">We'll provision a dedicated phone number for your business. SMS costs are included in your plan.</p>
+                  <input value={areaCode} onChange={e => setAreaCode(e.target.value)} placeholder="Preferred area code (optional, e.g. 239)"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                  <button onClick={handleProvision} disabled={connecting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg">
+                    {connecting ? "Provisioning..." : "Get Phone Number"}
+                  </button>
+                </div>
+              )}
+
+              {mode === "byok" && (
+                <div className="space-y-2">
+                  <input value={accountSid} onChange={e => setAccountSid(e.target.value)} placeholder="Account SID (starts with AC)"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                  <input value={authToken} onChange={e => setAuthToken(e.target.value)} placeholder="Auth Token" type="password"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                  <button onClick={handleByok} disabled={connecting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg">
+                    {connecting ? "Connecting..." : "Connect Twilio"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          {success && <p className="text-xs text-emerald-600">{success}</p>}
+        </div>
+      )}
     </div>
   );
 }
