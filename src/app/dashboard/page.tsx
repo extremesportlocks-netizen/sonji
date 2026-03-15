@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import SonjiBox from "@/components/dashboard/sonji-box";
 import MoneyOnTable from "@/components/dashboard/money-on-table";
+import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
 
 // ═══════════════════════════════════════
 // TYPES
@@ -115,12 +116,12 @@ function RevenueOverview({ s }: { s: Stats }) {
   );
 }
 
-function TopCustomers({ s }: { s: Stats }) {
+function TopCustomers({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
   if (s.topCustomers.length === 0) return <EmptyWidget msg="No customer data yet" cta="Import from Stripe" href="/dashboard/settings?tab=integrations" />;
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Top Customers</h3>
+        <h3 className="text-sm font-semibold text-gray-900">Top {ic?.contactLabelPlural || "Customers"}</h3>
         <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
       </div>
       <div className="space-y-1">
@@ -138,18 +139,21 @@ function TopCustomers({ s }: { s: Stats }) {
   );
 }
 
-function CustomerTiers({ s }: { s: Stats }) {
+function CustomerTiers({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
   const total = s.totalContacts || 1;
+  const hvLabel = ic?.highValueLabel || "High Value";
+  const midLabel = ic?.midTierLabel || "Mid";
+  const lowLabel = ic?.lowTierLabel || "Low";
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Value</h3>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">{ic?.contactLabel || "Customer"} Value</h3>
       <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
         {[{ k: "whale", c: "bg-violet-500", n: s.ltvBuckets.whale }, { k: "mid", c: "bg-blue-500", n: s.ltvBuckets.mid }, { k: "low", c: "bg-amber-400", n: s.ltvBuckets.low }, { k: "zero", c: "bg-gray-300", n: s.ltvBuckets.zero }]
           .filter(b => b.n > 0).map(b => <div key={b.k} className={`h-full ${b.c}`} style={{ width: `${(b.n / total) * 100}%` }} />)}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {[{ l: "High Value ($500+)", n: s.ltvBuckets.whale, c: "text-violet-600", d: "bg-violet-500" }, { l: "Mid ($200-499)", n: s.ltvBuckets.mid, c: "text-blue-600", d: "bg-blue-500" },
-          { l: "Low (<$200)", n: s.ltvBuckets.low, c: "text-amber-600", d: "bg-amber-400" }, { l: "No purchase", n: s.ltvBuckets.zero, c: "text-gray-500", d: "bg-gray-300" }]
+        {[{ l: `${hvLabel} ($500+)`, n: s.ltvBuckets.whale, c: "text-violet-600", d: "bg-violet-500" }, { l: `${midLabel} ($200-499)`, n: s.ltvBuckets.mid, c: "text-blue-600", d: "bg-blue-500" },
+          { l: `${lowLabel} (<$200)`, n: s.ltvBuckets.low, c: "text-amber-600", d: "bg-amber-400" }, { l: "No purchase", n: s.ltvBuckets.zero, c: "text-gray-500", d: "bg-gray-300" }]
           .map(t => <div key={t.l} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${t.d}`} /><span className="text-xs text-gray-500">{t.l}</span><span className={`text-xs font-bold ${t.c} ml-auto`}>{num(t.n)}</span></div>)}
       </div>
     </div>
@@ -175,8 +179,8 @@ function SubscriptionBreakdown({ s }: { s: Stats }) {
   );
 }
 
-function RecentContacts({ s }: { s: Stats }) {
-  if (s.recentContacts.length === 0) return <EmptyWidget msg="No contacts yet" cta="Import from Stripe" href="/dashboard/settings?tab=integrations" />;
+function RecentContacts({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
+  if (s.recentContacts.length === 0) return <EmptyWidget msg={`No ${(ic?.contactLabelPlural || "contacts").toLowerCase()} yet`} cta="Import from Stripe" href="/dashboard/settings?tab=integrations" />;
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -363,13 +367,13 @@ function EmptyWidget({ msg, cta, href }: { msg: string; cta: string; href: strin
 }
 
 // Widget renderer
-function renderWidget(type: string, s: Stats) {
+function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
   switch (type) {
     case "revenue_overview": return <SonjiBox stats={s} />;
-    case "top_customers": return <TopCustomers s={s} />;
-    case "customer_tiers": return <CustomerTiers s={s} />;
+    case "top_customers": return <TopCustomers s={s} ic={ic} />;
+    case "customer_tiers": return <CustomerTiers s={s} ic={ic} />;
     case "subscription_breakdown": return <SubscriptionBreakdown s={s} />;
-    case "recent_contacts": return <RecentContacts s={s} />;
+    case "recent_contacts": return <RecentContacts s={s} ic={ic} />;
     case "quick_actions": return <QuickActions />;
     case "pipeline": return <Pipeline s={s} />;
     case "open_tasks": return <OpenTasks s={s} />;
@@ -393,14 +397,21 @@ export default function DashboardPage() {
   const [editMode, setEditMode] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [ic, setIc] = useState<IndustryConfig | null>(null);
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const url = demoIndustry && demoIndustry !== "ecommerce"
+    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+    const url = isDemo
       ? `/api/demo?industry=${demoIndustry}`
       : "/api/dashboard";
     fetch(url).then(r => r.json()).then(d => { if (d.ok || d.data) setS(d.data); }).catch(() => {}).finally(() => setLoading(false));
     setLayout(loadLayout());
+
+    // Set industry config for demo mode
+    if (isDemo && demoIndustry) {
+      setIc(getIndustryConfig(demoIndustry));
+    }
   }, []);
 
   const updateLayout = (next: WidgetConfig[]) => {
@@ -452,7 +463,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Welcome back</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{s.tenantName} · {num(s.totalContacts)} contacts{s.revenue.total > 0 ? ` · ${fmt(s.revenue.total)} revenue` : ""}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{s.tenantName} · {num(s.totalContacts)} {(ic?.contactLabelPlural || "contacts").toLowerCase()}{s.revenue.total > 0 ? ` · ${fmt(s.revenue.total)} ${(ic?.revenueLabel || "revenue").toLowerCase()}` : ""}</p>
           </div>
           <div className="flex items-center gap-2">
             {editMode && (
@@ -538,7 +549,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 )}
-                {renderWidget(w.type, s)}
+                {renderWidget(w.type, s, ic)}
               </div>
             );
           })}
