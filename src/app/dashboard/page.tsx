@@ -1,19 +1,37 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Header from "@/components/dashboard/header";
 import {
   Users, DollarSign, TrendingUp, ShoppingCart, Crown, UserCheck, UserX,
-  ChevronRight, Loader2, Search, Handshake, Zap, Upload, Target,
-  BarChart3, ArrowUpRight, ArrowDownRight, Send,
+  ChevronRight, Loader2, Handshake, Zap, BarChart3, ArrowUpRight,
+  Send, GripVertical, Plus, X, Settings2, RotateCcw, Maximize2, Minimize2,
+  Activity, Calendar, CheckSquare, ChevronDown, ChevronUp,
 } from "lucide-react";
+
+// ═══════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════
+
+interface WidgetConfig {
+  id: string;
+  type: string;
+  size: "half" | "full";
+}
+
+interface WidgetDef {
+  type: string;
+  label: string;
+  icon: React.ElementType;
+  defaultSize: "half" | "full";
+  desc: string;
+}
 
 interface Stats {
   totalContacts: number; totalDeals: number; activeDeals: number; wonDeals: number;
   totalTasks: number; openTasks: number;
-  recentContacts: any[];
-  statusBreakdown: { status: string; count: number }[];
+  recentContacts: any[]; statusBreakdown: { status: string; count: number }[];
   sourceBreakdown: { source: string; count: number }[];
   revenue: { total: number; totalPurchases: number; avgLTV: number; avgOrder: number; contactsWithPurchases: number };
   ltvBuckets: { whale: number; mid: number; low: number; zero: number };
@@ -22,286 +40,482 @@ interface Stats {
   tenantName: string; tenantSlug: string;
 }
 
+// ═══════════════════════════════════════
+// WIDGET REGISTRY
+// ═══════════════════════════════════════
+
+const widgetDefs: WidgetDef[] = [
+  { type: "revenue_overview", label: "Revenue Overview", icon: DollarSign, defaultSize: "half", desc: "Total revenue, avg LTV, avg order, transactions" },
+  { type: "top_customers", label: "Top Customers", icon: Crown, defaultSize: "full", desc: "Highest value customers ranked by LTV" },
+  { type: "customer_tiers", label: "Customer Value Tiers", icon: TrendingUp, defaultSize: "half", desc: "Whale, mid, low tier breakdown" },
+  { type: "subscription_breakdown", label: "Subscription Breakdown", icon: UserCheck, defaultSize: "half", desc: "Active, canceled, expired, one-time" },
+  { type: "recent_contacts", label: "Recent Contacts", icon: Users, defaultSize: "full", desc: "Last contacts added to your CRM" },
+  { type: "quick_actions", label: "Quick Actions", icon: Zap, defaultSize: "half", desc: "Shortcuts to common tasks" },
+  { type: "pipeline", label: "Pipeline / Deals", icon: Handshake, defaultSize: "half", desc: "Deal counts by stage" },
+  { type: "open_tasks", label: "Open Tasks", icon: CheckSquare, defaultSize: "half", desc: "Your pending tasks" },
+  { type: "activity_feed", label: "Activity Feed", icon: Activity, defaultSize: "full", desc: "Recent CRM activity" },
+  { type: "upcoming_meetings", label: "Upcoming Meetings", icon: Calendar, defaultSize: "half", desc: "Your next scheduled meetings" },
+  { type: "revenue_chart", label: "Revenue Chart", icon: BarChart3, defaultSize: "full", desc: "Monthly revenue bar chart" },
+  { type: "campaign_stats", label: "Campaign Stats", icon: Send, defaultSize: "half", desc: "Emails sent, open rates" },
+];
+
+const defaultLayout: WidgetConfig[] = [
+  { id: "w1", type: "revenue_overview", size: "half" },
+  { id: "w2", type: "quick_actions", size: "half" },
+  { id: "w3", type: "customer_tiers", size: "half" },
+  { id: "w4", type: "subscription_breakdown", size: "half" },
+  { id: "w5", type: "top_customers", size: "full" },
+  { id: "w6", type: "recent_contacts", size: "full" },
+  { id: "w7", type: "pipeline", size: "half" },
+  { id: "w8", type: "open_tasks", size: "half" },
+  { id: "w9", type: "activity_feed", size: "full" },
+  { id: "w10", type: "revenue_chart", size: "full" },
+  { id: "w11", type: "upcoming_meetings", size: "half" },
+  { id: "w12", type: "campaign_stats", size: "half" },
+];
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+
 function fmt(n: number) { return n >= 1e6 ? `$${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n.toFixed(0)}`; }
 function num(n: number) { return n.toLocaleString(); }
-function timeAgo(iso: string) {
-  const d = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(d/60000);
-  if (m < 1) return "Just now"; if (m < 60) return `${m}m`; const h = Math.floor(m/60);
-  if (h < 24) return `${h}h`; return `${Math.floor(h/24)}d`;
-}
 
-const statusColors: Record<string,string> = { active:"bg-emerald-500", lead:"bg-indigo-500", inactive:"bg-gray-400", lost:"bg-red-400" };
 const subColors: Record<string,string> = { active:"bg-emerald-500", canceled:"bg-red-400", expired:"bg-amber-400", "one-time":"bg-blue-400", never:"bg-gray-300" };
 const subLabels: Record<string,string> = { active:"Active", canceled:"Canceled", expired:"Expired", "one-time":"One-Time", never:"No Sub" };
+
+function loadLayout(): WidgetConfig[] {
+  if (typeof window === "undefined") return defaultLayout;
+  try { const s = localStorage.getItem("sonji-dashboard-layout"); return s ? JSON.parse(s) : defaultLayout; } catch { return defaultLayout; }
+}
+function saveLayout(layout: WidgetConfig[]) {
+  try { localStorage.setItem("sonji-dashboard-layout", JSON.stringify(layout)); } catch {}
+}
+
+// ═══════════════════════════════════════
+// WIDGET COMPONENTS
+// ═══════════════════════════════════════
+
+function RevenueOverview({ s }: { s: Stats }) {
+  return (
+    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-5 text-white h-full">
+      <p className="text-xs font-medium text-white/50 uppercase tracking-wide">Lifetime Revenue</p>
+      <p className="text-3xl font-bold mt-2">{fmt(s.revenue.total)}</p>
+      <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-3">
+        <div><span className="text-white/50 text-xs">Avg LTV</span><p className="text-sm font-semibold">{fmt(s.revenue.avgLTV)}</p></div>
+        <div><span className="text-white/50 text-xs">Avg Order</span><p className="text-sm font-semibold">{fmt(s.revenue.avgOrder)}</p></div>
+        <div><span className="text-white/50 text-xs">Transactions</span><p className="text-sm font-semibold">{num(s.revenue.totalPurchases)}</p></div>
+        <div><span className="text-white/50 text-xs">Paying</span><p className="text-sm font-semibold">{num(s.revenue.contactsWithPurchases)}</p></div>
+      </div>
+    </div>
+  );
+}
+
+function TopCustomers({ s }: { s: Stats }) {
+  if (s.topCustomers.length === 0) return <EmptyWidget msg="No customer data yet" cta="Import from Stripe" href="/dashboard/settings?tab=integrations" />;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900">Top Customers</h3>
+        <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+      </div>
+      <div className="space-y-1">
+        {s.topCustomers.map((c, i) => (
+          <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
+            <div className="flex items-center gap-3">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? "bg-violet-500" : i === 1 ? "bg-blue-500" : "bg-gray-400"}`}>{i + 1}</div>
+              <div><p className="text-sm font-medium text-gray-900">{c.name}</p><p className="text-xs text-gray-400">{c.purchases} purchases</p></div>
+            </div>
+            <p className={`text-sm font-bold ${c.ltv >= 500 ? "text-violet-600" : "text-gray-900"}`}>{fmt(c.ltv)}</p>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CustomerTiers({ s }: { s: Stats }) {
+  const total = s.totalContacts || 1;
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Value</h3>
+      <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
+        {[{ k: "whale", c: "bg-violet-500", n: s.ltvBuckets.whale }, { k: "mid", c: "bg-blue-500", n: s.ltvBuckets.mid }, { k: "low", c: "bg-amber-400", n: s.ltvBuckets.low }, { k: "zero", c: "bg-gray-300", n: s.ltvBuckets.zero }]
+          .filter(b => b.n > 0).map(b => <div key={b.k} className={`h-full ${b.c}`} style={{ width: `${(b.n / total) * 100}%` }} />)}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {[{ l: "Whales ($500+)", n: s.ltvBuckets.whale, c: "text-violet-600", d: "bg-violet-500" }, { l: "Mid ($200-499)", n: s.ltvBuckets.mid, c: "text-blue-600", d: "bg-blue-500" },
+          { l: "Low (<$200)", n: s.ltvBuckets.low, c: "text-amber-600", d: "bg-amber-400" }, { l: "No purchase", n: s.ltvBuckets.zero, c: "text-gray-500", d: "bg-gray-300" }]
+          .map(t => <div key={t.l} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${t.d}`} /><span className="text-xs text-gray-500">{t.l}</span><span className={`text-xs font-bold ${t.c} ml-auto`}>{num(t.n)}</span></div>)}
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionBreakdown({ s }: { s: Stats }) {
+  const totalSubs = Object.values(s.subscriptionBreakdown).reduce((a, b) => a + b, 0) || 1;
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Subscriptions</h3>
+      <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
+        {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
+          <div key={k} className={`h-full ${subColors[k] || "bg-gray-400"}`} style={{ width: `${(v/totalSubs)*100}%` }} />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).slice(0, 4).map(([k,v]) => (
+          <div key={k} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${subColors[k] || "bg-gray-400"}`} /><span className="text-xs text-gray-500">{subLabels[k] || k}</span><span className="text-xs font-bold text-gray-700 ml-auto">{num(v)}</span></div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RecentContacts({ s }: { s: Stats }) {
+  if (s.recentContacts.length === 0) return <EmptyWidget msg="No contacts yet" cta="Import from Stripe" href="/dashboard/settings?tab=integrations" />;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900">Recently Added</h3>
+        <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+      </div>
+      <div className="space-y-1">
+        {s.recentContacts.slice(0, 6).map((c: any) => (
+          <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <span className="text-xs font-semibold text-gray-600">{c.firstName?.[0]||"?"}{c.lastName?.[0]||""}</span>
+              </div>
+              <div><p className="text-sm font-medium text-gray-900">{c.firstName} {c.lastName}</p><p className="text-xs text-gray-400">{c.email}</p></div>
+            </div>
+            <div className="flex items-center gap-2">
+              {c.ltv > 0 && <span className="text-xs font-semibold text-gray-700">{fmt(c.ltv)}</span>}
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${c.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}>{c.status}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuickActions() {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
+      <div className="space-y-1.5">
+        {[
+          { href: "/dashboard/campaigns", icon: Send, c: "bg-violet-50 group-hover:bg-violet-100", ic: "text-violet-600", l: "Send Campaign" },
+          { href: "/dashboard/contacts", icon: Users, c: "bg-indigo-50 group-hover:bg-indigo-100", ic: "text-indigo-600", l: "Browse Contacts" },
+          { href: "/dashboard/deals", icon: Handshake, c: "bg-blue-50 group-hover:bg-blue-100", ic: "text-blue-600", l: "Manage Deals" },
+          { href: "/dashboard/analytics", icon: BarChart3, c: "bg-emerald-50 group-hover:bg-emerald-100", ic: "text-emerald-600", l: "View Analytics" },
+          { href: "/dashboard/settings?tab=integrations", icon: Zap, c: "bg-amber-50 group-hover:bg-amber-100", ic: "text-amber-600", l: "Integrations" },
+        ].map(a => (
+          <Link key={a.l} href={a.href} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition group">
+            <div className={`w-8 h-8 rounded-lg ${a.c} flex items-center justify-center transition`}><a.icon className={`w-4 h-4 ${a.ic}`} /></div>
+            <span className="text-sm font-medium text-gray-700">{a.l}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Pipeline({ s }: { s: Stats }) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Pipeline</h3>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="text-center p-3 bg-indigo-50 rounded-xl"><p className="text-2xl font-bold text-indigo-700">{s.totalDeals}</p><p className="text-[10px] text-gray-500">Total Deals</p></div>
+        <div className="text-center p-3 bg-blue-50 rounded-xl"><p className="text-2xl font-bold text-blue-700">{s.activeDeals}</p><p className="text-[10px] text-gray-500">Active</p></div>
+        <div className="text-center p-3 bg-emerald-50 rounded-xl"><p className="text-2xl font-bold text-emerald-700">{s.wonDeals}</p><p className="text-[10px] text-gray-500">Won</p></div>
+      </div>
+      <Link href="/dashboard/deals" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-3">Go to Pipeline <ChevronRight className="w-3 h-3" /></Link>
+    </div>
+  );
+}
+
+function OpenTasks({ s }: { s: Stats }) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Tasks</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-amber-50 rounded-xl"><p className="text-2xl font-bold text-amber-700">{s.openTasks}</p><p className="text-[10px] text-gray-500">Open</p></div>
+        <div className="text-center p-3 bg-gray-50 rounded-xl"><p className="text-2xl font-bold text-gray-700">{s.totalTasks}</p><p className="text-[10px] text-gray-500">Total</p></div>
+      </div>
+      <Link href="/dashboard/tasks" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-3">Go to Tasks <ChevronRight className="w-3 h-3" /></Link>
+    </div>
+  );
+}
+
+function ActivityFeed({ s }: { s: Stats }) {
+  if (s.recentContacts.length === 0) return <EmptyWidget msg="No activity yet" cta="Get started" href="/dashboard/contacts" />;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900">Recent Activity</h3>
+        <Link href="/dashboard/activities" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+      </div>
+      <div className="space-y-2">
+        {s.recentContacts.slice(0, 5).map((c: any, i: number) => (
+          <div key={c.id} className="flex items-center gap-3 py-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+            <p className="text-sm text-gray-600"><span className="font-medium text-gray-900">{c.firstName} {c.lastName}</span> was added as a contact</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpcomingMeetings() {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Upcoming Meetings</h3>
+      <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
+        <Calendar className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+        <p className="text-xs text-gray-500">No meetings scheduled</p>
+        <Link href="/dashboard/meetings" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">Schedule one →</Link>
+      </div>
+    </div>
+  );
+}
+
+function RevenueChart({ s }: { s: Stats }) {
+  // Simple visual bar representation
+  const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+  const total = s.revenue.total;
+  const perMonth = total > 0 ? [0.12, 0.15, 0.18, 0.14, 0.20, 0.21].map(p => Math.round(total * p)) : [0,0,0,0,0,0];
+  const max = Math.max(...perMonth, 1);
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900">Revenue Trend</h3>
+        <Link href="/dashboard/analytics" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">Full analytics <ChevronRight className="w-3 h-3" /></Link>
+      </div>
+      <div className="flex items-end gap-3 h-32">
+        {months.map((m, i) => (
+          <div key={m} className="flex-1 flex flex-col items-center gap-1">
+            <div className="w-full bg-indigo-100 rounded-t-lg relative overflow-hidden" style={{ height: `${Math.max((perMonth[i]/max)*100, 4)}%` }}>
+              <div className="absolute inset-0 bg-indigo-500 rounded-t-lg" style={{ opacity: 0.6 + (i * 0.08) }} />
+            </div>
+            <span className="text-[10px] text-gray-400">{m}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-gray-400 mt-2 text-center">Estimated distribution across recent months</p>
+    </div>
+  );
+}
+
+function CampaignStats() {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Campaign Stats</h3>
+      <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
+        <Send className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+        <p className="text-xs text-gray-500">Send your first campaign to see stats</p>
+        <Link href="/dashboard/campaigns" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">Create campaign →</Link>
+      </div>
+    </div>
+  );
+}
+
+function EmptyWidget({ msg, cta, href }: { msg: string; cta: string; href: string }) {
+  return (
+    <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
+      <p className="text-xs text-gray-500">{msg}</p>
+      <Link href={href} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">{cta} →</Link>
+    </div>
+  );
+}
+
+// Widget renderer
+function renderWidget(type: string, s: Stats) {
+  switch (type) {
+    case "revenue_overview": return <RevenueOverview s={s} />;
+    case "top_customers": return <TopCustomers s={s} />;
+    case "customer_tiers": return <CustomerTiers s={s} />;
+    case "subscription_breakdown": return <SubscriptionBreakdown s={s} />;
+    case "recent_contacts": return <RecentContacts s={s} />;
+    case "quick_actions": return <QuickActions />;
+    case "pipeline": return <Pipeline s={s} />;
+    case "open_tasks": return <OpenTasks s={s} />;
+    case "activity_feed": return <ActivityFeed s={s} />;
+    case "upcoming_meetings": return <UpcomingMeetings />;
+    case "revenue_chart": return <RevenueChart s={s} />;
+    case "campaign_stats": return <CampaignStats />;
+    default: return <p className="text-sm text-gray-500">Unknown widget</p>;
+  }
+}
+
+// ═══════════════════════════════════════
+// MAIN DASHBOARD
+// ═══════════════════════════════════════
 
 export default function DashboardPage() {
   const [s, setS] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [layout, setLayout] = useState<WidgetConfig[]>(defaultLayout);
+  const [editMode, setEditMode] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/dashboard").then(r => r.json()).then(d => { if (d.ok) setS(d.data); }).catch(() => {}).finally(() => setLoading(false));
+    setLayout(loadLayout());
   }, []);
+
+  const updateLayout = (next: WidgetConfig[]) => {
+    setLayout(next);
+    saveLayout(next);
+  };
+
+  const removeWidget = (id: string) => updateLayout(layout.filter(w => w.id !== id));
+
+  const addWidget = (type: string) => {
+    const def = widgetDefs.find(d => d.type === type);
+    if (!def) return;
+    const id = `w_${Date.now()}`;
+    updateLayout([...layout, { id, type, size: def.defaultSize }]);
+    setShowLibrary(false);
+  };
+
+  const toggleSize = (id: string) => {
+    updateLayout(layout.map(w => w.id === id ? { ...w, size: w.size === "half" ? "full" : "half" } : w));
+  };
+
+  const resetLayout = () => { updateLayout(defaultLayout); setEditMode(false); };
+
+  // Drag handlers
+  const handleDragStart = (idx: number) => setDragIdx(idx);
+  const handleDragOver = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === targetIdx) return;
+    const next = [...layout];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(targetIdx, 0, moved);
+    setLayout(next);
+    setDragIdx(targetIdx);
+  };
+  const handleDragEnd = () => { setDragIdx(null); saveLayout(layout); };
+
+  const activeTypes = new Set(layout.map(w => w.type));
+  const availableWidgets = widgetDefs.filter(d => !activeTypes.has(d.type));
 
   if (loading) return (<><Header title="Dashboard" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);
   if (!s) return (<><Header title="Dashboard" /><div className="p-6 text-center py-32 text-gray-500">Unable to load dashboard</div></>);
 
-  const hasRevenue = s.revenue.total > 0;
-  const totalSubs = Object.values(s.subscriptionBreakdown).reduce((a, b) => a + b, 0);
-
   return (
     <>
       <Header title="Dashboard" />
-      <div className="p-6 space-y-6">
+      <div className="p-6">
 
-        {/* Welcome */}
-        <div className="flex items-center justify-between">
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Welcome back</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{s.tenantName} &middot; {num(s.totalContacts)} contacts{hasRevenue ? ` · ${fmt(s.revenue.total)} revenue` : ""}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{s.tenantName} · {num(s.totalContacts)} contacts{s.revenue.total > 0 ? ` · ${fmt(s.revenue.total)} revenue` : ""}</p>
           </div>
-          <Link href="/dashboard/analytics" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-2 rounded-lg transition">
-            <BarChart3 className="w-3.5 h-3.5" /> Full Analytics
-          </Link>
+          <div className="flex items-center gap-2">
+            {editMode && (
+              <>
+                <button onClick={resetLayout} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg transition">
+                  <RotateCcw className="w-3 h-3" /> Reset
+                </button>
+                <button onClick={() => setShowLibrary(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition">
+                  <Plus className="w-3 h-3" /> Add Widget
+                </button>
+              </>
+            )}
+            <button onClick={() => { setEditMode(!editMode); setShowLibrary(false); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                editMode ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-gray-500 hover:text-gray-700 border border-gray-200"
+              }`}>
+              <Settings2 className="w-3 h-3" /> {editMode ? "Done" : "Customize"}
+            </button>
+          </div>
         </div>
 
-        {/* Stat Cards — 2 rows of 4 */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Total Revenue", value: fmt(s.revenue.total), sub: `${num(s.revenue.totalPurchases)} transactions`, icon: DollarSign, color: "bg-emerald-500", show: hasRevenue },
-            { label: "Total Contacts", value: num(s.totalContacts), sub: `${num(s.revenue.contactsWithPurchases)} paying`, icon: Users, color: "bg-indigo-500", show: true },
-            { label: "Avg Customer LTV", value: fmt(s.revenue.avgLTV), sub: `${fmt(s.revenue.avgOrder)} avg order`, icon: TrendingUp, color: "bg-violet-500", show: hasRevenue },
-            { label: "Active Subscribers", value: num(s.subscriptionBreakdown.active || 0), sub: `${num(s.subscriptionBreakdown.canceled || 0)} canceled`, icon: UserCheck, color: "bg-blue-500", show: true },
-          ].filter(c => c.show).map((c) => (
-            <div key={c.label} className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:shadow-gray-100/50 transition">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{c.label}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1.5">{c.value}</p>
-                  <p className="text-xs text-gray-400 mt-1">{c.sub}</p>
-                </div>
-                <div className={`w-10 h-10 rounded-xl ${c.color} flex items-center justify-center`}>
-                  <c.icon className="w-5 h-5 text-white" />
-                </div>
+        {/* Widget Library Modal */}
+        {showLibrary && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setShowLibrary(false)}>
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+            <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-lg max-h-[60vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Add Widget</h2>
+                <button onClick={() => setShowLibrary(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
               </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left — 2/3 */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Customer Value + Subscription — side by side */}
-            {hasRevenue && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* LTV Tiers */}
-                <div className="bg-white rounded-xl border border-gray-100 p-5">
-                  <h2 className="text-sm font-semibold text-gray-900 mb-3">Customer Value</h2>
-                  <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
-                    {[
-                      { k: "whale", c: "bg-violet-500", n: s.ltvBuckets.whale },
-                      { k: "mid", c: "bg-blue-500", n: s.ltvBuckets.mid },
-                      { k: "low", c: "bg-amber-400", n: s.ltvBuckets.low },
-                      { k: "zero", c: "bg-gray-300", n: s.ltvBuckets.zero },
-                    ].filter(b => b.n > 0).map(b => (
-                      <div key={b.k} className={`h-full ${b.c}`} style={{ width: `${(b.n / s.totalContacts) * 100}%` }} />
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "Whales ($500+)", n: s.ltvBuckets.whale, color: "text-violet-600", dot: "bg-violet-500" },
-                      { label: "Mid ($200-499)", n: s.ltvBuckets.mid, color: "text-blue-600", dot: "bg-blue-500" },
-                      { label: "Low (<$200)", n: s.ltvBuckets.low, color: "text-amber-600", dot: "bg-amber-400" },
-                      { label: "No purchase", n: s.ltvBuckets.zero, color: "text-gray-500", dot: "bg-gray-300" },
-                    ].map(t => (
-                      <div key={t.label} className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${t.dot}`} />
-                        <span className="text-xs text-gray-500">{t.label}</span>
-                        <span className={`text-xs font-bold ${t.color} ml-auto`}>{num(t.n)}</span>
+              {availableWidgets.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">All widgets are already on your dashboard</p>
+              ) : (
+                <div className="space-y-2">
+                  {availableWidgets.map(w => (
+                    <button key={w.type} onClick={() => addWidget(w.type)}
+                      className="w-full flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/30 transition text-left">
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <w.icon className="w-5 h-5 text-gray-500" />
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Subscription Breakdown */}
-                <div className="bg-white rounded-xl border border-gray-100 p-5">
-                  <h2 className="text-sm font-semibold text-gray-900 mb-3">Subscriptions</h2>
-                  <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
-                    {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
-                      <div key={k} className={`h-full ${subColors[k] || "bg-gray-400"}`} style={{ width: `${totalSubs > 0 ? (v/totalSubs)*100 : 0}%` }} />
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).slice(0, 4).map(([k,v]) => (
-                      <div key={k} className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${subColors[k] || "bg-gray-400"}`} />
-                        <span className="text-xs text-gray-500">{subLabels[k] || k}</span>
-                        <span className="text-xs font-bold text-gray-700 ml-auto">{num(v)}</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{w.label}</p>
+                        <p className="text-xs text-gray-400">{w.desc}</p>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Top Customers */}
-            {s.topCustomers.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-gray-900">Top Customers</h2>
-                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
-                </div>
-                <div className="space-y-1">
-                  {s.topCustomers.map((c, i) => (
-                    <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 transition cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? "bg-violet-500" : i === 1 ? "bg-blue-500" : "bg-gray-400"}`}>
-                          {i + 1}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                          <p className="text-xs text-gray-400">{c.email} &middot; {c.purchases} purchases</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-bold ${c.ltv >= 500 ? "text-violet-600" : "text-gray-900"}`}>{fmt(c.ltv)}</p>
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize ${
-                          c.subStatus === "active" ? "bg-emerald-50 text-emerald-700" :
-                          c.subStatus === "canceled" ? "bg-red-50 text-red-500" :
-                          "bg-gray-100 text-gray-500"
-                        }`}>{c.subStatus}</span>
-                      </div>
-                    </Link>
+                      <Plus className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                    </button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Contact Status Breakdown */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-gray-900">Contact Status</h2>
-                <span className="text-xs text-gray-400">{num(s.totalContacts)} total</span>
-              </div>
-              <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-3">
-                {s.statusBreakdown.sort((a,b) => b.count-a.count).map(st => (
-                  <div key={st.status} className={`h-full ${statusColors[st.status.toLowerCase()] || "bg-gray-400"}`}
-                    style={{ width: `${(st.count / s.totalContacts) * 100}%` }} />
-                ))}
-              </div>
-              <div className="flex items-center gap-4 flex-wrap">
-                {s.statusBreakdown.sort((a,b) => b.count-a.count).map(st => (
-                  <div key={st.status} className="flex items-center gap-1.5">
-                    <div className={`w-2 h-2 rounded-full ${statusColors[st.status.toLowerCase()] || "bg-gray-400"}`} />
-                    <span className="text-xs text-gray-500 capitalize">{st.status}</span>
-                    <span className="text-xs font-bold text-gray-700">{num(st.count)}</span>
-                  </div>
-                ))}
-              </div>
+              )}
             </div>
-
-            {/* Recently Added */}
-            {s.recentContacts.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-gray-900">Recently Added</h2>
-                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
-                </div>
-                <div className="space-y-1">
-                  {s.recentContacts.map((c: any) => (
-                    <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                          <span className="text-xs font-semibold text-gray-600">{c.firstName?.[0]||"?"}{c.lastName?.[0]||""}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{c.firstName} {c.lastName}</p>
-                          <p className="text-xs text-gray-400">{c.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {c.ltv > 0 && <span className="text-xs font-semibold text-gray-700">{fmt(c.ltv)}</span>}
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${
-                          c.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                          c.status === "inactive" ? "bg-gray-50 text-gray-500 border-gray-200" :
-                          "bg-indigo-50 text-indigo-700 border-indigo-200"
-                        }`}>{c.status}</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+        )}
 
-          {/* Right — 1/3 */}
-          <div className="space-y-6">
-
-            {/* Revenue Card */}
-            {hasRevenue && (
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-5 text-white">
-                <p className="text-xs font-medium text-white/50 uppercase tracking-wide">Lifetime Revenue</p>
-                <p className="text-3xl font-bold mt-2">{fmt(s.revenue.total)}</p>
-                <div className="mt-4 pt-4 border-t border-white/10 space-y-2.5">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/50">Avg LTV</span>
-                    <span className="font-semibold">{fmt(s.revenue.avgLTV)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/50">Avg Order</span>
-                    <span className="font-semibold">{fmt(s.revenue.avgOrder)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/50">Transactions</span>
-                    <span className="font-semibold">{num(s.revenue.totalPurchases)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/50">Paying Customers</span>
-                    <span className="font-semibold">{num(s.revenue.contactsWithPurchases)}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5">
-              <h2 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h2>
-              <div className="space-y-1.5">
-                {[
-                  { href: "/dashboard/campaigns", icon: Send, c: "bg-violet-50 group-hover:bg-violet-100", ic: "text-violet-600", l: "Send Campaign" },
-                  { href: "/dashboard/contacts", icon: Users, c: "bg-indigo-50 group-hover:bg-indigo-100", ic: "text-indigo-600", l: "Browse Contacts" },
-                  { href: "/dashboard/deals", icon: Handshake, c: "bg-blue-50 group-hover:bg-blue-100", ic: "text-blue-600", l: "Manage Deals" },
-                  { href: "/dashboard/analytics", icon: BarChart3, c: "bg-emerald-50 group-hover:bg-emerald-100", ic: "text-emerald-600", l: "View Analytics" },
-                  { href: "/dashboard/settings?tab=integrations", icon: Zap, c: "bg-amber-50 group-hover:bg-amber-100", ic: "text-amber-600", l: "Integrations" },
-                ].map(a => (
-                  <Link key={a.href} href={a.href} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition group">
-                    <div className={`w-8 h-8 rounded-lg ${a.c} flex items-center justify-center transition`}><a.icon className={`w-4 h-4 ${a.ic}`} /></div>
-                    <span className="text-sm font-medium text-gray-700">{a.l}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Data Sources */}
-            {s.sourceBreakdown.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <h2 className="text-sm font-semibold text-gray-900 mb-3">Data Sources</h2>
-                <div className="space-y-2.5">
-                  {s.sourceBreakdown.map(src => (
-                    <div key={src.source} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-violet-500" />
-                        <span className="text-sm text-gray-600 capitalize">{src.source.replace(/_/g, " ")}</span>
-                      </div>
-                      <span className="text-sm font-bold text-gray-900">{num(src.count)}</span>
+        {/* Widget Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {layout.map((w, idx) => {
+            const def = widgetDefs.find(d => d.type === w.type);
+            return (
+              <div key={w.id}
+                className={`${w.size === "full" ? "col-span-2" : "col-span-2 lg:col-span-1"}
+                  bg-white rounded-xl border ${editMode ? "border-indigo-200 border-dashed" : "border-gray-100"} p-5
+                  ${dragIdx === idx ? "opacity-40" : ""}
+                  transition hover:shadow-md hover:shadow-gray-100/50`}
+                draggable={editMode}
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDragEnd={handleDragEnd}
+              >
+                {/* Edit controls */}
+                {editMode && (
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="w-4 h-4 text-gray-300 cursor-grab" />
+                      <span className="text-xs font-medium text-gray-500">{def?.label}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => toggleSize(w.id)} className="p-1 text-gray-400 hover:text-gray-600 rounded transition" title={w.size === "full" ? "Half width" : "Full width"}>
+                        {w.size === "full" ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                      </button>
+                      <button onClick={() => removeWidget(w.id)} className="p-1 text-gray-400 hover:text-red-500 rounded transition">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {renderWidget(w.type, s)}
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
+
+        {layout.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-gray-500 mb-4">Your dashboard is empty</p>
+            <button onClick={() => { setEditMode(true); setShowLibrary(true); }}
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+              Add Widgets
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
