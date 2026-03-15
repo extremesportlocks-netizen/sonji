@@ -113,6 +113,7 @@ export default function Sidebar() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [demoCompany, setDemoCompany] = useState<{ name: string; initial: string } | null>(null);
   const [demoKey, setDemoKey] = useState<string | null>(null);
+  const [tenantName, setTenantName] = useState<string | null>(null);
 
   // Listen for demo mode changes
   useEffect(() => {
@@ -123,8 +124,20 @@ export default function Sidebar() {
     };
     update();
     window.addEventListener("sonji-demo-change", update);
+
+    // Load real tenant name from session
+    try {
+      const t = sessionStorage.getItem("sonji-tenant");
+      if (t) { const parsed = JSON.parse(t); setTenantName(parsed.name || null); }
+    } catch {}
+
     return () => window.removeEventListener("sonji-demo-change", update);
   }, []);
+
+  // Workspace display
+  const workspaceName = demoCompany?.name || tenantName || "Sonji";
+  const workspaceInitial = demoCompany?.initial || (tenantName ? tenantName[0].toUpperCase() : "S");
+  const workspaceLabel = demoCompany ? "Demo Workspace" : tenantName ? "My Workspace" : "My Workspace";
 
   // Get label for a nav item, with industry override
   const getLabel = (item: NavItem) => {
@@ -249,16 +262,16 @@ export default function Sidebar() {
       <div className={`flex items-center h-16 border-b border-gray-100 ${collapsed ? "justify-center px-2" : "px-5"}`}>
         {collapsed ? (
           <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">{demoCompany?.initial || "S"}</span>
+            <span className="text-white font-bold text-sm">{workspaceInitial}</span>
           </div>
         ) : (
           <div className="flex items-center gap-3 w-full">
             <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-sm">{demoCompany?.initial || "S"}</span>
+              <span className="text-white font-bold text-sm">{workspaceInitial}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">{demoCompany?.name || "Sonji"}</p>
-              <p className="text-xs text-gray-400 truncate">{demoCompany ? "Demo Workspace" : "My Workspace"}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{workspaceName}</p>
+              <p className="text-xs text-gray-400 truncate">{workspaceLabel}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
           </div>

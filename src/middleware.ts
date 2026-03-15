@@ -44,11 +44,17 @@ export default clerkMiddleware(async (auth, request) => {
   const hostname = request.headers.get("host") || "";
 
   // ─── PASSWORD GATE ───
+  // Bypass for: API routes, Clerk-authenticated users, specific paths
   if (SITE_PASSWORD && url.pathname !== "/password-gate" && url.pathname !== "/api/auth-password" && !url.pathname.startsWith("/api/inngest") && !url.pathname.startsWith("/api/webhooks")) {
     const authed = request.cookies.get("site_auth")?.value;
-    if (authed !== SITE_PASSWORD) {
-      url.pathname = "/password-gate";
-      return NextResponse.rewrite(url);
+    const { userId } = await auth();
+    // Skip password gate if user is signed in via Clerk OR has the site password cookie
+    if (authed !== SITE_PASSWORD && !userId) {
+      // Also skip for login/signup/onboarding so new users can register
+      if (!url.pathname.startsWith("/login") && !url.pathname.startsWith("/signup") && !url.pathname.startsWith("/onboarding")) {
+        url.pathname = "/password-gate";
+        return NextResponse.rewrite(url);
+      }
     }
   }
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import {
   Search, Bell, Plus, ChevronDown, Phone, Mail, Video,
   Users, Handshake, CheckSquare, Calendar, DollarSign,
@@ -23,6 +24,10 @@ interface Props { title: string; subtitle?: string; }
 export default function Header({ title, subtitle }: Props) {
   const { openModal } = useModal();
   const router = useRouter();
+  const { user } = useUser();
+  const userName = user?.firstName || "User";
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress || "hello@sonji.io";
+  const userInitial = userName[0]?.toUpperCase() || "U";
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPhonePanel, setShowPhonePanel] = useState(false);
@@ -304,7 +309,7 @@ export default function Header({ title, subtitle }: Props) {
             <button onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-50 transition">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
-                <span className="text-white text-xs font-semibold">O</span>
+                <span className="text-white text-xs font-semibold">{userInitial}</span>
               </div>
               <ChevronDown className="w-3 h-3 text-gray-400 hidden sm:block" />
             </button>
@@ -313,8 +318,8 @@ export default function Header({ title, subtitle }: Props) {
                 <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
                 <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">Orlando</p>
-                    <p className="text-xs text-gray-400">hello@sonji.io</p>
+                    <p className="text-sm font-medium text-gray-900">{userName}</p>
+                    <p className="text-xs text-gray-400">{userEmail}</p>
                   </div>
                   <div className="py-1">
                     <button onClick={() => { setShowUserMenu(false); router.push("/dashboard/settings"); }}
