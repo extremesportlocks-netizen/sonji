@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import SonjiBox from "@/components/dashboard/sonji-box";
 import MoneyOnTable from "@/components/dashboard/money-on-table";
+import RecoveredRevenue from "@/components/dashboard/recovered-revenue";
+import DealVelocity from "@/components/dashboard/deal-velocity";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
 import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
 
@@ -62,6 +64,8 @@ const widgetDefs: WidgetDef[] = [
   { type: "revenue_chart", label: "Revenue Chart", icon: BarChart3, defaultSize: "full", desc: "Monthly revenue bar chart" },
   { type: "campaign_stats", label: "Campaign Stats", icon: Send, defaultSize: "half", desc: "Emails sent, open rates" },
   { type: "money_on_table", label: "Money Left on the Table", icon: DollarSign, defaultSize: "full", desc: "Lapsed revenue + one-click win-back emails" },
+  { type: "recovered_revenue", label: "Sonji Recovered Revenue", icon: TrendingUp, defaultSize: "full", desc: "Revenue recovered through Sonji automations" },
+  { type: "deal_velocity", label: "Deal Velocity", icon: Activity, defaultSize: "full", desc: "Pipeline momentum — stalled and slowing deals" },
 ];
 
 const defaultLayout: WidgetConfig[] = [
@@ -71,9 +75,11 @@ const defaultLayout: WidgetConfig[] = [
   { id: "w4", type: "subscription_breakdown", size: "half" },
   { id: "w5", type: "top_customers", size: "full" },
   { id: "w13", type: "money_on_table", size: "full" },
+  { id: "w14", type: "recovered_revenue", size: "full" },
   { id: "w6", type: "recent_contacts", size: "full" },
   { id: "w7", type: "pipeline", size: "half" },
   { id: "w8", type: "open_tasks", size: "half" },
+  { id: "w15", type: "deal_velocity", size: "full" },
   { id: "w9", type: "activity_feed", size: "full" },
   { id: "w10", type: "revenue_chart", size: "full" },
   { id: "w11", type: "upcoming_meetings", size: "half" },
@@ -393,6 +399,8 @@ function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
     case "revenue_chart": return <RevenueChart s={s} />;
     case "campaign_stats": return <CampaignStats />;
     case "money_on_table": return <MoneyOnTable />;
+    case "recovered_revenue": return <RecoveredRevenue />;
+    case "deal_velocity": return <DealVelocity />;
     default: return <p className="text-sm text-gray-500">Unknown widget</p>;
   }
 }

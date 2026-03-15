@@ -48,6 +48,14 @@ const metrics: MetricDef[] = [
   // Tasks
   { key: "open_tasks", label: "Open Tasks", shortLabel: "Open Tasks", category: "Tasks", icon: CheckSquare, format: "number", extract: (s) => s.openTasks || 0 },
   { key: "total_tasks", label: "Total Tasks", shortLabel: "Tasks", category: "Tasks", icon: CheckSquare, format: "number", extract: (s) => s.totalTasks || 0 },
+
+  // Revenue Recovery
+  { key: "recovered_revenue", label: "Sonji Recovered Revenue", shortLabel: "Recovered", category: "Revenue", icon: TrendingUp, format: "currency", extract: () => {
+    // Demo values — will be replaced with real tracking in production
+    const key = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const vals: Record<string,number> = { health_wellness: 47200, fitness_gym: 31500, beauty_salon: 38900, agency_consulting: 84000, real_estate: 62500, home_services: 56000, legal: 73000, coaching_education: 42000, restaurant_food: 18500, automotive: 44800, nonprofit: 28500, ecommerce: 52300 };
+    return vals[key || "ecommerce"] || 52300;
+  }},
 ];
 
 const defaultSlots = ["total_revenue", "total_contacts", "active_subs", "whales", "avg_ltv"];
