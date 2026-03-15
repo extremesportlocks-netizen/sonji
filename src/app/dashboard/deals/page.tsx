@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useCRM } from "@/lib/crm-store";
 import { useModal } from "@/components/modals/modal-provider";
+import { getIndustryConfig } from "@/lib/industry-config";
 import {
   Search,
   SlidersHorizontal,
@@ -479,6 +480,7 @@ export default function DealsPage() {
   // Use industry stages + deals in demo mode (including ecommerce)
   const stages = demoIndustry && INDUSTRY_STAGES[demoIndustry] ? INDUSTRY_STAGES[demoIndustry] : defaultStages;
   const isDemo = demoIndustry && INDUSTRY_DEALS[demoIndustry];
+  const ic = demoIndustry ? getIndustryConfig(demoIndustry) : null;
   const deals = isDemo ? demoDeals : crmDeals;
 
   const handleUpdateDeal = (id: string, updates: Partial<DemoDeal>) => {
@@ -561,14 +563,14 @@ export default function DealsPage() {
 
   return (
     <>
-      <Header title="Deals" />
+      <Header title={ic?.dealLabelPlural || "Deals"} />
       <div className="p-6 space-y-4">
         {/* Toolbar */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">{filtered.length} Deals</h2>
+                <h2 className="text-sm font-semibold text-gray-900">{filtered.length} {ic?.dealLabelPlural || "Deals"}</h2>
                 <p className="text-xs text-gray-400">{formatCurrency(totalValue)} total pipeline</p>
               </div>
               <div className="w-px h-8 bg-gray-200 mx-2" />
@@ -622,7 +624,7 @@ export default function DealsPage() {
                 onClick={() => openModal("deal")}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition shadow-sm"
               >
-                <Plus className="w-4 h-4" /><span className="hidden sm:inline">Create Deal</span>
+                <Plus className="w-4 h-4" /><span className="hidden sm:inline">Create {ic?.dealLabel || "Deal"}</span>
               </button>
             </div>
           </div>
@@ -707,7 +709,7 @@ export default function DealsPage() {
 
                 {/* Stage Total */}
                 <div className="text-xs text-gray-400 mb-3 px-1">
-                  {formatCurrency(stageTotal)} · {stageDeals.length} deal{stageDeals.length !== 1 ? "s" : ""}
+                  {formatCurrency(stageTotal)} · {stageDeals.length} {(ic?.dealLabel || "deal").toLowerCase()}{stageDeals.length !== 1 ? "s" : ""}
                 </div>
 
                 {/* Cards */}
@@ -722,7 +724,7 @@ export default function DealsPage() {
 
                   {stageDeals.length === 0 && !isDragOver && (
                     <div className="flex items-center justify-center h-24 text-xs text-gray-400">
-                      No deals in this stage
+                      No {(ic?.dealLabelPlural || "deals").toLowerCase()} in this stage
                     </div>
                   )}
 
@@ -769,7 +771,7 @@ export default function DealsPage() {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-400">No deals match your filters</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-400">No {(ic?.dealLabelPlural || "deals").toLowerCase()} match your filters</td></tr>
                 )}
               </tbody>
             </table>
@@ -797,7 +799,7 @@ export default function DealsPage() {
               );
             })}
             {filtered.length === 0 && (
-              <div className="col-span-full py-12 text-center text-sm text-gray-400">No deals match your filters</div>
+              <div className="col-span-full py-12 text-center text-sm text-gray-400">No {(ic?.dealLabelPlural || "deals").toLowerCase()} match your filters</div>
             )}
           </div>
         )}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/dashboard/header";
 import { useModal } from "@/components/modals/modal-provider";
+import { useIndustry } from "@/lib/use-industry";
 import {
   Search,
   SlidersHorizontal,
@@ -221,6 +222,7 @@ const ALL_COLUMNS: ColumnDef[] = [
 
 export default function ContactsPage() {
   const { openModal } = useModal();
+  const ic = useIndustry();
 
   // Data state
   const [contactsList, setContactsList] = useState<Contact[]>([]);
@@ -234,11 +236,12 @@ export default function ContactsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   // Filter segments — each maps to API query params
+  const hvLabel = ic?.highValueLabel || "High Value";
   type Segment = { key: string; label: string; params: Record<string, string> };
   const segments: Segment[] = [
     { key: "all", label: "All", params: {} },
-    { key: "active_sub", label: "Active Subscribers", params: { subStatus: "active" } },
-    { key: "whales", label: "High Value ($500+)", params: { minLtv: "500" } },
+    { key: "active_sub", label: ic ? `Active ${ic.contactLabelPlural}` : "Active Subscribers", params: { subStatus: "active" } },
+    { key: "whales", label: `${hvLabel} ($500+)`, params: { minLtv: "500" } },
     { key: "lapsed", label: "Lapsed", params: { tag: "Lapsed" } },
     { key: "winback", label: "Win-Back", params: { tag: "Win-Back" } },
     { key: "inactive", label: "Inactive", params: { status: "inactive" } },
@@ -323,7 +326,7 @@ export default function ContactsPage() {
 
   return (
     <>
-      <Header title="Contacts" />
+      <Header title={ic?.contactLabelPlural || "Contacts"} />
       <div className="p-6">
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           {/* Toolbar */}
@@ -342,7 +345,7 @@ export default function ContactsPage() {
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" placeholder="Search contacts..." value={search}
+                <input type="text" placeholder={`Search ${(ic?.contactLabelPlural || "contacts").toLowerCase()}...`} value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                   className="w-52 pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300" />
                 {search && (
@@ -397,7 +400,7 @@ export default function ContactsPage() {
 
               <button onClick={() => openModal("contact")}
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
-                <Plus className="w-3.5 h-3.5" /> Create Contact
+                <Plus className="w-3.5 h-3.5" /> Create {ic?.contactLabel || "Contact"}
               </button>
             </div>
           </div>

@@ -25,6 +25,21 @@ const DEMO_NAMES: Record<string,{ name: string; initial: string }> = {
   ecommerce: { name: "ESL Sports", initial: "E" },
 };
 
+// Industry-specific sidebar label overrides
+const INDUSTRY_NAV_LABELS: Record<string, Record<string, string>> = {
+  health_wellness: { contacts: "Patients", deals: "Treatments", companies: "Providers", invoices: "Billing" },
+  fitness_gym: { contacts: "Members", deals: "Memberships", companies: "Locations" },
+  beauty_salon: { contacts: "Clients", deals: "Appointments", invoices: "Billing" },
+  agency_consulting: { contacts: "Clients", deals: "Projects", companies: "Accounts", invoices: "Billing" },
+  real_estate: { contacts: "Leads", deals: "Transactions", companies: "Brokerages" },
+  home_services: { contacts: "Customers", deals: "Jobs", companies: "Properties" },
+  legal: { contacts: "Clients", deals: "Cases", companies: "Firms" },
+  coaching_education: { contacts: "Students", deals: "Enrollments", invoices: "Payments" },
+  restaurant_food: { contacts: "Customers", deals: "Orders", invoices: "Checks" },
+  automotive: { contacts: "Customers", deals: "Work Orders", companies: "Fleets" },
+  nonprofit: { contacts: "Supporters", deals: "Campaigns", companies: "Partners", invoices: "Donations" },
+};
+
 // ────────────────────────────────────
 // NAV CONFIG
 // ────────────────────────────────────
@@ -97,17 +112,27 @@ export default function Sidebar() {
   const [editMode, setEditMode] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [demoCompany, setDemoCompany] = useState<{ name: string; initial: string } | null>(null);
+  const [demoKey, setDemoKey] = useState<string | null>(null);
 
   // Listen for demo mode changes
   useEffect(() => {
     const update = () => {
       const key = localStorage.getItem("sonji-demo-industry");
       setDemoCompany(key && DEMO_NAMES[key] ? DEMO_NAMES[key] : null);
+      setDemoKey(key && key !== "ecommerce" ? key : null);
     };
     update();
     window.addEventListener("sonji-demo-change", update);
     return () => window.removeEventListener("sonji-demo-change", update);
   }, []);
+
+  // Get label for a nav item, with industry override
+  const getLabel = (item: NavItem) => {
+    if (demoKey && INDUSTRY_NAV_LABELS[demoKey]?.[item.id]) {
+      return INDUSTRY_NAV_LABELS[demoKey][item.id];
+    }
+    return item.label;
+  };
 
   // Load saved state on mount
   useEffect(() => {
@@ -193,12 +218,12 @@ export default function Sidebar() {
               ${collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2"}
               ${active ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}
             `}
-            title={collapsed ? item.label : undefined}
+            title={collapsed ? getLabel(item) : undefined}
           >
             <Icon className={`flex-shrink-0 ${active ? "text-indigo-600" : "text-gray-400"}`} size={20} strokeWidth={active ? 2 : 1.5} />
             {!collapsed && (
               <>
-                <span className="flex-1">{item.label}</span>
+                <span className="flex-1">{getLabel(item)}</span>
                 {item.badge && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">{item.badge}</span>
                 )}
@@ -305,7 +330,7 @@ export default function Sidebar() {
                         active ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-50"
                       }`}>
                       <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" fill="currentColor" />
-                      <span className="flex-1 text-xs">{item.label}</span>
+                      <span className="flex-1 text-xs">{getLabel(item)}</span>
                     </div>
                     <button onClick={() => toggleFavorite(item.id)}
                       className="p-1 text-transparent group-hover:text-gray-300 hover:!text-red-400 rounded transition">
