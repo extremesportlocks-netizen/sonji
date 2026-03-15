@@ -221,15 +221,17 @@ function RecentContacts({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
   );
 }
 
-function QuickActions() {
+function QuickActions({ ic }: { ic?: IndustryConfig | null }) {
+  const contactWord = ic ? `Browse ${ic.contactLabelPlural}` : "Browse Contacts";
+  const dealWord = ic ? `Manage ${ic.dealLabelPlural}` : "Manage Deals";
   return (
     <div>
       <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
       <div className="space-y-1.5">
         {[
           { href: "/dashboard/campaigns", icon: Send, c: "bg-violet-50 group-hover:bg-violet-100", ic: "text-violet-600", l: "Send Campaign" },
-          { href: "/dashboard/contacts", icon: Users, c: "bg-indigo-50 group-hover:bg-indigo-100", ic: "text-indigo-600", l: "Browse Contacts" },
-          { href: "/dashboard/deals", icon: Handshake, c: "bg-blue-50 group-hover:bg-blue-100", ic: "text-blue-600", l: "Manage Deals" },
+          { href: "/dashboard/contacts", icon: Users, c: "bg-indigo-50 group-hover:bg-indigo-100", ic: "text-indigo-600", l: contactWord },
+          { href: "/dashboard/deals", icon: Handshake, c: "bg-blue-50 group-hover:bg-blue-100", ic: "text-blue-600", l: dealWord },
           { href: "/dashboard/analytics", icon: BarChart3, c: "bg-emerald-50 group-hover:bg-emerald-100", ic: "text-emerald-600", l: "View Analytics" },
           { href: "/dashboard/settings?tab=integrations", icon: Zap, c: "bg-amber-50 group-hover:bg-amber-100", ic: "text-amber-600", l: "Integrations" },
         ].map(a => (
@@ -388,7 +390,7 @@ function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
     case "customer_tiers": return <CustomerTiers s={s} ic={ic} />;
     case "subscription_breakdown": return <SubscriptionBreakdown s={s} ic={ic} />;
     case "recent_contacts": return <RecentContacts s={s} ic={ic} />;
-    case "quick_actions": return <QuickActions />;
+    case "quick_actions": return <QuickActions ic={ic} />;
     case "pipeline": return <Pipeline s={s} />;
     case "open_tasks": return <OpenTasks s={s} />;
     case "activity_feed": {

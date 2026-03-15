@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useCRM } from "@/lib/crm-store";
 import { useModal } from "@/components/modals/modal-provider";
@@ -36,7 +36,7 @@ interface Stage {
   bgColor: string;
 }
 
-const stages: Stage[] = [
+const defaultStages: Stage[] = [
   { id: "Lead", name: "Lead", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
   { id: "Sales Qualified", name: "Sales Qualified", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
   { id: "Meeting Booked", name: "Meeting Booked", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
@@ -45,6 +45,80 @@ const stages: Stage[] = [
   { id: "Closed Won", name: "Closed Won", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
   { id: "Closed Lost", name: "Closed Lost", color: "text-red-600", borderColor: "border-red-400", bgColor: "bg-red-50" },
 ];
+
+const INDUSTRY_STAGES: Record<string, Stage[]> = {
+  health_wellness: [
+    { id: "Inquiry", name: "Inquiry", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
+    { id: "Consultation Booked", name: "Consultation", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
+    { id: "Treatment Plan", name: "Treatment Plan", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
+    { id: "Payment Collected", name: "Payment", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
+    { id: "In Treatment", name: "In Treatment", color: "text-cyan-700", borderColor: "border-cyan-400", bgColor: "bg-cyan-50" },
+    { id: "Follow-up", name: "Follow-up", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
+  ],
+  agency_consulting: [
+    { id: "Discovery", name: "Discovery", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
+    { id: "Proposal Sent", name: "Proposal Sent", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
+    { id: "Negotiation", name: "Negotiation", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
+    { id: "Contract Signed", name: "Signed", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
+    { id: "Onboarding", name: "Onboarding", color: "text-cyan-700", borderColor: "border-cyan-400", bgColor: "bg-cyan-50" },
+    { id: "Active Client", name: "Active", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
+    { id: "Renewal", name: "Renewal", color: "text-orange-700", borderColor: "border-orange-400", bgColor: "bg-orange-50" },
+  ],
+  real_estate: [
+    { id: "Lead", name: "Lead", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
+    { id: "Contacted", name: "Contacted", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
+    { id: "Showing", name: "Showing", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
+    { id: "Offer", name: "Offer", color: "text-orange-700", borderColor: "border-orange-400", bgColor: "bg-orange-50" },
+    { id: "Under Contract", name: "Under Contract", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
+    { id: "Closed", name: "Closed", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
+  ],
+  ecommerce: [
+    { id: "Subscriber", name: "Subscriber", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
+    { id: "First Purchase", name: "1st Purchase", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
+    { id: "Repeat", name: "Repeat", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
+    { id: "VIP", name: "VIP", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
+    { id: "Win-Back", name: "Win-Back", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
+    { id: "Churned", name: "Churned", color: "text-red-600", borderColor: "border-red-400", bgColor: "bg-red-50" },
+  ],
+};
+
+type DemoDeal = { id: string; title: string; value: number; stage: string; pipeline: string; contactName: string; assignedTo: string; closeDate: string; notes: string };
+
+const INDUSTRY_DEALS: Record<string, DemoDeal[]> = {
+  health_wellness: [
+    { id: "d1", title: "Botox Full Face", contactName: "Maria Santos", value: 850, stage: "Inquiry", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 20", notes: "" },
+    { id: "d2", title: "IV Vitamin Package", contactName: "David Kim", value: 1200, stage: "Inquiry", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 22", notes: "" },
+    { id: "d3", title: "Weight Loss Consult", contactName: "Jennifer Adams", value: 2400, stage: "Consultation Booked", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Mar 18", notes: "" },
+    { id: "d4", title: "Filler Treatment", contactName: "Alex Rivera", value: 1600, stage: "Consultation Booked", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 19", notes: "" },
+    { id: "d5", title: "Wellness Annual Plan", contactName: "Patricia Lee", value: 3600, stage: "Treatment Plan", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Mar 25", notes: "" },
+    { id: "d6", title: "Laser Treatment", contactName: "Robert Chen", value: 900, stage: "Treatment Plan", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 21", notes: "" },
+    { id: "d7", title: "Semaglutide Program", contactName: "Sarah Thompson", value: 4800, stage: "Payment Collected", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Mar 15", notes: "" },
+    { id: "d8", title: "Microneedling Package", contactName: "Lisa Wang", value: 600, stage: "In Treatment", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Apr 5", notes: "" },
+    { id: "d9", title: "HRT Consultation", contactName: "James Wilson", value: 1800, stage: "In Treatment", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Apr 10", notes: "" },
+    { id: "d10", title: "Post-Treatment Review", contactName: "Emma Thomas", value: 450, stage: "Follow-up", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 16", notes: "" },
+  ],
+  agency_consulting: [
+    { id: "d1", title: "SEO + PPC Retainer", contactName: "Brightview Hotels", value: 8500, stage: "Discovery", pipeline: "New Business", assignedTo: "Power", closeDate: "Mar 25", notes: "" },
+    { id: "d2", title: "Social Media Mgmt", contactName: "Apex Construction", value: 3000, stage: "Discovery", pipeline: "New Business", assignedTo: "Power", closeDate: "Mar 28", notes: "" },
+    { id: "d3", title: "Web Redesign", contactName: "Meridian Law Group", value: 15000, stage: "Proposal Sent", pipeline: "Projects", assignedTo: "Power", closeDate: "Apr 1", notes: "" },
+    { id: "d4", title: "Content Strategy", contactName: "Harbor Dental", value: 5000, stage: "Proposal Sent", pipeline: "New Business", assignedTo: "Power", closeDate: "Mar 30", notes: "" },
+    { id: "d5", title: "Brand Refresh", contactName: "Summit Athletics", value: 12000, stage: "Negotiation", pipeline: "Projects", assignedTo: "Power", closeDate: "Apr 5", notes: "" },
+    { id: "d6", title: "Growth Retainer", contactName: "Nova Fitness", value: 5000, stage: "Contract Signed", pipeline: "Retainers", assignedTo: "Power", closeDate: "Mar 15", notes: "" },
+    { id: "d7", title: "Onboarding Package", contactName: "Cedar Creek Realty", value: 4000, stage: "Onboarding", pipeline: "Retainers", assignedTo: "Power", closeDate: "Mar 20", notes: "" },
+    { id: "d8", title: "Full Stack Marketing", contactName: "Sterling Partners", value: 10000, stage: "Active Client", pipeline: "Retainers", assignedTo: "Power", closeDate: "Ongoing", notes: "" },
+    { id: "d9", title: "PPC Management", contactName: "Coastal Real Estate", value: 6000, stage: "Active Client", pipeline: "Retainers", assignedTo: "Power", closeDate: "Ongoing", notes: "" },
+    { id: "d10", title: "SEO Retainer", contactName: "Pinnacle Fitness", value: 3500, stage: "Renewal", pipeline: "Retainers", assignedTo: "Power", closeDate: "Apr 15", notes: "" },
+    { id: "d11", title: "Website Maintenance", contactName: "Atlas Legal", value: 2000, stage: "Active Client", pipeline: "Retainers", assignedTo: "Power", closeDate: "Ongoing", notes: "" },
+  ],
+  ecommerce: [
+    { id: "d1", title: "VIP Yearly Upgrade", contactName: "Chris Persaud", value: 999, stage: "Repeat", pipeline: "Upgrades", assignedTo: "Orlando", closeDate: "Mar 20", notes: "" },
+    { id: "d2", title: "Monthly → 3-Month", contactName: "Tyler McLaughlin", value: 399, stage: "Repeat", pipeline: "Upgrades", assignedTo: "Orlando", closeDate: "Mar 22", notes: "" },
+    { id: "d3", title: "Win-Back Campaign", contactName: "Andrew Krieman", value: 999, stage: "Win-Back", pipeline: "Recovery", assignedTo: "Orlando", closeDate: "Mar 25", notes: "" },
+    { id: "d4", title: "Reactivation", contactName: "Ramon Garcia", value: 165, stage: "Win-Back", pipeline: "Recovery", assignedTo: "Orlando", closeDate: "Mar 18", notes: "" },
+    { id: "d5", title: "New VIP Annual", contactName: "Bruce Grimsley", value: 999, stage: "First Purchase", pipeline: "Sales", assignedTo: "Orlando", closeDate: "Mar 16", notes: "" },
+    { id: "d6", title: "Monthly Sub", contactName: "Iyad Al Zein", value: 165, stage: "First Purchase", pipeline: "Sales", assignedTo: "Orlando", closeDate: "Mar 17", notes: "" },
+  ],
+};
 
 // ────────────────────────────────────
 // HELPERS
@@ -150,13 +224,23 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete }: {
 // ────────────────────────────────────
 
 export default function DealsPage() {
-  const { deals, moveDeal, deleteDeal, stats } = useCRM();
+  const { deals: crmDeals, moveDeal, deleteDeal, stats } = useCRM();
   const { openModal } = useModal();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"kanban" | "list" | "grid">("kanban");
   const [showFilters, setShowFilters] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [demoIndustry, setDemoIndustry] = useState<string | null>(null);
+
+  useEffect(() => {
+    const key = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    setDemoIndustry(key || null);
+  }, []);
+
+  // Use industry stages + deals in demo mode (including ecommerce)
+  const stages = demoIndustry && INDUSTRY_STAGES[demoIndustry] ? INDUSTRY_STAGES[demoIndustry] : defaultStages;
+  const deals = demoIndustry && INDUSTRY_DEALS[demoIndustry] ? INDUSTRY_DEALS[demoIndustry] : crmDeals;
 
   const filtered = deals.filter((d) => {
     if (!search) return true;
