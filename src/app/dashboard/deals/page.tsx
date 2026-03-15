@@ -462,6 +462,9 @@ export default function DealsPage() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"kanban" | "list" | "grid">("kanban");
   const [showFilters, setShowFilters] = useState(false);
+  const [filterPipeline, setFilterPipeline] = useState("all");
+  const [filterAmount, setFilterAmount] = useState("all");
+  const [filterAssigned, setFilterAssigned] = useState("all");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [demoIndustry, setDemoIndustry] = useState<string | null>(null);
@@ -501,10 +504,18 @@ export default function DealsPage() {
   };
 
   const filtered = deals.filter((d) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return d.title.toLowerCase().includes(q) || d.contactName.toLowerCase().includes(q);
+    if (search) { const q = search.toLowerCase(); if (!d.title.toLowerCase().includes(q) && !d.contactName.toLowerCase().includes(q)) return false; }
+    if (filterPipeline !== "all" && d.pipeline !== filterPipeline) return false;
+    if (filterAmount === "under1k" && d.value >= 1000) return false;
+    if (filterAmount === "1k-5k" && (d.value < 1000 || d.value >= 5000)) return false;
+    if (filterAmount === "5k-25k" && (d.value < 5000 || d.value >= 25000)) return false;
+    if (filterAmount === "25k+" && d.value < 25000) return false;
+    if (filterAssigned !== "all" && d.assignedTo !== filterAssigned) return false;
+    return true;
   });
+
+  const uniquePipelines = Array.from(new Set(deals.map(d => d.pipeline).filter(Boolean)));
+  const uniqueAssigned = Array.from(new Set(deals.map(d => d.assignedTo).filter(Boolean)));
 
   const dealsByStage = useMemo(() => {
     const grouped: Record<string, typeof filtered> = {};
@@ -563,6 +574,11 @@ export default function DealsPage() {
               <div className="w-px h-8 bg-gray-200 mx-2" />
               <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-1.5 px-3 py-2 text-sm border rounded-lg transition ${showFilters ? "bg-indigo-50 text-indigo-600 border-indigo-200" : "text-gray-600 border-gray-200 hover:bg-gray-50"}`}>
                 <SlidersHorizontal className="w-4 h-4" /> Filters
+                {(filterPipeline !== "all" || filterAmount !== "all" || filterAssigned !== "all") && (
+                  <span className="w-4 h-4 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {[filterPipeline !== "all", filterAmount !== "all", filterAssigned !== "all"].filter(Boolean).length}
+                  </span>
+                )}
               </button>
               <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden">
                 <button onClick={() => setView("kanban")} className={`p-2 transition ${view === "kanban" ? "bg-indigo-50 text-indigo-600" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`} title="Kanban">
@@ -594,7 +610,12 @@ export default function DealsPage() {
                 )}
               </div>
               <div className="w-px h-6 bg-gray-200 mx-1 hidden sm:block" />
-              <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+              <button onClick={() => {
+                const csv = ["Title,Contact,Value,Stage,Pipeline,Close Date", ...filtered.map(d => `"${d.title}","${d.contactName}",${d.value},"${d.stage}","${d.pipeline}","${d.closeDate}"`)].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a"); a.href = url; a.download = "deals-export.csv"; a.click(); URL.revokeObjectURL(url);
+              }} className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                 <Download className="w-4 h-4" /><span className="hidden sm:inline">Export</span>
               </button>
               <button
@@ -612,26 +633,38 @@ export default function DealsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Pipeline</label>
-                  <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                    <option>All Pipelines</option>
+                  <select value={filterPipeline} onChange={(e) => setFilterPipeline(e.target.value)}
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                    <option value="all">All Pipelines</option>
+                    {uniquePipelines.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Deal Amount</label>
-                  <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                    <option>Any Amount</option>
+                  <select value={filterAmount} onChange={(e) => setFilterAmount(e.target.value)}
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                    <option value="all">Any Amount</option>
+                    <option value="under1k">Under $1,000</option>
+                    <option value="1k-5k">$1,000 - $5,000</option>
+                    <option value="5k-25k">$5,000 - $25,000</option>
+                    <option value="25k+">$25,000+</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Close Date</label>
                   <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
                     <option>Any Date</option>
+                    <option>This Week</option>
+                    <option>This Month</option>
+                    <option>Overdue</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Assigned To</label>
-                  <select className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                    <option>Anyone</option>
+                  <select value={filterAssigned} onChange={(e) => setFilterAssigned(e.target.value)}
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                    <option value="all">Anyone</option>
+                    {uniqueAssigned.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
               </div>
@@ -640,6 +673,7 @@ export default function DealsPage() {
         </div>
 
         {/* Kanban Board */}
+        {view === "kanban" && (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {stages.map((stage) => {
             const stageDeals = dealsByStage[stage.id] || [];
@@ -665,11 +699,8 @@ export default function DealsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition">
+                    <button onClick={() => openModal("deal")} className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition">
                       <Plus className="w-4 h-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition">
-                      <MoreHorizontal className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -705,6 +736,71 @@ export default function DealsPage() {
             );
           })}
         </div>
+        )}
+
+        {/* List View */}
+        {view === "list" && (
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Deal</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Contact</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Stage</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Pipeline</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Value</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Close</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((d) => {
+                  const stg = stages.find(s => s.id === d.stage);
+                  return (
+                    <tr key={d.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3"><span className="text-sm font-medium text-gray-900">{d.title}</span></td>
+                      <td className="px-4 py-3"><span className="text-sm text-gray-600">{d.contactName}</span></td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${stg?.bgColor || "bg-gray-100"} ${stg?.color || "text-gray-600"}`}>{d.stage}</span>
+                      </td>
+                      <td className="px-4 py-3"><span className="text-xs text-gray-400">{d.pipeline}</span></td>
+                      <td className="px-4 py-3 text-right"><span className="text-sm font-bold text-gray-900">{formatCurrency(d.value)}</span></td>
+                      <td className="px-4 py-3 text-right"><span className="text-xs text-gray-400">{d.closeDate}</span></td>
+                    </tr>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-400">No deals match your filters</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Grid View */}
+        {view === "grid" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((d) => {
+              const stg = stages.find(s => s.id === d.stage);
+              return (
+                <div key={d.id} className="bg-white rounded-xl border border-gray-100 p-5 hover:border-indigo-200 hover:shadow-md transition">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${stg?.bgColor || "bg-gray-100"} ${stg?.color || "text-gray-600"}`}>{d.stage}</span>
+                    <span className="text-lg font-bold text-gray-900">{formatCurrency(d.value)}</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">{d.title}</h3>
+                  <p className="text-xs text-gray-500 mb-3">{d.contactName} · {d.pipeline}</p>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                    <span className="text-xs text-gray-400">{d.assignedTo || "Unassigned"}</span>
+                    <span className="text-xs text-gray-400">{d.closeDate}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div className="col-span-full py-12 text-center text-sm text-gray-400">No deals match your filters</div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
