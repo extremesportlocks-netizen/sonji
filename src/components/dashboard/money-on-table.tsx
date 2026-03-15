@@ -36,11 +36,12 @@ export default function MoneyOnTable() {
         const isDemo = demoIndustry && demoIndustry !== "ecommerce";
 
         if (isDemo) {
-          // Generate demo lapsed customers
-          const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&pageSize=10`);
+          // Generate demo lapsed customers — fetch more to ensure we get canceled ones
+          const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&pageSize=100`);
           const data = await res.json();
           const contacts = (data.data || [])
-            .filter((c: any) => c.customFields?.subscriptionStatus === "canceled" && c.customFields?.ltv > 0)
+            .filter((c: any) => (c.customFields?.subscriptionStatus === "canceled" || c.status === "inactive") && parseFloat(c.customFields?.ltv || "0") > 0)
+            .sort((a: any, b: any) => parseFloat(b.customFields?.ltv || "0") - parseFloat(a.customFields?.ltv || "0"))
             .slice(0, 10)
             .map((c: any) => ({
               id: c.id, firstName: c.firstName || "", lastName: c.lastName || "",
@@ -79,24 +80,31 @@ export default function MoneyOnTable() {
 
   const handleWinBack = async (customer: LapsedCustomer) => {
     if (!customer.email) return;
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
     setSendingId(customer.id);
     try {
-      await fetch("/api/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "send",
-          to: customer.email,
-          subject: `We miss you, ${customer.firstName}!`,
-          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+      if (isDemo) {
+        // Simulate send in demo mode — don't send real emails
+        await new Promise(r => setTimeout(r, 800));
+      } else {
+        await fetch("/api/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "send",
+            to: customer.email,
+            subject: `We miss you, ${customer.firstName}!`,
+            html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
 <h2 style="color:#1a1a2e;">Hey ${customer.firstName},</h2>
 <p style="color:#555;line-height:1.6;">It's been ${customer.daysSince} days since we last heard from you, and we wanted to reach out personally.</p>
 <p style="color:#555;line-height:1.6;">You've been one of our most valued customers, and we'd love to welcome you back.</p>
 <a href="#" style="display:inline-block;background:#6d28d9;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0;">Come Back & Save</a>
 <p style="color:#999;font-size:13px;">Reply to this email with any questions. We're here to help.</p>
 </div>`,
-        }),
-      });
+          }),
+        });
+      }
       setSentIds(prev => { const next = new Set(prev); next.add(customer.id); return next; });
     } catch {}
     finally { setSendingId(null); }
