@@ -5,8 +5,9 @@ import Header from "@/components/dashboard/header";
 import {
   Send, Users, Mail, Plus, ChevronRight, Loader2, Eye, X, MessageSquare,
   Crown, UserX, UserCheck, Zap, ShoppingCart, ArrowRight, Check, Search,
-  ClipboardPaste, UserPlus, Bookmark, Trash2,
+  ClipboardPaste, UserPlus, Bookmark, Trash2, Sparkles,
 } from "lucide-react";
+import AICampaigns from "@/components/dashboard/ai-campaigns";
 
 // ─── TYPES ───
 
@@ -57,6 +58,7 @@ function saveSavedSegments(segs: Segment[]) {
 
 export default function CampaignsPage() {
   const [step, setStep] = useState<Step>("audience");
+  const [campaignMode, setCampaignMode] = useState<"ai" | "manual">("ai");
   const [audienceMode, setAudienceMode] = useState<AudienceMode>("segment");
 
   // Segment selection
@@ -266,6 +268,30 @@ export default function CampaignsPage() {
     <>
       <Header title="Campaigns" />
       <div className="p-6">
+
+        {/* Mode Tabs */}
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
+          <button onClick={() => setCampaignMode("ai")}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition ${
+              campaignMode === "ai" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}>
+            <Sparkles className={`w-4 h-4 ${campaignMode === "ai" ? "text-violet-500" : ""}`} />
+            AI Smart Campaigns
+          </button>
+          <button onClick={() => setCampaignMode("manual")}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition ${
+              campaignMode === "manual" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}>
+            <Send className={`w-4 h-4 ${campaignMode === "manual" ? "text-indigo-500" : ""}`} />
+            Manual Campaign
+          </button>
+        </div>
+
+        {/* AI MODE */}
+        {campaignMode === "ai" && <AICampaigns />}
+
+        {/* MANUAL MODE */}
+        {campaignMode === "manual" && (<>
 
         {/* Quick Send */}
         {step === "audience" && (
@@ -607,6 +633,7 @@ export default function CampaignsPage() {
           </div>
         )}
 
+        </>)}
       </div>
     </>
   );
