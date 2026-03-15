@@ -37,13 +37,6 @@ const comingSoonIntegrations = [
   { name: "Zapier", desc: "Connect 5,000+ apps", icon: "⚡" },
 ];
 
-const teamMembers = [
-  { name: "Orlando", email: "hello@sonji.io", role: "Owner", avatar: "O", status: "Active" },
-  { name: "Sarah Chen", email: "sarah@sonji.io", role: "Admin", avatar: "SC", status: "Active" },
-  { name: "Marcus Rivera", email: "marcus@sonji.io", role: "Member", avatar: "MR", status: "Active" },
-  { name: "Emily Rodriguez", email: "emily@sonji.io", role: "Member", avatar: "ER", status: "Invited" },
-];
-
 // ═══════════════════════════════════════════
 // STRIPE INTEGRATION COMPONENT
 // ═══════════════════════════════════════════
@@ -397,65 +390,6 @@ function StripeIntegration() {
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
-
-          {/* Sync Result */}
-          {syncResult && (
-            <div className={`mt-3 p-4 rounded-lg border ${syncResult.dryRun ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
-              <div className="flex items-center gap-2 mb-3">
-                {syncResult.dryRun ? (
-                  <span className="text-xs font-semibold text-amber-700 uppercase">Preview (no data imported)</span>
-                ) : (
-                  <span className="text-xs font-semibold text-emerald-700 uppercase">Import Complete</span>
-                )}
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-white/70 rounded-lg px-3 py-2">
-                  <p className="text-xl font-bold text-gray-900">{(syncResult.stripeData?.customersFound || 0).toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-500">Customers</p>
-                </div>
-                <div className="bg-white/70 rounded-lg px-3 py-2">
-                  <p className="text-xl font-bold text-gray-900">{(syncResult.stripeData?.chargesFound || 0).toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-500">Charges</p>
-                </div>
-                <div className="bg-white/70 rounded-lg px-3 py-2">
-                  <p className="text-xl font-bold text-gray-900">{(syncResult.stripeData?.subscriptionsFound || 0).toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-500">Subscriptions</p>
-                </div>
-                <div className="bg-white/70 rounded-lg px-3 py-2">
-                  <p className="text-xl font-bold text-emerald-700">${(syncResult.metrics?.totalRevenue || 0).toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-500">Total Revenue</p>
-                </div>
-              </div>
-              {syncResult.metrics?.tierBreakdown && (
-                <div className="grid grid-cols-4 gap-2 mt-3">
-                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
-                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.tierBreakdown.whales}</p>
-                    <p className="text-[10px] text-gray-400">Whales ($500+)</p>
-                  </div>
-                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
-                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.tierBreakdown.mid}</p>
-                    <p className="text-[10px] text-gray-400">Mid ($200-499)</p>
-                  </div>
-                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
-                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.tierBreakdown.low}</p>
-                    <p className="text-[10px] text-gray-400">Low (&lt;$200)</p>
-                  </div>
-                  <div className="text-center bg-white/50 rounded px-2 py-1.5">
-                    <p className="text-sm font-bold text-gray-900">{syncResult.metrics.subBreakdown?.active || 0}</p>
-                    <p className="text-[10px] text-gray-400">Active Subs</p>
-                  </div>
-                </div>
-              )}
-              {syncResult.duration && (
-                <p className="text-xs text-gray-500 mt-2">Completed in {(syncResult.duration / 1000).toFixed(1)}s</p>
-              )}
-              {!syncResult.dryRun && syncResult.imported > 0 && (
-                <a href="/dashboard/contacts" className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 mt-3">
-                  View {syncResult.imported.toLocaleString()} contacts →
-                </a>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Resend Email Integration */}
@@ -794,6 +728,58 @@ export default function SettingsPage() {
   const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const initialTab = searchParams?.get("tab") || "general";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [tenant, setTenant] = useState<any>(null);
+  const [tenantLoading, setTenantLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  // General form state
+  const [businessName, setBusinessName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [timezone, setTimezone] = useState("America/New_York");
+  const [currency, setCurrency] = useState("USD");
+  const [dateFormat, setDateFormat] = useState("MM/DD/YYYY");
+
+  // Branding form state
+  const [primaryColor, setPrimaryColor] = useState("#6366f1");
+  const [accentColor, setAccentColor] = useState("#0f172a");
+
+  // Notification state
+  const [notifs, setNotifs] = useState<Record<string, boolean>>({
+    newContact: true, dealStage: true, taskAssigned: true,
+    formSubmission: true, meetingReminder: true, weeklyDigest: true,
+  });
+
+  // Load tenant data
+  useEffect(() => {
+    fetch("/api/tenant-settings").then(r => r.json()).then(d => {
+      setTenant(d);
+      setBusinessName(d.name || "");
+      setSlug(d.slug || "");
+      const s = d.settings || {};
+      setTimezone(s.timezone || "America/New_York");
+      setCurrency(s.currency || "USD");
+      setDateFormat(s.dateFormat || "MM/DD/YYYY");
+      const b = d.branding || {};
+      setPrimaryColor(b.primaryColor || "#6366f1");
+      setAccentColor(b.accentColor || "#0f172a");
+      if (s.notifications) setNotifs({ ...notifs, ...s.notifications });
+    }).catch(() => {}).finally(() => setTenantLoading(false));
+  }, []);
+
+  const handleSave = async (data: any) => {
+    setSaving(true); setSaveMsg("");
+    try {
+      const res = await fetch("/api/tenant-settings", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) setSaveMsg("Saved!");
+      else setSaveMsg("Failed to save");
+      setTimeout(() => setSaveMsg(""), 2000);
+    } catch { setSaveMsg("Failed"); }
+    finally { setSaving(false); }
+  };
 
   return (
     <>
@@ -821,57 +807,63 @@ export default function SettingsPage() {
 
           {/* Content */}
           <div className="flex-1 max-w-2xl">
+
             {/* GENERAL */}
             {activeTab === "general" && (
               <div className="bg-white rounded-xl border border-gray-100 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-1">General Settings</h2>
                 <p className="text-sm text-gray-500 mb-6">Manage your workspace configuration</p>
-
                 <div className="space-y-5">
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Business Name</label>
-                    <input type="text" defaultValue="My Business" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300" />
+                    <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300" />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Workspace URL</label>
                     <div className="flex items-center">
                       <span className="px-3 py-2.5 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-200 rounded-l-lg">https://</span>
-                      <input type="text" defaultValue="mybusiness" className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300" />
+                      <input type="text" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                        className="flex-1 px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300" />
                       <span className="px-3 py-2.5 text-sm text-gray-500 bg-gray-50 border border-l-0 border-gray-200 rounded-r-lg">.sonji.io</span>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-1.5 block">Timezone</label>
-                      <select className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                        <option>America/New_York (EST)</option>
-                        <option>America/Chicago (CST)</option>
-                        <option>America/Denver (MST)</option>
-                        <option>America/Los_Angeles (PST)</option>
+                      <select value={timezone} onChange={(e) => setTimezone(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        <option value="America/New_York">America/New_York (EST)</option>
+                        <option value="America/Chicago">America/Chicago (CST)</option>
+                        <option value="America/Denver">America/Denver (MST)</option>
+                        <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-1.5 block">Currency</label>
-                      <select className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                        <option>USD — US Dollar</option>
-                        <option>EUR — Euro</option>
-                        <option>GBP — British Pound</option>
+                      <select value={currency} onChange={(e) => setCurrency(e.target.value)}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        <option value="USD">USD — US Dollar</option>
+                        <option value="EUR">EUR — Euro</option>
+                        <option value="GBP">GBP — British Pound</option>
                       </select>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Date Format</label>
-                    <select className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                      <option>MM/DD/YYYY</option>
-                      <option>DD/MM/YYYY</option>
-                      <option>YYYY-MM-DD</option>
+                    <select value={dateFormat} onChange={(e) => setDateFormat(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                      <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                      <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                      <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                     </select>
                   </div>
                 </div>
-
-                <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
-                  <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
-                    <Save className="w-4 h-4" /> Save Changes
+                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                  {saveMsg && <span className="text-xs text-emerald-600 font-medium">{saveMsg}</span>}
+                  <button onClick={() => handleSave({ name: businessName, slug, settings: { timezone, currency, dateFormat } })} disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg transition">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Changes
                   </button>
                 </div>
               </div>
@@ -881,58 +873,60 @@ export default function SettingsPage() {
             {activeTab === "branding" && (
               <div className="bg-white rounded-xl border border-gray-100 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-1">Branding</h2>
-                <p className="text-sm text-gray-500 mb-6">Customize how your CRM looks to your team and clients</p>
-
+                <p className="text-sm text-gray-500 mb-6">Customize how your CRM looks</p>
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-3 block">Logo</label>
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-xl bg-indigo-100 flex items-center justify-center border-2 border-dashed border-indigo-300">
-                        <span className="text-xl font-bold text-indigo-600">S</span>
+                        <span className="text-xl font-bold text-indigo-600">{businessName?.[0] || "S"}</span>
                       </div>
                       <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
                         <Upload className="w-4 h-4" /> Upload Logo
                       </button>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-1.5 block">Primary Color</label>
                       <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-600 border border-gray-200 cursor-pointer" />
-                        <input type="text" defaultValue="#6366f1" className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                        <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" />
+                        <input type="text" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
                       </div>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-1.5 block">Accent Color</label>
                       <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-lg bg-slate-900 border border-gray-200 cursor-pointer" />
-                        <input type="text" defaultValue="#0f172a" className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                        <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)}
+                          className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" />
+                        <input type="text" value={accentColor} onChange={(e) => setAccentColor(e.target.value)}
+                          className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
                       </div>
                     </div>
                   </div>
-
                   <div>
                     <label className="text-sm font-medium text-gray-700 mb-3 block">Preview</label>
                     <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">S</span>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: primaryColor }}>
+                          <span className="text-white text-xs font-bold">{businessName?.[0] || "S"}</span>
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">Your Business</span>
+                        <span className="text-sm font-semibold text-gray-900">{businessName || "Your Business"}</span>
                       </div>
                       <div className="flex gap-2">
-                        <div className="px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg">Primary Button</div>
+                        <div className="px-3 py-1.5 text-xs font-medium text-white rounded-lg" style={{ background: primaryColor }}>Primary Button</div>
                         <div className="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 border border-gray-200 rounded-lg">Secondary Button</div>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
-                  <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
-                    <Save className="w-4 h-4" /> Save Branding
+                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                  {saveMsg && <span className="text-xs text-emerald-600 font-medium">{saveMsg}</span>}
+                  <button onClick={() => handleSave({ branding: { primaryColor, accentColor } })} disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg transition">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Branding
                   </button>
                 </div>
               </div>
@@ -943,32 +937,23 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <div className="bg-white rounded-xl border border-gray-100 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-1">Current Plan</h2>
-                  <p className="text-sm text-gray-500 mb-4">You are on the Growth plan</p>
-                  <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                  <p className="text-sm text-gray-500 mb-4">Manage your subscription</p>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                     <div>
-                      <p className="text-sm font-semibold text-indigo-900">Growth Plan</p>
-                      <p className="text-xs text-indigo-600 mt-0.5">10,000 contacts · 10 team members · All features</p>
+                      <p className="text-sm font-semibold text-gray-900">{tenant?.plan ? `${tenant.plan.charAt(0).toUpperCase()}${tenant.plan.slice(1)} Plan` : "Free Trial"}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Unlimited contacts · All features included</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-indigo-900">$149<span className="text-sm font-normal text-indigo-600">/mo</span></p>
-                      <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1">Upgrade to Scale</button>
+                      <p className="text-sm text-gray-500">Billing not yet configured</p>
+                      <p className="text-xs text-gray-400 mt-1">Stripe billing will be enabled before launch</p>
                     </div>
                   </div>
                 </div>
-
                 <div className="bg-white rounded-xl border border-gray-100 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h2>
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-7 rounded bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">
-                        <span className="text-white text-[8px] font-bold">VISA</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Visa ending in 4242</p>
-                        <p className="text-xs text-gray-400">Expires 12/2028</p>
-                      </div>
-                    </div>
-                    <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">Update</button>
+                  <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
+                    <p className="text-sm text-gray-500">No payment method on file</p>
+                    <p className="text-xs text-gray-400 mt-1">Payment will be configured when Stripe billing goes live</p>
                   </div>
                 </div>
               </div>
@@ -987,30 +972,25 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {teamMembers.map((m) => (
-                    <div key={m.email} className="flex items-center justify-between py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
-                          <span className="text-xs font-semibold text-white">{m.avatar}</span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{m.name}</p>
-                          <p className="text-xs text-gray-400">{m.email}</p>
-                        </div>
+                  <div className="flex items-center justify-between py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-white">O</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
-                          m.status === "Active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"
-                        }`}>{m.status}</span>
-                        <select className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none" defaultValue={m.role}>
-                          <option>Owner</option>
-                          <option>Admin</option>
-                          <option>Member</option>
-                          <option>Viewer</option>
-                        </select>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Orlando</p>
+                        <p className="text-xs text-gray-400">hello@sonji.io</p>
                       </div>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-medium px-2.5 py-1 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">Active</span>
+                      <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">Owner</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 p-4 border border-dashed border-gray-200 rounded-xl text-center">
+                  <p className="text-sm text-gray-500">Team invites will be functional once Clerk is in production mode</p>
+                  <p className="text-xs text-gray-400 mt-1">Roles: Owner, Admin, Member, Viewer — RBAC with 35 permissions</p>
                 </div>
               </div>
             )}
@@ -1022,24 +1002,33 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-500 mb-6">Choose what you want to be notified about</p>
                 <div className="space-y-4">
                   {[
-                    { label: "New contact created", desc: "Get notified when a new contact is added to the CRM" },
-                    { label: "Deal stage changes", desc: "Get notified when deals move between pipeline stages" },
-                    { label: "Task assigned to you", desc: "Get notified when someone assigns you a task" },
-                    { label: "Form submissions", desc: "Get notified when someone submits an intake form" },
-                    { label: "Meeting reminders", desc: "Get reminded 15 minutes before scheduled meetings" },
-                    { label: "Weekly digest", desc: "Receive a weekly summary of your CRM activity" },
+                    { key: "newContact", label: "New contact created", desc: "Get notified when a new contact is added" },
+                    { key: "dealStage", label: "Deal stage changes", desc: "Get notified when deals move between pipeline stages" },
+                    { key: "taskAssigned", label: "Task assigned to you", desc: "Get notified when someone assigns you a task" },
+                    { key: "formSubmission", label: "Form submissions", desc: "Get notified when someone submits a form" },
+                    { key: "meetingReminder", label: "Meeting reminders", desc: "15-minute reminders before meetings" },
+                    { key: "weeklyDigest", label: "Weekly digest", desc: "Weekly summary of CRM activity" },
                   ].map((n) => (
-                    <div key={n.label} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                    <div key={n.key} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
                       <div>
                         <p className="text-sm font-medium text-gray-900">{n.label}</p>
                         <p className="text-xs text-gray-400 mt-0.5">{n.desc}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked className="sr-only peer" />
+                        <input type="checkbox" checked={notifs[n.key] ?? true}
+                          onChange={(e) => setNotifs({ ...notifs, [n.key]: e.target.checked })}
+                          className="sr-only peer" />
                         <div className="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-500/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600" />
                       </label>
                     </div>
                   ))}
+                </div>
+                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                  {saveMsg && <span className="text-xs text-emerald-600 font-medium">{saveMsg}</span>}
+                  <button onClick={() => handleSave({ settings: { notifications: notifs } })} disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg transition">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Preferences
+                  </button>
                 </div>
               </div>
             )}
