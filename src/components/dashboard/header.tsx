@@ -1,53 +1,106 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Search,
-  Bell,
-  Plus,
-  ChevronDown,
-  Phone,
-  Mail,
-  Video,
+  Search, Bell, Plus, ChevronDown, Phone, Mail, Video,
+  Users, Handshake, CheckSquare, Calendar, DollarSign,
+  X, Send, Loader2, ExternalLink,
 } from "lucide-react";
 import { useModal } from "@/components/modals/modal-provider";
 
-// ────────────────────────────────────
-// HEADER COMPONENT
-// Fixed top bar with search, quick actions, notifications, user
-// ────────────────────────────────────
+const createOptions = [
+  { label: "Contact", icon: "👤", modal: "contact" },
+  { label: "Deal", icon: "🤝", modal: "deal" },
+  { label: "Task", icon: "✅", modal: "task" },
+  { label: "Meeting", icon: "📅", modal: "meeting" },
+  { label: "Company", icon: "🏢", modal: "company" },
+  { label: "Invoice", icon: "💰", modal: "invoice" },
+];
 
-interface HeaderProps {
-  title: string;
-  subtitle?: string;
-}
+interface Props { title: string; subtitle?: string; }
 
-export default function Header({ title, subtitle }: HeaderProps) {
+export default function Header({ title, subtitle }: Props) {
+  const { openModal } = useModal();
+  const router = useRouter();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { openModal } = useModal();
+  const [showPhonePanel, setShowPhonePanel] = useState(false);
+  const [showEmailPanel, setShowEmailPanel] = useState(false);
+  const [showVideoPanel, setShowVideoPanel] = useState(false);
 
-  const createOptions = [
-    { label: "Add Contact", icon: "👤", modal: "contact" as const },
-    { label: "Add Deal", icon: "🤝", modal: "deal" as const },
-    { label: "Add Task", icon: "✓", modal: "task" as const },
-    { label: "Schedule Meeting", icon: "📅", modal: "meeting" as const },
-    { label: "Compose Email", icon: "✉️", modal: "email" as const },
-    { label: "Import Contacts", icon: "📥", modal: "import" as const },
-  ];
+  // Phone state
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  // Email state
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailResult, setEmailResult] = useState<string | null>(null);
+
+  // Video state
+  const [meetingUrl, setMeetingUrl] = useState("");
+
+  // Load saved meeting URL
+  useEffect(() => {
+    try { const saved = localStorage.getItem("sonji-meeting-url"); if (saved) setMeetingUrl(saved); } catch {}
+  }, []);
+
+  const closeAllPanels = () => {
+    setShowPhonePanel(false);
+    setShowEmailPanel(false);
+    setShowVideoPanel(false);
+  };
+
+  const handleCall = () => {
+    if (!phoneNumber) return;
+    const cleaned = phoneNumber.replace(/\D/g, "");
+    const formatted = cleaned.startsWith("1") ? `+${cleaned}` : `+1${cleaned}`;
+    window.open(`tel:${formatted}`, "_self");
+    setShowPhonePanel(false);
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailTo.includes("@") || !emailSubject) return;
+    setEmailSending(true); setEmailResult(null);
+    try {
+      const res = await fetch("/api/email", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send", to: emailTo, subject: emailSubject,
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;"><p style="color:#555;line-height:1.6;">${emailBody.replace(/\n/g, "<br/>")}</p></div>`,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) { setEmailResult("✓ Sent"); setEmailTo(""); setEmailSubject(""); setEmailBody(""); setTimeout(() => { setShowEmailPanel(false); setEmailResult(null); }, 1500); }
+      else setEmailResult(`Failed: ${data.error}`);
+    } catch { setEmailResult("Failed"); }
+    finally { setEmailSending(false); }
+  };
+
+  const handleStartMeeting = () => {
+    if (meetingUrl) {
+      try { localStorage.setItem("sonji-meeting-url", meetingUrl); } catch {}
+      window.open(meetingUrl, "_blank");
+    }
+    setShowVideoPanel(false);
+  };
+
+  const handleSignOut = () => {
+    // Clear site auth cookie and redirect
+    document.cookie = "site_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    window.location.href = "/login";
+  };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-gray-100">
       <div className="flex items-center justify-between h-16 px-6">
-        {/* Left: Page title */}
-        <div className="flex items-center gap-4">
+        {/* Left: Title */}
+        <div className="flex items-center gap-4" data-tour="header-title">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900 leading-tight">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
-            )}
+            <h1 className="text-lg font-semibold text-gray-900 leading-none">{title}</h1>
+            {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
           </div>
         </div>
 
@@ -68,16 +121,108 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1">
-          {/* Quick communication icons */}
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition hidden sm:flex">
-            <Phone className="w-4 h-4" />
-          </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition hidden sm:flex">
-            <Mail className="w-4 h-4" />
-          </button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition hidden sm:flex">
-            <Video className="w-4 h-4" />
-          </button>
+
+          {/* ── PHONE ── */}
+          <div className="relative hidden sm:block">
+            <button onClick={() => { closeAllPanels(); setShowPhonePanel(!showPhonePanel); }}
+              className={`p-2 rounded-lg transition ${showPhonePanel ? "text-indigo-600 bg-indigo-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}>
+              <Phone className="w-4 h-4" />
+            </button>
+            {showPhonePanel && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowPhonePanel(false)} />
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-100 p-4 z-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-gray-900">Quick Call</p>
+                    <button onClick={() => setShowPhonePanel(false)} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Phone number..."
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    onKeyDown={(e) => e.key === "Enter" && handleCall()} />
+                  <button onClick={handleCall} disabled={!phoneNumber}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 rounded-lg transition">
+                    <Phone className="w-3.5 h-3.5" /> Call
+                  </button>
+                  <p className="text-[10px] text-gray-400 mt-2">Opens your phone's dialer. Twilio Voice coming soon.</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ── EMAIL ── */}
+          <div className="relative hidden sm:block">
+            <button onClick={() => { closeAllPanels(); setShowEmailPanel(!showEmailPanel); }}
+              className={`p-2 rounded-lg transition ${showEmailPanel ? "text-indigo-600 bg-indigo-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}>
+              <Mail className="w-4 h-4" />
+            </button>
+            {showEmailPanel && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowEmailPanel(false)} />
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 p-4 z-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-gray-900">Quick Email</p>
+                    <button onClick={() => setShowEmailPanel(false)} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <div className="space-y-2">
+                    <input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="To: email@example.com"
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                    <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Subject"
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                    <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} placeholder="Message..." rows={3}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                    <button onClick={handleSendEmail} disabled={emailSending || !emailTo || !emailSubject}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 rounded-lg transition">
+                      {emailSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      {emailSending ? "Sending..." : "Send Email"}
+                    </button>
+                    {emailResult && <p className={`text-xs ${emailResult.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>{emailResult}</p>}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ── VIDEO ── */}
+          <div className="relative hidden sm:block">
+            <button onClick={() => { closeAllPanels(); setShowVideoPanel(!showVideoPanel); }}
+              className={`p-2 rounded-lg transition ${showVideoPanel ? "text-indigo-600 bg-indigo-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}>
+              <Video className="w-4 h-4" />
+            </button>
+            {showVideoPanel && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowVideoPanel(false)} />
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 p-4 z-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-gray-900">Start Meeting</p>
+                    <button onClick={() => setShowVideoPanel(false)} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 mb-1.5 block">Your Meeting Room URL</label>
+                      <input value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)}
+                        placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                      <p className="text-[10px] text-gray-400 mt-1">Google Meet, Zoom, or any video link. Saved for next time.</p>
+                    </div>
+                    <button onClick={handleStartMeeting} disabled={!meetingUrl}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-lg transition">
+                      <Video className="w-3.5 h-3.5" /> Start Meeting
+                    </button>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button onClick={() => { setMeetingUrl("https://meet.google.com/new"); }}
+                        className="flex-1 text-xs text-center py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-600">
+                        Google Meet
+                      </button>
+                      <button onClick={() => { setMeetingUrl("https://zoom.us/start/videomeeting"); }}
+                        className="flex-1 text-xs text-center py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-600">
+                        Zoom
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block" />
 
@@ -96,21 +241,14 @@ export default function Header({ title, subtitle }: HeaderProps) {
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Create</span>
             </button>
-
-            {/* Dropdown */}
             {showCreateMenu && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowCreateMenu(false)}
-                />
+                <div className="fixed inset-0 z-40" onClick={() => setShowCreateMenu(false)} />
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                   {createOptions.map((opt) => (
-                    <button
-                      key={opt.label}
+                    <button key={opt.label}
                       className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
-                      onClick={() => { setShowCreateMenu(false); openModal(opt.modal); }}
-                    >
+                      onClick={() => { setShowCreateMenu(false); openModal(opt.modal as "contact" | "deal" | "task" | "meeting" | "company" | "invoice"); }}>
                       <span className="text-base">{opt.icon}</span>
                       <span>{opt.label}</span>
                       <Plus className="w-3.5 h-3.5 text-gray-400 ml-auto" />
@@ -123,42 +261,40 @@ export default function Header({ title, subtitle }: HeaderProps) {
 
           <div className="w-px h-6 bg-gray-200 mx-2" />
 
-          {/* User Avatar */}
+          {/* User Menu */}
           <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-50 transition"
-            >
+            <button onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-50 transition">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
                 <span className="text-white text-xs font-semibold">O</span>
               </div>
               <ChevronDown className="w-3 h-3 text-gray-400 hidden sm:block" />
             </button>
-
             {showUserMenu && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowUserMenu(false)}
-                />
+                <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
                 <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">Orlando</p>
                     <p className="text-xs text-gray-400">hello@sonji.io</p>
                   </div>
                   <div className="py-1">
-                    <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition">
+                    <button onClick={() => { setShowUserMenu(false); router.push("/dashboard/settings"); }}
+                      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition">
                       Account Settings
                     </button>
-                    <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition">
+                    <button onClick={() => { setShowUserMenu(false); router.push("/dashboard/settings?tab=billing"); }}
+                      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition">
                       Billing
                     </button>
-                    <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition">
+                    <button onClick={() => { setShowUserMenu(false); window.open("mailto:hello@sonji.io?subject=Support Request", "_blank"); }}
+                      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition">
                       Help & Support
                     </button>
                   </div>
                   <div className="border-t border-gray-100 pt-1">
-                    <button className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left transition">
+                    <button onClick={handleSignOut}
+                      className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left transition">
                       Sign Out
                     </button>
                   </div>

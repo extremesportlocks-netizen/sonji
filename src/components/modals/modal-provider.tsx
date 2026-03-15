@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import { CreateContactModal, CreateDealModal, CreateTaskModal, ScheduleMeetingModal, ComposeEmailModal, ImportContactsModal } from "@/components/modals";
 
-type ModalType = "contact" | "deal" | "task" | "meeting" | "email" | "import" | null;
+type ModalType = "contact" | "deal" | "task" | "meeting" | "email" | "import" | "company" | "invoice" | null;
 
 interface ModalContextType {
   openModal: (type: ModalType, props?: Record<string, any>) => void;
