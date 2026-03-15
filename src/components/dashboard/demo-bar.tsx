@@ -61,7 +61,7 @@ export default function DemoBar() {
   };
 
   const exitDemo = () => {
-    setDemoIndustry(null);
+    setDemoIndustry("ecommerce");
     window.location.reload();
   };
 
@@ -74,7 +74,7 @@ export default function DemoBar() {
             <span className="text-[11px] font-semibold text-violet-200 uppercase tracking-widest">Demo Mode</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {/* Switcher */}
             <button onClick={() => setOpen(!open)}
               className="flex items-center gap-2 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition text-sm font-medium">
@@ -86,9 +86,9 @@ export default function DemoBar() {
               <ChevronDown className={`w-3.5 h-3.5 transition ${open ? "rotate-180" : ""}`} />
             </button>
 
-            {active && !INDUSTRIES.find(i => i.key === active)?.live && (
-              <button onClick={exitDemo} className="flex items-center gap-1 px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition text-xs">
-                <X className="w-3 h-3" /> Exit Demo
+            {active && active !== "ecommerce" && (
+              <button onClick={exitDemo} className="flex items-center gap-1.5 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 rounded-lg transition text-xs font-medium">
+                <X className="w-3 h-3" /> Back to Live Data
               </button>
             )}
           </div>

@@ -45,7 +45,10 @@ export default function ReportsPage() {
   const [view, setView] = useState<ReportView>("overview");
 
   useEffect(() => {
-    fetch("/api/analytics").then(r => r.json()).then(d => { if (d.ok) setData(d.data); }).catch(() => {}).finally(() => setLoading(false));
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+    const url = isDemo ? `/api/demo?industry=${demoIndustry}` : "/api/analytics";
+    fetch(url).then(r => r.json()).then(d => { if (d.ok) setData(isDemo ? d.data : d.data); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   if (loading) return (<><Header title="Reports" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);

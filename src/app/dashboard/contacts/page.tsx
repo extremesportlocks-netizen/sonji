@@ -270,12 +270,24 @@ export default function ContactsPage() {
         params.set(k, v);
       }
 
-      const res = await fetch(`/api/contacts?${params.toString()}`);
-      const json = await res.json();
+      // Check demo mode
+      const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+      const isDemo = demoIndustry && demoIndustry !== "ecommerce";
 
-      if (json.ok) {
-        setContactsList(json.data || []);
-        setTotal(json.meta?.total || 0);
+      if (isDemo) {
+        const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&page=${page}&pageSize=${per}`);
+        const json = await res.json();
+        if (json.ok) {
+          setContactsList(json.data || []);
+          setTotal(json.meta?.total || 0);
+        }
+      } else {
+        const res = await fetch(`/api/contacts?${params.toString()}`);
+        const json = await res.json();
+        if (json.ok) {
+          setContactsList(json.data || []);
+          setTotal(json.meta?.total || 0);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch contacts:", err);

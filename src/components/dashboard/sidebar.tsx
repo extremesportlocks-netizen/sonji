@@ -10,6 +10,21 @@ import {
   DollarSign, Send, Puzzle, GripVertical, X,
 } from "lucide-react";
 
+const DEMO_NAMES: Record<string,{ name: string; initial: string }> = {
+  health_wellness: { name: "Glow Med Spa", initial: "G" },
+  fitness_gym: { name: "Iron Republic", initial: "I" },
+  beauty_salon: { name: "Luxe Beauty", initial: "L" },
+  agency_consulting: { name: "Power Marketing", initial: "P" },
+  real_estate: { name: "Summit Realty", initial: "S" },
+  home_services: { name: "Apex Roofing", initial: "A" },
+  legal: { name: "Sterling Law", initial: "S" },
+  coaching_education: { name: "Elevate Coaching", initial: "E" },
+  restaurant_food: { name: "The Copper Table", initial: "T" },
+  automotive: { name: "Precision Auto", initial: "P" },
+  nonprofit: { name: "Harbor Foundation", initial: "H" },
+  ecommerce: { name: "ESL Sports", initial: "E" },
+};
+
 // ────────────────────────────────────
 // NAV CONFIG
 // ────────────────────────────────────
@@ -81,6 +96,18 @@ export default function Sidebar() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [editMode, setEditMode] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [demoCompany, setDemoCompany] = useState<{ name: string; initial: string } | null>(null);
+
+  // Listen for demo mode changes
+  useEffect(() => {
+    const update = () => {
+      const key = localStorage.getItem("sonji-demo-industry");
+      setDemoCompany(key && DEMO_NAMES[key] ? DEMO_NAMES[key] : null);
+    };
+    update();
+    window.addEventListener("sonji-demo-change", update);
+    return () => window.removeEventListener("sonji-demo-change", update);
+  }, []);
 
   // Load saved state on mount
   useEffect(() => {
@@ -197,16 +224,16 @@ export default function Sidebar() {
       <div className={`flex items-center h-16 border-b border-gray-100 ${collapsed ? "justify-center px-2" : "px-5"}`}>
         {collapsed ? (
           <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+            <span className="text-white font-bold text-sm">{demoCompany?.initial || "S"}</span>
           </div>
         ) : (
           <div className="flex items-center gap-3 w-full">
             <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-sm">S</span>
+              <span className="text-white font-bold text-sm">{demoCompany?.initial || "S"}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">Sonji</p>
-              <p className="text-xs text-gray-400 truncate">My Workspace</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{demoCompany?.name || "Sonji"}</p>
+              <p className="text-xs text-gray-400 truncate">{demoCompany ? "Demo Workspace" : "My Workspace"}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
           </div>

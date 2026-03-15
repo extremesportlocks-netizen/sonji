@@ -43,9 +43,12 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/analytics")
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+    const url = isDemo ? `/api/demo?industry=${demoIndustry}` : "/api/analytics";
+    fetch(url)
       .then((r) => r.json())
-      .then((res) => { if (res.ok) setData(res.data); })
+      .then((res) => { if (res.ok) setData(isDemo ? res.data : res.data); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

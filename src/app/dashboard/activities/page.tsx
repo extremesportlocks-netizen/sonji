@@ -38,7 +38,10 @@ export default function ActivitiesPage() {
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
-    fetch("/api/contacts?pageSize=100&sortBy=createdAt&sortOrder=desc")
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+    const url = isDemo ? `/api/demo/contacts?industry=${demoIndustry}&pageSize=100` : "/api/contacts?pageSize=100&sortBy=createdAt&sortOrder=desc";
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
         if (data.ok) setActivities(data.data || []);
