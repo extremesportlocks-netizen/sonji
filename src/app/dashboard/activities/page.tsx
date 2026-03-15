@@ -71,7 +71,7 @@ export default function ActivitiesPage() {
                 { key: "all", label: "All" },
                 { key: "active", label: "Active" },
                 { key: "inactive", label: "Inactive" },
-                { key: "whale", label: "Whales" },
+                { key: "whale", label: "High Value" },
               ].map((f) => (
                 <button key={f.key} onClick={() => setFilter(f.key)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${filter === f.key ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
@@ -109,7 +109,7 @@ export default function ActivitiesPage() {
                           c.status === "inactive" ? "bg-red-50 text-red-600" :
                           "bg-gray-100 text-gray-500"
                         }`}>{c.status}</span>
-                        {ltv >= 500 && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-700">Whale</span>}
+                        {ltv >= 500 && <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-50 text-violet-700">High Value</span>}
                       </div>
                       <p className="text-sm text-gray-500 mt-0.5">{c.email}</p>
                       <div className="flex items-center gap-3 mt-1.5">

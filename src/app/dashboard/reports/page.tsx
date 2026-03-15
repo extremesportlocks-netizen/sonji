@@ -116,7 +116,7 @@ export default function ReportsPage() {
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Tiers</h3>
                     <div className="space-y-3">
                       {[
-                        { label: "Whales ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500" },
+                        { label: "High Value ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500" },
                         { label: "Mid ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500" },
                         { label: "Low (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400" },
                         { label: "No purchase", n: data.ltvBuckets.zero, color: "bg-gray-300" },
@@ -160,7 +160,7 @@ export default function ReportsPage() {
                   <h3 className="text-sm font-semibold text-gray-900 mb-4">Revenue by Customer Tier</h3>
                   <div className="space-y-4">
                     {[
-                      { label: "Whales ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500", est: data.ltvBuckets.whale * 750 },
+                      { label: "High Value ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500", est: data.ltvBuckets.whale * 750 },
                       { label: "Mid-Tier ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500", est: data.ltvBuckets.mid * 320 },
                       { label: "Low-Tier (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400", est: data.ltvBuckets.low * 80 },
                     ].map((t) => (

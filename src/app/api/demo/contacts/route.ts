@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     const subStatus = rand() < 0.25 ? "active" : rand() < 0.5 ? "canceled" : rand() < 0.7 ? "one-time" : "never";
     const status = subStatus === "active" || daysSince < 30 ? "active" : ltv > 0 ? "inactive" : "lead";
     const tags = [...(tagSets[Math.floor(rand() * tagSets.length)] || [])];
-    if (ltv >= 500) tags.push("Whale"); else if (ltv >= 200) tags.push("Mid-Tier"); else if (ltv > 0) tags.push("Low-Tier");
+    if (ltv >= 500) tags.push("High Value"); else if (ltv >= 200) tags.push("Mid-Tier"); else if (ltv > 0) tags.push("Low-Tier");
     if (subStatus === "active") tags.push("Active Subscriber");
     if (subStatus === "canceled") tags.push("Lapsed");
     const plan = plans[Math.floor(rand() * plans.length)];

@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
     const coldWhales = enriched.filter(c => c.ltv >= 500 && c.daysSince > 60 && c.subStatus !== "active").sort((a, b) => b.ltv - a.ltv).slice(0, 30);
     if (coldWhales.length > 0) {
       const totalLtv = coldWhales.reduce((s, c) => s + c.ltv, 0);
-      campaigns.push({ id: "whale_retention", name: "VIP Whale Re-engagement", emoji: "🐋", urgency: "high", contactCount: coldWhales.length,
+      campaigns.push({ id: "whale_retention", name: "VIP Re-engagement", emoji: "🐋", urgency: "high", contactCount: coldWhales.length,
         reason: `${coldWhales.length} of your $500+ LTV customers have gone quiet. Combined value: $${totalLtv.toLocaleString()}.`,
         contacts: coldWhales.map(c => ({ id: c.id, firstName: c.firstName, lastName: c.lastName || "", email: c.email!, ltv: c.ltv, daysSince: c.daysSince, purchases: c.purchases })),
         subject: "A personal note for you, {{firstName}}", estimatedRevenue: `$${Math.round(totalLtv * 0.2).toLocaleString()} potential`,
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
     // 5: Mid-Tier Upsell
     const midTier = enriched.filter(c => c.ltv >= 200 && c.ltv < 500 && (c.subStatus === "active" || c.daysSince < 30) && c.purchases >= 2).sort((a, b) => b.ltv - a.ltv).slice(0, 50);
     if (midTier.length > 0) {
-      campaigns.push({ id: "mid_tier_upsell", name: "Mid-Tier → Whale Upsell", emoji: "📈", urgency: "low", contactCount: midTier.length,
+      campaigns.push({ id: "mid_tier_upsell", name: "Mid-Tier → VIP Upsell", emoji: "📈", urgency: "low", contactCount: midTier.length,
         reason: `${midTier.length} active customers in the $200-499 range. One more purchase pushes them into whale territory.`,
         contacts: midTier.map(c => ({ id: c.id, firstName: c.firstName, lastName: c.lastName || "", email: c.email!, ltv: c.ltv, daysSince: c.daysSince, purchases: c.purchases })),
         subject: "Something exclusive for our best customers", estimatedRevenue: `$${Math.round(midTier.length * 150).toLocaleString()} upsell potential`,

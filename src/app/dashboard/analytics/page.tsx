@@ -113,7 +113,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Whales ($500+)", count: data.ltvBuckets.whale, color: "bg-violet-500", icon: Crown },
+                  { label: "High Value ($500+)", count: data.ltvBuckets.whale, color: "bg-violet-500", icon: Crown },
                   { label: "Mid ($200-499)", count: data.ltvBuckets.mid, color: "bg-blue-500", icon: TrendingUp },
                   { label: "Low (<$200)", count: data.ltvBuckets.low, color: "bg-amber-400", icon: Users },
                   { label: "No Purchase", count: data.ltvBuckets.zero, color: "bg-gray-300", icon: AlertTriangle },

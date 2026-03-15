@@ -238,7 +238,7 @@ export default function ContactsPage() {
   const segments: Segment[] = [
     { key: "all", label: "All", params: {} },
     { key: "active_sub", label: "Active Subscribers", params: { subStatus: "active" } },
-    { key: "whales", label: "Whales ($500+)", params: { minLtv: "500" } },
+    { key: "whales", label: "High Value ($500+)", params: { minLtv: "500" } },
     { key: "lapsed", label: "Lapsed", params: { tag: "Lapsed" } },
     { key: "winback", label: "Win-Back", params: { tag: "Win-Back" } },
     { key: "inactive", label: "Inactive", params: { status: "inactive" } },

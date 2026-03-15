@@ -85,7 +85,7 @@ export default function ContactDetailPage() {
   const ltv = parseFloat(cf.ltv || "0");
   const tier = ltv >= 500 ? "whale" : ltv >= 200 ? "mid" : ltv > 0 ? "low" : "none";
   const tierColors = { whale: "bg-violet-100 text-violet-700", mid: "bg-blue-100 text-blue-700", low: "bg-gray-100 text-gray-600", none: "bg-gray-50 text-gray-400" };
-  const tierLabels = { whale: "Whale ($500+)", mid: "Mid-Tier", low: "Low-Tier", none: "No Purchases" };
+  const tierLabels = { whale: "High Value ($500+)", mid: "Mid-Tier", low: "Low-Tier", none: "No Purchases" };
   const tags = Array.isArray(contact?.tags) ? contact.tags : [];
 
   const handleQuickEmail = async () => {

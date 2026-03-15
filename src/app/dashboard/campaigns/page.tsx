@@ -24,7 +24,7 @@ interface Segment {
 const defaultSegments: Segment[] = [
   { key: "all", label: "All Contacts", desc: "Everyone in your CRM", icon: Users, color: "bg-gray-500", params: {} },
   { key: "active_sub", label: "Active Subscribers", desc: "Currently paying customers", icon: UserCheck, color: "bg-emerald-500", params: { subStatus: "active" } },
-  { key: "whales", label: "Whales ($500+)", desc: "Your highest value customers", icon: Crown, color: "bg-violet-500", params: { minLtv: "500" } },
+  { key: "whales", label: "High Value ($500+)", desc: "Your highest value customers", icon: Crown, color: "bg-violet-500", params: { minLtv: "500" } },
   { key: "lapsed", label: "Lapsed Customers", desc: "Had a subscription, now canceled", icon: UserX, color: "bg-red-400", params: { tag: "Lapsed" } },
   { key: "winback", label: "Win-Back", desc: "Inactive 90+ days with purchase history", icon: Zap, color: "bg-amber-500", params: { tag: "Win-Back" } },
   { key: "high_freq", label: "High Frequency", desc: "10+ purchases", icon: ShoppingCart, color: "bg-blue-500", params: { tag: "High Frequency" } },

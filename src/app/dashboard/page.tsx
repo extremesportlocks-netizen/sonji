@@ -49,7 +49,7 @@ interface Stats {
 const widgetDefs: WidgetDef[] = [
   { type: "revenue_overview", label: "Sonji Box", icon: Zap, defaultSize: "full", desc: "Your 5 most important metrics — fully customizable" },
   { type: "top_customers", label: "Top Customers", icon: Crown, defaultSize: "full", desc: "Highest value customers ranked by LTV" },
-  { type: "customer_tiers", label: "Customer Value Tiers", icon: TrendingUp, defaultSize: "half", desc: "Whale, mid, low tier breakdown" },
+  { type: "customer_tiers", label: "Customer Value Tiers", icon: TrendingUp, defaultSize: "half", desc: "High Value, mid, low tier breakdown" },
   { type: "subscription_breakdown", label: "Subscription Breakdown", icon: UserCheck, defaultSize: "half", desc: "Active, canceled, expired, one-time" },
   { type: "recent_contacts", label: "Recent Contacts", icon: Users, defaultSize: "full", desc: "Last contacts added to your CRM" },
   { type: "quick_actions", label: "Quick Actions", icon: Zap, defaultSize: "half", desc: "Shortcuts to common tasks" },
@@ -148,7 +148,7 @@ function CustomerTiers({ s }: { s: Stats }) {
           .filter(b => b.n > 0).map(b => <div key={b.k} className={`h-full ${b.c}`} style={{ width: `${(b.n / total) * 100}%` }} />)}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {[{ l: "Whales ($500+)", n: s.ltvBuckets.whale, c: "text-violet-600", d: "bg-violet-500" }, { l: "Mid ($200-499)", n: s.ltvBuckets.mid, c: "text-blue-600", d: "bg-blue-500" },
+        {[{ l: "High Value ($500+)", n: s.ltvBuckets.whale, c: "text-violet-600", d: "bg-violet-500" }, { l: "Mid ($200-499)", n: s.ltvBuckets.mid, c: "text-blue-600", d: "bg-blue-500" },
           { l: "Low (<$200)", n: s.ltvBuckets.low, c: "text-amber-600", d: "bg-amber-400" }, { l: "No purchase", n: s.ltvBuckets.zero, c: "text-gray-500", d: "bg-gray-300" }]
           .map(t => <div key={t.l} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${t.d}`} /><span className="text-xs text-gray-500">{t.l}</span><span className={`text-xs font-bold ${t.c} ml-auto`}>{num(t.n)}</span></div>)}
       </div>
@@ -226,6 +226,34 @@ function QuickActions() {
 }
 
 function Pipeline({ s }: { s: Stats }) {
+  const pipelineStages = (s as any).pipeline as { stage: string; color: string; count: number }[] | undefined;
+
+  // If we have detailed pipeline stages (demo mode), show visual funnel
+  if (pipelineStages && pipelineStages.length > 0) {
+    const maxCount = Math.max(...pipelineStages.map(p => p.count), 1);
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Pipeline</h3>
+          <Link href="/dashboard/deals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+        </div>
+        <div className="space-y-2">
+          {pipelineStages.map((p, i) => (
+            <div key={p.stage} className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+              <span className="text-xs text-gray-600 w-32 truncate flex-shrink-0">{p.stage}</span>
+              <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${Math.max((p.count / maxCount) * 100, 4)}%`, backgroundColor: p.color, opacity: 0.7 }} />
+              </div>
+              <span className="text-xs font-bold text-gray-700 w-8 text-right">{p.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: simple 3-stat view for real data
   return (
     <div>
       <h3 className="text-sm font-semibold text-gray-900 mb-3">Pipeline</h3>

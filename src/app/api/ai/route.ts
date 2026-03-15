@@ -33,7 +33,7 @@ CURRENT CRM DATA for ${tenant?.name || "this business"}:
 - Total lifetime revenue: $${Number(stats.totalRevenue).toLocaleString()}
 - Average customer LTV: $${Number(stats.avgLtv).toFixed(0)}
 - Active subscribers: ${stats.activeSubscribers}
-- Whale customers ($500+ LTV): ${stats.whaleCount}
+- High value clients ($500+ LTV): ${stats.whaleCount}
 - Lapsed/canceled: ${stats.lapsedCount}
 
 You can help with:

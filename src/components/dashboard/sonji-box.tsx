@@ -31,7 +31,7 @@ const metrics: MetricDef[] = [
 
   // Contacts
   { key: "total_contacts", label: "Total Contacts", shortLabel: "Contacts", category: "Contacts", icon: Users, format: "number", extract: (s) => s.totalContacts || 0 },
-  { key: "whales", label: "Whale Customers ($500+)", shortLabel: "Whales", category: "Contacts", icon: Crown, format: "number", extract: (s) => s.ltvBuckets?.whale || 0 },
+  { key: "whales", label: "High Value Clients ($500+)", shortLabel: "High Value", category: "Contacts", icon: Crown, format: "number", extract: (s) => s.ltvBuckets?.whale || 0 },
   { key: "mid_tier", label: "Mid-Tier Customers ($200-499)", shortLabel: "Mid-Tier", category: "Contacts", icon: Users, format: "number", extract: (s) => s.ltvBuckets?.mid || 0 },
   { key: "low_tier", label: "Low-Tier Customers (<$200)", shortLabel: "Low-Tier", category: "Contacts", icon: Users, format: "number", extract: (s) => s.ltvBuckets?.low || 0 },
 
@@ -69,6 +69,37 @@ interface SonjiBoxConfig {
   gradientTo: string;
 }
 
+// Industry-specific presets for demo mode
+const INDUSTRY_PRESETS: Record<string, { slots: string[]; from: string; to: string }> = {
+  health_wellness: { slots: ["total_revenue", "total_contacts", "active_subs", "whales", "avg_order"], from: "#0c4a6e", to: "#0369a1" },
+  fitness_gym: { slots: ["active_subs", "total_contacts", "total_revenue", "avg_ltv", "open_tasks"], from: "#064e3b", to: "#047857" },
+  beauty_salon: { slots: ["total_revenue", "total_contacts", "active_subs", "avg_order", "whales"], from: "#881337", to: "#be123c" },
+  agency_consulting: { slots: ["total_revenue", "active_subs", "total_deals", "avg_ltv", "avg_order"], from: "#312e81", to: "#4338ca" },
+  real_estate: { slots: ["total_deals", "active_deals", "total_revenue", "total_contacts", "won_deals"], from: "#78350f", to: "#b45309" },
+  home_services: { slots: ["total_revenue", "total_deals", "active_deals", "avg_order", "total_contacts"], from: "#1e293b", to: "#334155" },
+  legal: { slots: ["active_deals", "total_revenue", "total_contacts", "avg_ltv", "avg_order"], from: "#0f172a", to: "#1e293b" },
+  coaching_education: { slots: ["active_subs", "total_revenue", "total_deals", "total_contacts", "avg_ltv"], from: "#4c1d95", to: "#6d28d9" },
+  restaurant_food: { slots: ["total_revenue", "total_contacts", "active_subs", "avg_order", "whales"], from: "#881337", to: "#9f1239" },
+  automotive: { slots: ["total_revenue", "total_deals", "active_deals", "avg_order", "total_contacts"], from: "#1e293b", to: "#334155" },
+  nonprofit: { slots: ["total_revenue", "active_subs", "total_contacts", "avg_order", "whales"], from: "#064e3b", to: "#047857" },
+  ecommerce: { slots: ["total_revenue", "total_contacts", "active_subs", "whales", "avg_ltv"], from: "#0f172a", to: "#1e293b" },
+};
+
+// Industry-specific label overrides
+const INDUSTRY_LABELS: Record<string, Record<string, string>> = {
+  health_wellness: { total_contacts: "Patients", active_subs: "Active Patients", whales: "VIP Patients", total_revenue: "Revenue", avg_order: "Avg Treatment" },
+  fitness_gym: { total_contacts: "Members", active_subs: "Active Members", whales: "VIP Members", total_revenue: "Revenue", open_tasks: "At Risk" },
+  beauty_salon: { total_contacts: "Clients", active_subs: "Regulars", whales: "VIP Clients", total_revenue: "Revenue", avg_order: "Avg Ticket" },
+  agency_consulting: { total_contacts: "Contacts", active_subs: "Active Retainers", total_deals: "Pipeline Deals", avg_ltv: "Avg Client Value", avg_order: "Avg Retainer", total_revenue: "MRR" },
+  real_estate: { total_deals: "Active Deals", active_deals: "In Pipeline", total_revenue: "Commission YTD", total_contacts: "In Sphere", won_deals: "Closed" },
+  home_services: { total_deals: "Jobs", active_deals: "Estimates Out", avg_order: "Avg Job Value", total_revenue: "Revenue", total_contacts: "Customers" },
+  legal: { active_deals: "Active Cases", total_revenue: "Revenue", total_contacts: "Clients", avg_ltv: "Avg Case Value", avg_order: "Avg Retainer" },
+  coaching_education: { active_subs: "Active Clients", total_revenue: "Revenue", total_deals: "In Pipeline", total_contacts: "Leads", avg_ltv: "Avg Program" },
+  restaurant_food: { total_revenue: "Revenue", total_contacts: "Customers", active_subs: "Regulars", avg_order: "Avg Check", whales: "VIP Diners" },
+  automotive: { total_revenue: "Revenue", total_deals: "Work Orders", active_deals: "In Shop", avg_order: "Avg Repair", total_contacts: "Customers" },
+  nonprofit: { total_revenue: "Donations", active_subs: "Active Donors", total_contacts: "Supporters", avg_order: "Avg Gift", whales: "Major Donors" },
+};
+
 function loadConfig(): SonjiBoxConfig {
   if (typeof window === "undefined") return { slots: defaultSlots, gradientFrom: "#0f172a", gradientTo: "#1e293b" };
   try {
@@ -97,6 +128,20 @@ export default function SonjiBox({ stats }: { stats: any }) {
   const [editing, setEditing] = useState(false);
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [demoIndustry, setDemoIndustry] = useState<string | null>(null);
+
+  useEffect(() => {
+    const key = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    setDemoIndustry(key && key !== "ecommerce" ? key : null);
+  }, []);
+
+  // In demo mode, use industry presets
+  const effectiveConfig = demoIndustry && INDUSTRY_PRESETS[demoIndustry]
+    ? { slots: INDUSTRY_PRESETS[demoIndustry].slots, gradientFrom: INDUSTRY_PRESETS[demoIndustry].from, gradientTo: INDUSTRY_PRESETS[demoIndustry].to }
+    : config;
+
+  // Industry-specific label overrides
+  const labelOverrides = demoIndustry ? (INDUSTRY_LABELS[demoIndustry] || {}) : {};
 
   const updateConfig = (next: Partial<SonjiBoxConfig>) => {
     const updated = { ...config, ...next };
@@ -111,13 +156,13 @@ export default function SonjiBox({ stats }: { stats: any }) {
     setEditingSlot(null);
   };
 
-  const slotMetrics = config.slots.map(key => metrics.find(m => m.key === key)).filter(Boolean) as MetricDef[];
+  const slotMetrics = effectiveConfig.slots.map(key => metrics.find(m => m.key === key)).filter(Boolean) as MetricDef[];
 
   // Group metrics by category for picker
   const categories = Array.from(new Set(metrics.map(m => m.category)));
 
   return (
-    <div className="relative rounded-2xl" style={{ background: `linear-gradient(135deg, ${config.gradientFrom}, ${config.gradientTo})` }}>
+    <div className="relative rounded-2xl" style={{ background: `linear-gradient(135deg, ${effectiveConfig.gradientFrom}, ${effectiveConfig.gradientTo})` }}>
 
       {/* Subtle pattern overlay */}
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
@@ -131,12 +176,14 @@ export default function SonjiBox({ stats }: { stats: any }) {
             </div>
             <span className="text-xs font-semibold text-white/40 uppercase tracking-widest">sonji</span>
           </div>
-          <button onClick={() => { setEditing(!editing); setEditingSlot(null); setShowColorPicker(false); }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium rounded-lg transition ${
-              editing ? "bg-white/20 text-white" : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/60"
-            }`}>
-            <Settings2 className="w-3 h-3" /> {editing ? "Done" : "Edit"}
-          </button>
+          {!demoIndustry && (
+            <button onClick={() => { setEditing(!editing); setEditingSlot(null); setShowColorPicker(false); }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium rounded-lg transition ${
+                editing ? "bg-white/20 text-white" : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/60"
+              }`}>
+              <Settings2 className="w-3 h-3" /> {editing ? "Done" : "Edit"}
+            </button>
+          )}
         </div>
 
         {/* Metrics Grid */}
@@ -153,7 +200,7 @@ export default function SonjiBox({ stats }: { stats: any }) {
                 } ${editingSlot === i ? "ring-2 ring-white/40" : ""}`}>
                 <Icon className="w-4 h-4 text-white/30 mx-auto mb-1.5" />
                 <p className="text-2xl font-bold text-white tracking-tight">{formatValue(value, m.format)}</p>
-                <p className="text-[10px] text-white/40 mt-1 font-medium">{m.shortLabel}</p>
+                <p className="text-[10px] text-white/40 mt-1 font-medium">{labelOverrides[m.key] || m.shortLabel}</p>
                 {editing && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white/20 flex items-center justify-center">
                     <ChevronDown className="w-2.5 h-2.5 text-white/60" />
@@ -208,7 +255,7 @@ export default function SonjiBox({ stats }: { stats: any }) {
               <div key={cat}>
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-4 pt-3 pb-1">{cat}</p>
                 {metrics.filter(m => m.category === cat).map(m => {
-                  const isActive = config.slots[editingSlot] === m.key;
+                  const isActive = effectiveConfig.slots[editingSlot] === m.key;
                   const Icon = m.icon;
                   return (
                     <button key={m.key} onClick={() => setSlotMetric(editingSlot, m.key)}
