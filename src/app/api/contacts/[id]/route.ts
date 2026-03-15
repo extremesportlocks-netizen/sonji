@@ -32,6 +32,14 @@ export const PUT = withErrorHandler(async (req: NextRequest, { params }: Params)
   const { data, errors } = await parseBody(req, updateContactSchema);
   if (errors) return validationError(errors);
 
+  // Merge customFields instead of replacing (preserves Stripe data)
+  if (data?.customFields) {
+    const [existing] = await db.select({ customFields: contacts.customFields })
+      .from(contacts).where(and(eq(contacts.id, id), eq(contacts.tenantId, ctx.tenantId))).limit(1);
+    const merged = { ...((existing?.customFields as any) || {}), ...data.customFields };
+    data.customFields = merged;
+  }
+
   const [updated] = await db.update(contacts)
     .set({ ...data, updatedAt: new Date() })
     .where(and(eq(contacts.id, id), eq(contacts.tenantId, ctx.tenantId)))

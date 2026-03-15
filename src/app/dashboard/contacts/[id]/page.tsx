@@ -21,13 +21,65 @@ export default function ContactDetailPage() {
   const [quickSubject, setQuickSubject] = useState("");
   const [quickResult, setQuickResult] = useState<string | null>(null);
 
+  // Subscription editing
+  const [editingSub, setEditingSub] = useState(false);
+  const [savingSub, setSavingSub] = useState(false);
+  const [subSaveMsg, setSubSaveMsg] = useState("");
+  const [subEditPlan, setSubEditPlan] = useState("");
+  const [subEditAmount, setSubEditAmount] = useState("");
+  const [subEditStatus, setSubEditStatus] = useState("");
+  const [subEditActiveUntil, setSubEditActiveUntil] = useState("");
+
   useEffect(() => {
     fetch(`/api/contacts/${id}`)
       .then((r) => r.json())
-      .then((data) => setContact(data.data || data))
+      .then((data) => {
+        const c = data.data || data;
+        setContact(c);
+        // Init subscription edit fields
+        const cf = c?.customFields || {};
+        setSubEditPlan(cf.subscriptionPlan || "");
+        setSubEditAmount(cf.subscriptionAmount ? String(cf.subscriptionAmount) : "");
+        setSubEditStatus(cf.subscriptionStatus || "never");
+        setSubEditActiveUntil(cf.manualActiveUntil ? cf.manualActiveUntil.split("T")[0] : "");
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleSaveSub = async () => {
+    setSavingSub(true); setSubSaveMsg("");
+    try {
+      const updates: any = {
+        subscriptionPlan: subEditPlan || undefined,
+        subscriptionAmount: subEditAmount ? parseFloat(subEditAmount) : undefined,
+        subscriptionStatus: subEditStatus,
+      };
+      if (subEditActiveUntil) {
+        updates.manualActiveUntil = new Date(subEditActiveUntil + "T23:59:59").toISOString();
+      } else {
+        updates.manualActiveUntil = null; // Clear manual override
+      }
+
+      // Update contact status based on subscription
+      const contactStatus = subEditStatus === "active" ? "active" : "inactive";
+
+      const res = await fetch(`/api/contacts/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customFields: updates, status: contactStatus }),
+      });
+      if (res.ok) {
+        setSubSaveMsg("✓ Saved");
+        // Refresh contact
+        const r = await fetch(`/api/contacts/${id}`);
+        const d = await r.json();
+        setContact(d.data || d);
+        setEditingSub(false);
+        setTimeout(() => setSubSaveMsg(""), 2000);
+      } else { setSubSaveMsg("Failed to save"); }
+    } catch { setSubSaveMsg("Failed"); }
+    finally { setSavingSub(false); }
+  };
 
   const cf = contact?.customFields || {};
   const ltv = parseFloat(cf.ltv || "0");
@@ -190,22 +242,100 @@ export default function ContactDetailPage() {
             </div>
 
             {/* Subscription Info */}
-            {cf.subscriptionStatus && cf.subscriptionStatus !== "never" && (
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Subscription</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">Subscription</h3>
+                {!editingSub ? (
+                  <button onClick={() => setEditingSub(true)} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Edit</button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveSub} disabled={savingSub} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">
+                      {savingSub ? "Saving..." : "Save"}
+                    </button>
+                    <button onClick={() => setEditingSub(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                  </div>
+                )}
+              </div>
+
+              {/* Days Left — the hero number */}
+              {(() => {
+                const endDate = cf.manualActiveUntil || cf.subscriptionEnd;
+                const daysLeft = endDate ? Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000) : null;
+                const isActive = cf.subscriptionStatus === "active" || (daysLeft !== null && daysLeft > 0);
+                return (
+                  <div className={`rounded-xl p-4 mb-3 ${isActive ? "bg-emerald-50 border border-emerald-200" : daysLeft !== null && daysLeft <= 0 ? "bg-red-50 border border-red-200" : "bg-gray-50 border border-gray-200"}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`text-3xl font-black ${isActive ? "text-emerald-700" : daysLeft !== null && daysLeft <= 0 ? "text-red-600" : "text-gray-400"}`}>
+                          {daysLeft !== null ? (daysLeft > 0 ? daysLeft : "Expired") : "—"}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {daysLeft !== null && daysLeft > 0 ? "days remaining" : daysLeft !== null && daysLeft <= 0 ? `expired ${Math.abs(daysLeft)} days ago` : "no subscription data"}
+                        </p>
+                      </div>
+                      {endDate && (
+                        <div className="text-right">
+                          <p className="text-xs text-gray-400">{daysLeft !== null && daysLeft > 0 ? "Expires" : "Expired"}</p>
+                          <p className="text-sm font-medium text-gray-700">{new Date(endDate).toLocaleDateString()}</p>
+                          {cf.manualActiveUntil && <p className="text-[10px] text-amber-600 font-medium">Manual override</p>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Edit mode */}
+              {editingSub ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase mb-1 block">Plan Name</label>
+                      <input value={subEditPlan} onChange={(e) => setSubEditPlan(e.target.value)} placeholder="VIP Yearly Package"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase mb-1 block">Amount</label>
+                      <input type="number" value={subEditAmount} onChange={(e) => setSubEditAmount(e.target.value)} placeholder="99.00"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase mb-1 block">Status</label>
+                      <select value={subEditStatus} onChange={(e) => setSubEditStatus(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        <option value="active">Active</option>
+                        <option value="canceled">Canceled</option>
+                        <option value="expired">Expired</option>
+                        <option value="one-time">One-Time</option>
+                        <option value="never">Never</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase mb-1 block">Active Until (Manual Override)</label>
+                      <input type="date" value={subEditActiveUntil} onChange={(e) => setSubEditActiveUntil(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-400">Manual "Active Until" overrides Stripe subscription end date. Leave blank to use Stripe data.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs text-gray-400">Status</p>
-                    <p className={`text-sm font-semibold ${cf.subscriptionStatus === "active" ? "text-emerald-600" : cf.subscriptionStatus === "canceled" ? "text-red-500" : "text-gray-600"}`}>
-                      {cf.subscriptionStatus}
+                    <p className="text-[10px] text-gray-400 uppercase">Status</p>
+                    <p className={`text-sm font-semibold capitalize ${cf.subscriptionStatus === "active" ? "text-emerald-600" : cf.subscriptionStatus === "canceled" ? "text-red-500" : "text-gray-600"}`}>
+                      {cf.subscriptionStatus || "None"}
                     </p>
                   </div>
-                  {cf.subscriptionPlan && <div><p className="text-xs text-gray-400">Plan</p><p className="text-sm font-medium text-gray-900">{cf.subscriptionPlan}</p></div>}
-                  {cf.subscriptionAmount && <div><p className="text-xs text-gray-400">Amount</p><p className="text-sm font-medium text-gray-900">${parseFloat(cf.subscriptionAmount).toFixed(2)}/{cf.subscriptionInterval || "mo"}</p></div>}
-                  {cf.subscriptionStart && <div><p className="text-xs text-gray-400">Since</p><p className="text-sm font-medium text-gray-900">{new Date(cf.subscriptionStart).toLocaleDateString()}</p></div>}
+                  {cf.subscriptionPlan && <div><p className="text-[10px] text-gray-400 uppercase">Plan</p><p className="text-sm font-medium text-gray-900">{cf.subscriptionPlan}</p></div>}
+                  {cf.subscriptionAmount && <div><p className="text-[10px] text-gray-400 uppercase">Amount</p><p className="text-sm font-medium text-gray-900">${parseFloat(cf.subscriptionAmount).toFixed(2)}/{cf.subscriptionInterval || "mo"}</p></div>}
+                  {cf.subscriptionStart && <div><p className="text-[10px] text-gray-400 uppercase">Since</p><p className="text-sm font-medium text-gray-900">{new Date(cf.subscriptionStart).toLocaleDateString()}</p></div>}
                 </div>
-              </div>
-            )}
+              )}
+
+              {subSaveMsg && <p className={`text-xs mt-2 ${subSaveMsg.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>{subSaveMsg}</p>}
+            </div>
 
             {/* Purchase Timeline */}
             <div className="bg-white rounded-xl border border-gray-100 p-5">

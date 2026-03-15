@@ -165,6 +165,18 @@ const ALL_COLUMNS: ColumnDef[] = [
     },
   },
   {
+    key: "daysLeft", label: "Days Left", defaultOn: true,
+    render: (c) => {
+      const endDate = c.customFields?.manualActiveUntil || c.customFields?.subscriptionEnd;
+      if (!endDate) return <span className="text-xs text-gray-400">—</span>;
+      const daysLeft = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000);
+      if (daysLeft <= 0) return <span className="text-xs font-bold text-red-600">Expired</span>;
+      if (daysLeft <= 7) return <span className="text-xs font-bold text-red-600">{daysLeft}d</span>;
+      if (daysLeft <= 30) return <span className="text-xs font-bold text-amber-600">{daysLeft}d</span>;
+      return <span className="text-xs font-bold text-emerald-600">{daysLeft}d</span>;
+    },
+  },
+  {
     key: "highestCharge", label: "Top Charge", defaultOn: false,
     render: (c) => <span className="text-sm font-medium text-gray-700">{c.customFields?.highestCharge ? formatCurrency(c.customFields.highestCharge) : "—"}</span>,
   },
