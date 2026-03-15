@@ -9,6 +9,7 @@ import {
   Send, GripVertical, Plus, X, Settings2, RotateCcw, Maximize2, Minimize2,
   Activity, Calendar, CheckSquare, ChevronDown, ChevronUp,
 } from "lucide-react";
+import SonjiBox from "@/components/dashboard/sonji-box";
 
 // ═══════════════════════════════════════
 // TYPES
@@ -45,7 +46,7 @@ interface Stats {
 // ═══════════════════════════════════════
 
 const widgetDefs: WidgetDef[] = [
-  { type: "revenue_overview", label: "Revenue Overview", icon: DollarSign, defaultSize: "half", desc: "Total revenue, avg LTV, avg order, transactions" },
+  { type: "revenue_overview", label: "Sonji Box", icon: Zap, defaultSize: "full", desc: "Your 5 most important metrics — fully customizable" },
   { type: "top_customers", label: "Top Customers", icon: Crown, defaultSize: "full", desc: "Highest value customers ranked by LTV" },
   { type: "customer_tiers", label: "Customer Value Tiers", icon: TrendingUp, defaultSize: "half", desc: "Whale, mid, low tier breakdown" },
   { type: "subscription_breakdown", label: "Subscription Breakdown", icon: UserCheck, defaultSize: "half", desc: "Active, canceled, expired, one-time" },
@@ -60,7 +61,7 @@ const widgetDefs: WidgetDef[] = [
 ];
 
 const defaultLayout: WidgetConfig[] = [
-  { id: "w1", type: "revenue_overview", size: "half" },
+  { id: "w1", type: "revenue_overview", size: "full" },
   { id: "w2", type: "quick_actions", size: "half" },
   { id: "w3", type: "customer_tiers", size: "half" },
   { id: "w4", type: "subscription_breakdown", size: "half" },
@@ -333,7 +334,7 @@ function EmptyWidget({ msg, cta, href }: { msg: string; cta: string; href: strin
 // Widget renderer
 function renderWidget(type: string, s: Stats) {
   switch (type) {
-    case "revenue_overview": return <RevenueOverview s={s} />;
+    case "revenue_overview": return <SonjiBox stats={s} />;
     case "top_customers": return <TopCustomers s={s} />;
     case "customer_tiers": return <CustomerTiers s={s} />;
     case "subscription_breakdown": return <SubscriptionBreakdown s={s} />;
