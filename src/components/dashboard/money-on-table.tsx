@@ -32,30 +32,45 @@ export default function MoneyOnTable() {
   useEffect(() => {
     async function load() {
       try {
-        // Fetch lapsed whales sorted by LTV
-        const res = await fetch("/api/contacts?tag=Lapsed&sortBy=customFields&sortDir=desc&pageSize=10");
-        const data = await res.json();
-        const contacts = (data.data || []).map((c: any) => ({
-          id: c.id,
-          firstName: c.firstName || "",
-          lastName: c.lastName || "",
-          email: c.email || "",
-          ltv: parseFloat(c.customFields?.ltv || "0"),
-          purchases: parseInt(c.customFields?.purchaseCount || "0"),
-          daysSince: parseInt(c.customFields?.daysSinceLastPurchase || "0"),
-        }));
-        setLapsed(contacts);
+        const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+        const isDemo = demoIndustry && demoIndustry !== "ecommerce";
 
-        // Get total lapsed revenue
-        const allRes = await fetch("/api/contacts?tag=Lapsed&pageSize=1");
-        const allData = await allRes.json();
-        const total = allData.meta?.total || 0;
+        if (isDemo) {
+          // Generate demo lapsed customers
+          const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&pageSize=10`);
+          const data = await res.json();
+          const contacts = (data.data || [])
+            .filter((c: any) => c.customFields?.subscriptionStatus === "canceled" && c.customFields?.ltv > 0)
+            .slice(0, 10)
+            .map((c: any) => ({
+              id: c.id, firstName: c.firstName || "", lastName: c.lastName || "",
+              email: c.email || "", ltv: parseFloat(c.customFields?.ltv || "0"),
+              purchases: parseInt(c.customFields?.purchaseCount || "0"),
+              daysSince: parseInt(c.customFields?.daysSinceLastPurchase || "0"),
+            }));
+          setLapsed(contacts);
+          const sum = contacts.reduce((s: number, c: LapsedCustomer) => s + c.ltv, 0);
+          setTotalLapsed(sum * 3.5); // Estimate total from visible sample
+        } else {
+          // Real data
+          const res = await fetch("/api/contacts?tag=Lapsed&sortBy=customFields&sortDir=desc&pageSize=10");
+          const data = await res.json();
+          const contacts = (data.data || []).map((c: any) => ({
+            id: c.id, firstName: c.firstName || "", lastName: c.lastName || "",
+            email: c.email || "", ltv: parseFloat(c.customFields?.ltv || "0"),
+            purchases: parseInt(c.customFields?.purchaseCount || "0"),
+            daysSince: parseInt(c.customFields?.daysSinceLastPurchase || "0"),
+          }));
+          setLapsed(contacts);
 
-        // Sum LTV from the contacts we have + estimate rest
-        const sumVisible = contacts.reduce((s: number, c: LapsedCustomer) => s + c.ltv, 0);
-        const avgLtv = contacts.length > 0 ? sumVisible / contacts.length : 0;
-        const estimated = sumVisible + (Math.max(0, total - contacts.length) * avgLtv * 0.4);
-        setTotalLapsed(estimated);
+          const allRes = await fetch("/api/contacts?tag=Lapsed&pageSize=1");
+          const allData = await allRes.json();
+          const total = allData.meta?.total || 0;
+          const sumVisible = contacts.reduce((s: number, c: LapsedCustomer) => s + c.ltv, 0);
+          const avgLtv = contacts.length > 0 ? sumVisible / contacts.length : 0;
+          const estimated = sumVisible + (Math.max(0, total - contacts.length) * avgLtv * 0.4);
+          setTotalLapsed(estimated);
+        }
       } catch {}
       finally { setLoading(false); }
     }

@@ -33,6 +33,15 @@ export default function AICampaigns() {
   const [sendResult, setSendResult] = useState<{ id: string; sent: number; failed: number } | null>(null);
 
   useEffect(() => {
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+    if (isDemo) {
+      // In demo mode, show placeholder — AI campaigns analyze real data only
+      setCampaigns([]);
+      setSummary({ totalCampaigns: 0, totalReachable: 0, totalAnalyzed: 0 });
+      setLoading(false);
+      return;
+    }
     fetch("/api/ai-campaigns").then(r => r.json()).then(d => {
       setCampaigns(d.campaigns || []);
       setSummary(d.summary || null);
