@@ -28,6 +28,7 @@ export default function Header({ title, subtitle }: Props) {
   const [showPhonePanel, setShowPhonePanel] = useState(false);
   const [showEmailPanel, setShowEmailPanel] = useState(false);
   const [showVideoPanel, setShowVideoPanel] = useState(false);
+  const [showNotifs, setShowNotifs] = useState(false);
 
   // Phone state
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -51,6 +52,7 @@ export default function Header({ title, subtitle }: Props) {
     setShowPhonePanel(false);
     setShowEmailPanel(false);
     setShowVideoPanel(false);
+    setShowNotifs(false);
   };
 
   const handleCall = () => {
@@ -227,10 +229,46 @@ export default function Header({ title, subtitle }: Props) {
           <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block" />
 
           {/* Notifications */}
-          <button data-tour="notifications" className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition">
-            <Bell className="w-[18px] h-[18px]" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full" />
-          </button>
+          <div className="relative">
+            <button data-tour="notifications" onClick={() => setShowNotifs(!showNotifs)}
+              className={`relative p-2 rounded-lg transition ${showNotifs ? "text-indigo-600 bg-indigo-50" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"}`}>
+              <Bell className="w-[18px] h-[18px]" />
+              {!showNotifs && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full" />}
+            </button>
+            {showNotifs && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowNotifs(false)} />
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                    <button onClick={() => setShowNotifs(false)} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Mark all read</button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
+                    {[
+                      { icon: "🤝", text: "New deal created — Botox Full Face ($850)", time: "5 min ago", unread: true },
+                      { icon: "📧", text: "Win-back campaign sent to 47 contacts", time: "1 hr ago", unread: true },
+                      { icon: "⚡", text: "Stripe sync completed — 4,075 contacts imported", time: "3 hr ago", unread: false },
+                      { icon: "⭐", text: "New 5-star review from Michael Brown", time: "5 hr ago", unread: false },
+                      { icon: "📊", text: "Weekly analytics report ready to view", time: "Yesterday", unread: false },
+                    ].map((n, i) => (
+                      <div key={i} className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition cursor-pointer ${n.unread ? "bg-indigo-50/30" : ""}`}>
+                        <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm leading-snug ${n.unread ? "text-gray-900 font-medium" : "text-gray-600"}`}>{n.text}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">{n.time}</p>
+                        </div>
+                        {n.unread && <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-1.5" />}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50">
+                    <button onClick={() => { setShowNotifs(false); router.push("/dashboard/activities"); }}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium w-full text-center">View all activity</button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Create Button */}
           <div className="relative" data-tour="create">

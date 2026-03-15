@@ -301,41 +301,62 @@ function getCompanyInitials(name: string) {
 // DEAL CARD
 // ────────────────────────────────────
 
-function DealCard({ deal, onDragStart, onDragEnd, onDelete }: {
+function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
   deal: { id: string; title: string; value: number; stage: string; pipeline: string; contactName: string; assignedTo: string; closeDate: string; notes: string };
   onDragStart: (e: React.DragEvent, dealId: string) => void;
   onDragEnd: () => void;
   onDelete: (id: string) => void;
+  onUpdate?: (id: string, updates: Partial<typeof deal>) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const company = deal.contactName; // Using contactName as display
+  const [editing, setEditing] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [editTitle, setEditTitle] = useState(deal.title);
+  const [editValue, setEditValue] = useState(deal.value.toString());
+  const [editContact, setEditContact] = useState(deal.contactName);
+  const [editClose, setEditClose] = useState(deal.closeDate);
+  const [noteText, setNoteText] = useState(deal.notes || "");
+
+  const handleSave = () => {
+    onUpdate?.(deal.id, { title: editTitle, value: parseFloat(editValue) || 0, contactName: editContact, closeDate: editClose });
+    setEditing(false);
+  };
+
+  const handleSaveNote = () => {
+    onUpdate?.(deal.id, { notes: noteText });
+    setAddingNote(false);
+  };
 
   return (
     <div
-      draggable
+      draggable={!editing && !addingNote}
       onDragStart={(e) => onDragStart(e, deal.id)}
       onDragEnd={onDragEnd}
-      className="bg-white rounded-xl border border-gray-100 p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition cursor-grab active:cursor-grabbing group"
+      className={`bg-white rounded-xl border p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition group ${editing ? "border-indigo-300 shadow-md" : "border-gray-100"} ${!editing && !addingNote ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" />
-          <h4 className="text-sm font-semibold text-gray-900 leading-snug">{deal.title}</h4>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {!editing && <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" />}
+          {editing ? (
+            <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+              className="text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          ) : (
+            <h4 className="text-sm font-semibold text-gray-900 leading-snug truncate">{deal.title}</h4>
+          )}
         </div>
-        <div className="relative">
-          <button
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition opacity-0 group-hover:opacity-100"
-          >
+        <div className="relative flex-shrink-0 ml-2">
+          <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition opacity-0 group-hover:opacity-100">
             <MoreHorizontal className="w-4 h-4" />
           </button>
           {menuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
               <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
-                <button className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Edit</button>
-                <button className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">View Details</button>
-                <button className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Add Note</button>
+                <button onClick={() => { setEditing(true); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Edit</button>
+                <button onClick={() => { setExpanded(!expanded); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">{expanded ? "Collapse" : "View Details"}</button>
+                <button onClick={() => { setAddingNote(true); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Add Note</button>
                 <div className="border-t border-gray-100 my-1" />
                 <button onClick={() => { onDelete(deal.id); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left flex items-center gap-2"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
@@ -347,7 +368,12 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete }: {
       {/* Contact */}
       <div className="flex items-center gap-2 mb-2">
         <User className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-xs text-gray-600">{deal.contactName}</span>
+        {editing ? (
+          <input type="text" value={editContact} onChange={(e) => setEditContact(e.target.value)}
+            className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
+        ) : (
+          <span className="text-xs text-gray-600">{deal.contactName}</span>
+        )}
       </div>
 
       {/* Pipeline */}
@@ -360,13 +386,68 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete }: {
       <div className="flex items-center justify-between pt-3 border-t border-gray-50">
         <div className="flex items-center gap-1.5">
           <DollarSign className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-sm font-bold text-gray-900">{formatCurrency(deal.value)}</span>
+          {editing ? (
+            <input type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
+              className="text-sm font-bold text-gray-900 border border-gray-200 rounded px-2 py-0.5 w-24 focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
+          ) : (
+            <span className="text-sm font-bold text-gray-900">{formatCurrency(deal.value)}</span>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <Calendar className="w-3 h-3 text-gray-400" />
-          <span className="text-xs text-gray-400">{deal.closeDate}</span>
+          {editing ? (
+            <input type="text" value={editClose} onChange={(e) => setEditClose(e.target.value)}
+              className="text-xs text-gray-400 border border-gray-200 rounded px-2 py-0.5 w-20 focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
+          ) : (
+            <span className="text-xs text-gray-400">{deal.closeDate}</span>
+          )}
         </div>
       </div>
+
+      {/* Edit Actions */}
+      {editing && (
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+          <button onClick={handleSave} className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">Save</button>
+          <button onClick={() => { setEditing(false); setEditTitle(deal.title); setEditValue(deal.value.toString()); setEditContact(deal.contactName); setEditClose(deal.closeDate); }}
+            className="flex-1 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Cancel</button>
+        </div>
+      )}
+
+      {/* Expanded Details */}
+      {expanded && !editing && (
+        <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Assigned</span>
+            <span className="text-xs text-gray-600">{deal.assignedTo || "Unassigned"}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Pipeline</span>
+            <span className="text-xs text-gray-600">{deal.pipeline}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Stage</span>
+            <span className="text-xs text-gray-600">{deal.stage}</span>
+          </div>
+          {deal.notes && (
+            <div>
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider">Notes</span>
+              <p className="text-xs text-gray-600 mt-0.5 bg-gray-50 rounded-lg p-2">{deal.notes}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add Note */}
+      {addingNote && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Add a note about this deal..."
+            rows={3} className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none" />
+          <div className="flex items-center gap-2 mt-2">
+            <button onClick={handleSaveNote} className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">Save Note</button>
+            <button onClick={() => setAddingNote(false)} className="flex-1 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -384,15 +465,40 @@ export default function DealsPage() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [demoIndustry, setDemoIndustry] = useState<string | null>(null);
+  const [demoDeals, setDemoDeals] = useState<DemoDeal[]>([]);
 
   useEffect(() => {
     const key = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
     setDemoIndustry(key || null);
+    if (key && INDUSTRY_DEALS[key]) setDemoDeals([...INDUSTRY_DEALS[key]]);
   }, []);
 
   // Use industry stages + deals in demo mode (including ecommerce)
   const stages = demoIndustry && INDUSTRY_STAGES[demoIndustry] ? INDUSTRY_STAGES[demoIndustry] : defaultStages;
-  const deals = demoIndustry && INDUSTRY_DEALS[demoIndustry] ? INDUSTRY_DEALS[demoIndustry] : crmDeals;
+  const isDemo = demoIndustry && INDUSTRY_DEALS[demoIndustry];
+  const deals = isDemo ? demoDeals : crmDeals;
+
+  const handleUpdateDeal = (id: string, updates: Partial<DemoDeal>) => {
+    if (isDemo) {
+      setDemoDeals(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+    }
+  };
+
+  const handleDeleteDeal = (id: string) => {
+    if (isDemo) {
+      setDemoDeals(prev => prev.filter(d => d.id !== id));
+    } else {
+      deleteDeal(id);
+    }
+  };
+
+  const handleMoveDeal = (dealId: string, newStage: string) => {
+    if (isDemo) {
+      setDemoDeals(prev => prev.map(d => d.id === dealId ? { ...d, stage: newStage } : d));
+    } else {
+      moveDeal(dealId, newStage);
+    }
+  };
 
   const filtered = deals.filter((d) => {
     if (!search) return true;
@@ -436,7 +542,7 @@ export default function DealsPage() {
     e.preventDefault();
     const dealId = e.dataTransfer.getData("text/plain");
     if (dealId) {
-      moveDeal(dealId, stageId);
+      handleMoveDeal(dealId, stageId);
     }
     setDragOverStage(null);
     setDraggingId(null);
@@ -580,7 +686,7 @@ export default function DealsPage() {
                   }`}
                 >
                   {stageDeals.map((deal) => (
-                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} onDragEnd={() => { setDragOverStage(null); setDraggingId(null); }} onDelete={deleteDeal} />
+                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} onDragEnd={() => { setDragOverStage(null); setDraggingId(null); }} onDelete={handleDeleteDeal} onUpdate={handleUpdateDeal} />
                   ))}
 
                   {stageDeals.length === 0 && !isDragOver && (
