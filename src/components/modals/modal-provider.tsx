@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, useCallback } from "react";
 import { CreateContactModal, CreateDealModal, CreateTaskModal, ScheduleMeetingModal, ComposeEmailModal, ImportContactsModal } from "@/components/modals";
+import CreateCompanyModal from "@/components/modals/create-company";
+import CreateInvoiceModal from "@/components/modals/create-invoice";
 
 type ModalType = "contact" | "deal" | "task" | "meeting" | "email" | "import" | "company" | "invoice" | null;
 
@@ -41,6 +43,8 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
       <ScheduleMeetingModal open={activeModal === "meeting"} onClose={closeModal} />
       <ComposeEmailModal open={activeModal === "email"} onClose={closeModal} {...modalProps} />
       <ImportContactsModal open={activeModal === "import"} onClose={closeModal} />
+      <CreateCompanyModal open={activeModal === "company"} onClose={closeModal} />
+      <CreateInvoiceModal open={activeModal === "invoice"} onClose={closeModal} />
     </ModalContext.Provider>
   );
 }

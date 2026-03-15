@@ -448,7 +448,7 @@ export default function ContactsPage() {
                       ))}
                       <td className="px-3 py-3">
                         <div className="relative flex items-center gap-0.5">
-                          <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition opacity-0 group-hover:opacity-100"><Eye className="w-3.5 h-3.5" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); window.location.href = `/dashboard/contacts/${c.id}`; }} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition opacity-0 group-hover:opacity-100"><Eye className="w-3.5 h-3.5" /></button>
                           <div className="relative">
                             <button onClick={(e) => { e.stopPropagation(); setMenuId(menuId === c.id ? null : c.id); }}
                               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition opacity-0 group-hover:opacity-100">
@@ -458,8 +458,8 @@ export default function ContactsPage() {
                               <>
                                 <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />
                                 <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
-                                  <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Eye className="w-3.5 h-3.5 text-gray-400" /> View</button>
-                                  <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Mail className="w-3.5 h-3.5 text-gray-400" /> Email</button>
+                                  <button onClick={() => { setMenuId(null); window.location.href = `/dashboard/contacts/${c.id}`; }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Eye className="w-3.5 h-3.5 text-gray-400" /> View</button>
+                                  <button onClick={() => { setMenuId(null); openModal("email", { prefillTo: c.email, prefillSubject: `Following up — ${c.firstName}` }); }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Mail className="w-3.5 h-3.5 text-gray-400" /> Email</button>
                                   <div className="border-t border-gray-100 my-1" />
                                   <button onClick={() => handleDelete(c.id)} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
                                 </div>
