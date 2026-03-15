@@ -8,6 +8,7 @@ import {
   ClipboardPaste, UserPlus, Bookmark, Trash2, Sparkles,
 } from "lucide-react";
 import AICampaigns from "@/components/dashboard/ai-campaigns";
+import { useIndustry } from "@/lib/use-industry";
 
 // ─── TYPES ───
 
@@ -60,6 +61,16 @@ export default function CampaignsPage() {
   const [step, setStep] = useState<Step>("audience");
   const [campaignMode, setCampaignMode] = useState<"ai" | "manual">("ai");
   const [audienceMode, setAudienceMode] = useState<AudienceMode>("segment");
+  const ic = useIndustry();
+
+  // Dynamic segments with industry labels
+  const segments: Segment[] = defaultSegments.map(s => {
+    if (s.key === "all") return { ...s, label: `All ${ic?.contactLabelPlural || "Contacts"}`, desc: `Everyone in your CRM` };
+    if (s.key === "active_sub") return { ...s, label: ic ? `Active ${ic.contactLabelPlural}` : "Active Subscribers", desc: ic ? `Currently active ${ic.contactLabelPlural.toLowerCase()}` : s.desc };
+    if (s.key === "whales") return { ...s, label: `${ic?.highValueLabel || "High Value"} ($500+)`, desc: ic ? `Your highest value ${ic.contactLabelPlural.toLowerCase()}` : s.desc };
+    if (s.key === "lapsed") return { ...s, label: ic ? `Lapsed ${ic.contactLabelPlural}` : "Lapsed Customers" };
+    return s;
+  });
 
   // Segment selection
   const [selectedSegment, setSelectedSegment] = useState<Segment | null>(null);
@@ -395,7 +406,7 @@ export default function CampaignsPage() {
                 )}
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Smart Segments</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {defaultSegments.map((seg) => {
+                  {segments.map((seg) => {
                     const Icon = seg.icon;
                     const isSelected = selectedSegment?.key === seg.key;
                     return (

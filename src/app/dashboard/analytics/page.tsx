@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { Loader2, Users, DollarSign, ShoppingCart, TrendingUp, Crown, AlertTriangle, UserCheck, UserX, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useIndustry } from "@/lib/use-industry";
 
 interface AnalyticsData {
   overview: {
@@ -41,6 +42,9 @@ const subLabels: Record<string, string> = {
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const ic = useIndustry();
+  const cLabel = ic?.contactLabelPlural?.toLowerCase() || "customers";
+  const hvLabel = ic?.highValueLabel || "High Value";
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
@@ -72,9 +76,9 @@ export default function AnalyticsPage() {
         {/* Top Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Revenue", value: fmt(o.totalRevenue), icon: DollarSign, color: "bg-emerald-500", sub: `From ${num(o.contactsWithPurchases)} paying customers` },
+            { label: "Total Revenue", value: fmt(o.totalRevenue), icon: DollarSign, color: "bg-emerald-500", sub: `From ${num(o.contactsWithPurchases)} paying ${cLabel}` },
             { label: "Total Contacts", value: num(o.totalContacts), icon: Users, color: "bg-indigo-500", sub: `${num(o.activeSubscribers)} active subscribers` },
-            { label: "Avg LTV", value: fmt(o.avgLTV), icon: TrendingUp, color: "bg-violet-500", sub: `Across ${num(o.contactsWithPurchases)} customers` },
+            { label: "Avg LTV", value: fmt(o.avgLTV), icon: TrendingUp, color: "bg-violet-500", sub: `Across ${num(o.contactsWithPurchases)} ${cLabel}` },
             { label: "Avg Order", value: fmt(o.avgOrderValue), icon: ShoppingCart, color: "bg-blue-500", sub: `${num(o.totalPurchases)} total purchases` },
           ].map((s) => (
             <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-5">
@@ -113,7 +117,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "High Value ($500+)", count: data.ltvBuckets.whale, color: "bg-violet-500", icon: Crown },
+                  { label: `${hvLabel} ($500+)`, count: data.ltvBuckets.whale, color: "bg-violet-500", icon: Crown },
                   { label: "Mid ($200-499)", count: data.ltvBuckets.mid, color: "bg-blue-500", icon: TrendingUp },
                   { label: "Low (<$200)", count: data.ltvBuckets.low, color: "bg-amber-400", icon: Users },
                   { label: "No Purchase", count: data.ltvBuckets.zero, color: "bg-gray-300", icon: AlertTriangle },
@@ -155,7 +159,7 @@ export default function AnalyticsPage() {
             {/* Top Customers */}
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-900">Top Customers by LTV</h2>
+                <h2 className="text-sm font-semibold text-gray-900">Top {ic?.contactLabelPlural || "Customers"} by LTV</h2>
                 <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
                   View all <ChevronRight className="w-3 h-3" />
                 </Link>
@@ -216,7 +220,7 @@ export default function AnalyticsPage() {
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Key Metrics</h2>
               <div className="space-y-3">
                 {[
-                  { label: "Paying Customers", value: num(o.contactsWithPurchases), pct: o.totalContacts > 0 ? `${((o.contactsWithPurchases / o.totalContacts) * 100).toFixed(1)}%` : "0%" },
+                  { label: `Paying ${ic?.contactLabelPlural || "Customers"}`, value: num(o.contactsWithPurchases), pct: o.totalContacts > 0 ? `${((o.contactsWithPurchases / o.totalContacts) * 100).toFixed(1)}%` : "0%" },
                   { label: "Active Subscribers", value: num(o.activeSubscribers), pct: o.totalContacts > 0 ? `${((o.activeSubscribers / o.totalContacts) * 100).toFixed(1)}%` : "0%" },
                   { label: "Churn (Canceled)", value: num(o.canceledSubscribers), pct: o.activeSubscribers + o.canceledSubscribers > 0 ? `${((o.canceledSubscribers / (o.activeSubscribers + o.canceledSubscribers)) * 100).toFixed(1)}%` : "0%" },
                   { label: "Never Purchased", value: num(o.neverPurchased), pct: o.totalContacts > 0 ? `${((o.neverPurchased / o.totalContacts) * 100).toFixed(1)}%` : "0%" },

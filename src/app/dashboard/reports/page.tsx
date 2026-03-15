@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import Link from "next/link";
+import { useIndustry } from "@/lib/use-industry";
 import {
   BarChart3, TrendingUp, Users, DollarSign, Crown, UserCheck, UserX,
   Star, ChevronRight, Loader2, Download, PieChart, Target, ShoppingCart,
@@ -31,7 +32,7 @@ const subLabels: Record<string,string> = { active:"Active", canceled:"Canceled",
 
 type ReportView = "overview" | "revenue" | "customers" | "subscriptions" | "segments";
 
-const reportTabs = [
+const reportTabsDef = [
   { key: "overview" as ReportView, label: "Overview", icon: BarChart3 },
   { key: "revenue" as ReportView, label: "Revenue", icon: DollarSign },
   { key: "customers" as ReportView, label: "Top Customers", icon: Crown },
@@ -43,6 +44,10 @@ export default function ReportsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ReportView>("overview");
+  const ic = useIndustry();
+  const hvLabel = ic?.highValueLabel || "High Value";
+
+  const reportTabs = reportTabsDef.map(t => t.key === "customers" ? { ...t, label: `Top ${ic?.contactLabelPlural || "Customers"}` } : t);
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
@@ -94,7 +99,7 @@ export default function ReportsPage() {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
                       { label: "Total Revenue", value: fmt(o.totalRevenue), icon: DollarSign, color: "bg-emerald-500" },
-                      { label: "Paying Customers", value: num(o.contactsWithPurchases), icon: Users, color: "bg-indigo-500" },
+                      { label: `Paying ${ic?.contactLabelPlural || "Customers"}`, value: num(o.contactsWithPurchases), icon: Users, color: "bg-indigo-500" },
                       { label: "Avg LTV", value: fmt(o.avgLTV), icon: TrendingUp, color: "bg-violet-500" },
                       { label: "Avg Order", value: fmt(o.avgOrderValue), icon: ShoppingCart, color: "bg-blue-500" },
                     ].map((s) => (
@@ -116,7 +121,7 @@ export default function ReportsPage() {
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Tiers</h3>
                     <div className="space-y-3">
                       {[
-                        { label: "High Value ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500" },
+                        { label: `${hvLabel} ($500+)`, n: data.ltvBuckets.whale, color: "bg-violet-500" },
                         { label: "Mid ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500" },
                         { label: "Low (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400" },
                         { label: "No purchase", n: data.ltvBuckets.zero, color: "bg-gray-300" },
@@ -160,7 +165,7 @@ export default function ReportsPage() {
                   <h3 className="text-sm font-semibold text-gray-900 mb-4">Revenue by Customer Tier</h3>
                   <div className="space-y-4">
                     {[
-                      { label: "High Value ($500+)", n: data.ltvBuckets.whale, color: "bg-violet-500", est: data.ltvBuckets.whale * 750 },
+                      { label: `${hvLabel} ($500+)`, n: data.ltvBuckets.whale, color: "bg-violet-500", est: data.ltvBuckets.whale * 750 },
                       { label: "Mid-Tier ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500", est: data.ltvBuckets.mid * 320 },
                       { label: "Low-Tier (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400", est: data.ltvBuckets.low * 80 },
                     ].map((t) => (
@@ -168,7 +173,7 @@ export default function ReportsPage() {
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-sm font-medium text-gray-700">{t.label}</span>
                           <div className="text-right">
-                            <span className="text-sm font-bold text-gray-900">{num(t.n)} customers</span>
+                            <span className="text-sm font-bold text-gray-900">{num(t.n)} {(ic?.contactLabelPlural || "customers").toLowerCase()}</span>
                           </div>
                         </div>
                         <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
@@ -186,10 +191,10 @@ export default function ReportsPage() {
               <div className="bg-white rounded-xl border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Top Customers by LTV</h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Your highest value customers ranked by lifetime spending</p>
+                    <h2 className="text-lg font-semibold text-gray-900">Top {ic?.contactLabelPlural || "Customers"} by LTV</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Your highest value {(ic?.contactLabelPlural || "customers").toLowerCase()} ranked by lifetime spending</p>
                   </div>
-                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all contacts <ChevronRight className="w-3 h-3" /></Link>
+                  <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all {(ic?.contactLabelPlural || "contacts").toLowerCase()} <ChevronRight className="w-3 h-3" /></Link>
                 </div>
                 <table className="w-full">
                   <thead>
