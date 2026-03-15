@@ -57,6 +57,59 @@ const DEMO_DEALS: Record<string, VelocityDeal[]> = {
     { id: "3", title: "Reactivation", company: "Ramon G.", stage: "Win-Back", stageColor: "#F59E0B", value: 165, daysInStage: 45, expectedDays: 14, velocity: "stalled" },
     { id: "4", title: "VIP Retention", company: "Raquel M.", stage: "VIP", stageColor: "#8B5CF6", value: 999, daysInStage: 5, expectedDays: 90, velocity: "healthy" },
   ],
+  fitness_gym: [
+    { id: "1", title: "Annual Membership", company: "Brandon Lewis", stage: "Trial Completed", stageColor: "#F59E0B", value: 720, daysInStage: 5, expectedDays: 2, velocity: "stalled" },
+    { id: "2", title: "PT Package", company: "Stephanie Clark", stage: "Membership Offered", stageColor: "#F97316", value: 960, daysInStage: 8, expectedDays: 5, velocity: "slowing" },
+    { id: "3", title: "At-Risk Save", company: "Daniel Wright", stage: "At Risk", stageColor: "#EF4444", value: 79, daysInStage: 12, expectedDays: 7, velocity: "slowing" },
+    { id: "4", title: "Monthly Unlimited", company: "Kevin Young", stage: "Active Member", stageColor: "#10B981", value: 79, daysInStage: 15, expectedDays: 30, velocity: "healthy" },
+  ],
+  beauty_salon: [
+    { id: "1", title: "Bridal Package", company: "Charlotte Davis", stage: "Booked", stageColor: "#6366F1", value: 1200, daysInStage: 1, expectedDays: 1, velocity: "healthy" },
+    { id: "2", title: "Lash Refill", company: "Isabella Lee", stage: "Rebooking", stageColor: "#F59E0B", value: 85, daysInStage: 19, expectedDays: 14, velocity: "slowing" },
+    { id: "3", title: "Re-engagement", company: "Evelyn Thomas", stage: "Lapsed", stageColor: "#EF4444", value: 95, daysInStage: 28, expectedDays: 14, velocity: "stalled" },
+    { id: "4", title: "Keratin Rebook", company: "Amelia Wilson", stage: "Rebooking", stageColor: "#F59E0B", value: 350, daysInStage: 4, expectedDays: 14, velocity: "healthy" },
+  ],
+  real_estate: [
+    { id: "1", title: "Waterfront Home", company: "Robert Chen", stage: "Offer", stageColor: "#F97316", value: 1200000, daysInStage: 8, expectedDays: 5, velocity: "slowing" },
+    { id: "2", title: "Investment Duplex", company: "David Nguyen", stage: "Contacted", stageColor: "#6366F1", value: 550000, daysInStage: 12, expectedDays: 5, velocity: "stalled" },
+    { id: "3", title: "First-Time Buyer", company: "Amanda Hill", stage: "Under Contract", stageColor: "#10B981", value: 275000, daysInStage: 10, expectedDays: 30, velocity: "healthy" },
+    { id: "4", title: "Condo Downtown", company: "Emily Scott", stage: "Lead", stageColor: "#818CF8", value: 320000, daysInStage: 7, expectedDays: 3, velocity: "stalled" },
+  ],
+  home_services: [
+    { id: "1", title: "Full Roof Replace", company: "Linda Garcia", stage: "Site Visit", stageColor: "#6366F1", value: 18500, daysInStage: 6, expectedDays: 3, velocity: "stalled" },
+    { id: "2", title: "Leak Repair", company: "Richard Wilson", stage: "Follow-up", stageColor: "#F97316", value: 3500, daysInStage: 5, expectedDays: 3, velocity: "slowing" },
+    { id: "3", title: "HVAC Install", company: "Thomas Brown", stage: "Estimate Sent", stageColor: "#F59E0B", value: 8200, daysInStage: 3, expectedDays: 5, velocity: "healthy" },
+    { id: "4", title: "Gutter Replacement", company: "Barbara M.", stage: "Job Booked", stageColor: "#10B981", value: 4200, daysInStage: 2, expectedDays: 14, velocity: "healthy" },
+  ],
+  legal: [
+    { id: "1", title: "Contract Dispute", company: "Harbor Constr.", stage: "Engagement Sent", stageColor: "#F97316", value: 15000, daysInStage: 8, expectedDays: 5, velocity: "slowing" },
+    { id: "2", title: "Estate Planning", company: "Patricia W.", stage: "Evaluation", stageColor: "#F59E0B", value: 4500, daysInStage: 6, expectedDays: 2, velocity: "stalled" },
+    { id: "3", title: "PI Case", company: "Marcus Johnson", stage: "Inquiry", stageColor: "#818CF8", value: 45000, daysInStage: 1, expectedDays: 1, velocity: "healthy" },
+    { id: "4", title: "Business Formation", company: "Apex Ventures", stage: "Consultation", stageColor: "#6366F1", value: 3500, daysInStage: 4, expectedDays: 3, velocity: "slowing" },
+  ],
+  coaching_education: [
+    { id: "1", title: "Mastermind Enrollment", company: "Brittany Lopez", stage: "Call Completed", stageColor: "#F97316", value: 8000, daysInStage: 5, expectedDays: 2, velocity: "stalled" },
+    { id: "2", title: "1:1 Coaching App", company: "Jason Wright", stage: "Application", stageColor: "#6366F1", value: 5000, daysInStage: 4, expectedDays: 3, velocity: "slowing" },
+    { id: "3", title: "VIP Day", company: "Nathan Harris", stage: "Discovery Call", stageColor: "#F59E0B", value: 3000, daysInStage: 2, expectedDays: 5, velocity: "healthy" },
+    { id: "4", title: "Alumni Upsell", company: "Laura Davis", stage: "Alumni", stageColor: "#8B5CF6", value: 5000, daysInStage: 20, expectedDays: 30, velocity: "healthy" },
+  ],
+  restaurant_food: [
+    { id: "1", title: "Corporate Lunch", company: "Apex Financial", stage: "Catering Lead", stageColor: "#F59E0B", value: 3500, daysInStage: 6, expectedDays: 3, velocity: "stalled" },
+    { id: "2", title: "Win-Back Diner", company: "Olivia Brown", stage: "Lapsed", stageColor: "#EF4444", value: 42, daysInStage: 32, expectedDays: 14, velocity: "stalled" },
+    { id: "3", title: "Birthday Party", company: "Sarah Johnson", stage: "Catering Lead", stageColor: "#F59E0B", value: 1800, daysInStage: 2, expectedDays: 3, velocity: "healthy" },
+  ],
+  automotive: [
+    { id: "1", title: "Transmission Service", company: "Linda Garcia", stage: "Estimate Given", stageColor: "#6366F1", value: 2400, daysInStage: 8, expectedDays: 3, velocity: "stalled" },
+    { id: "2", title: "AC Recharge", company: "Robert Chen", stage: "Estimate Given", stageColor: "#6366F1", value: 350, daysInStage: 5, expectedDays: 3, velocity: "slowing" },
+    { id: "3", title: "Timing Belt", company: "Thomas Brown", stage: "In Service", stageColor: "#F97316", value: 1200, daysInStage: 1, expectedDays: 2, velocity: "healthy" },
+    { id: "4", title: "Oil Change Due", company: "Richard Wilson", stage: "Maintenance Due", stageColor: "#8B5CF6", value: 65, daysInStage: 15, expectedDays: 7, velocity: "stalled" },
+  ],
+  nonprofit: [
+    { id: "1", title: "Corporate Partnership", company: "Apex Financial", stage: "Prospect", stageColor: "#818CF8", value: 25000, daysInStage: 14, expectedDays: 7, velocity: "stalled" },
+    { id: "2", title: "Gala Sponsor", company: "Harbor Wealth", stage: "Contacted", stageColor: "#6366F1", value: 10000, daysInStage: 5, expectedDays: 5, velocity: "healthy" },
+    { id: "3", title: "Lapsed Recovery", company: "Marcus Rivera", stage: "Lapsed", stageColor: "#EF4444", value: 250, daysInStage: 30, expectedDays: 14, velocity: "stalled" },
+    { id: "4", title: "Grant Application", company: "Smith Foundation", stage: "Prospect", stageColor: "#818CF8", value: 50000, daysInStage: 8, expectedDays: 14, velocity: "healthy" },
+  ],
 };
 
 function fmt(n: number) { return n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n}`; }
