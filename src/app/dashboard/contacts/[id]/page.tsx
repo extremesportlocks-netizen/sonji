@@ -8,6 +8,7 @@ import {
   Calendar, DollarSign, ShoppingCart, Clock, CreditCard, ChevronRight,
   Loader2, ExternalLink, TrendingUp, User,
 } from "lucide-react";
+import AIInsights from "@/components/dashboard/ai-insights";
 
 export default function ContactDetailPage() {
   const { id } = useParams();
@@ -138,6 +139,9 @@ export default function ContactDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* AI Insights */}
+            <AIInsights contact={contact} />
 
             {/* Quick Actions */}
             <div className="bg-white rounded-xl border border-gray-100 p-4">

@@ -10,6 +10,7 @@ import {
   Activity, Calendar, CheckSquare, ChevronDown, ChevronUp,
 } from "lucide-react";
 import SonjiBox from "@/components/dashboard/sonji-box";
+import MoneyOnTable from "@/components/dashboard/money-on-table";
 
 // ═══════════════════════════════════════
 // TYPES
@@ -58,6 +59,7 @@ const widgetDefs: WidgetDef[] = [
   { type: "upcoming_meetings", label: "Upcoming Meetings", icon: Calendar, defaultSize: "half", desc: "Your next scheduled meetings" },
   { type: "revenue_chart", label: "Revenue Chart", icon: BarChart3, defaultSize: "full", desc: "Monthly revenue bar chart" },
   { type: "campaign_stats", label: "Campaign Stats", icon: Send, defaultSize: "half", desc: "Emails sent, open rates" },
+  { type: "money_on_table", label: "Money Left on the Table", icon: DollarSign, defaultSize: "full", desc: "Lapsed revenue + one-click win-back emails" },
 ];
 
 const defaultLayout: WidgetConfig[] = [
@@ -66,6 +68,7 @@ const defaultLayout: WidgetConfig[] = [
   { id: "w3", type: "customer_tiers", size: "half" },
   { id: "w4", type: "subscription_breakdown", size: "half" },
   { id: "w5", type: "top_customers", size: "full" },
+  { id: "w13", type: "money_on_table", size: "full" },
   { id: "w6", type: "recent_contacts", size: "full" },
   { id: "w7", type: "pipeline", size: "half" },
   { id: "w8", type: "open_tasks", size: "half" },
@@ -346,6 +349,7 @@ function renderWidget(type: string, s: Stats) {
     case "upcoming_meetings": return <UpcomingMeetings />;
     case "revenue_chart": return <RevenueChart s={s} />;
     case "campaign_stats": return <CampaignStats />;
+    case "money_on_table": return <MoneyOnTable />;
     default: return <p className="text-sm text-gray-500">Unknown widget</p>;
   }
 }
