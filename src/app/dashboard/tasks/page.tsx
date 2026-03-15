@@ -135,7 +135,7 @@ export default function TasksPage() {
                     <span className="text-sm font-semibold text-gray-900">{col.name}</span>
                     <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{colTasks.length}</span>
                   </div>
-                  <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition">
+                  <button onClick={() => openModal("task")} className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>

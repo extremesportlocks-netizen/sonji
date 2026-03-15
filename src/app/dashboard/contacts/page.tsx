@@ -379,6 +379,22 @@ export default function ContactsPage() {
                 )}
               </div>
 
+              <button onClick={() => {
+                const csv = ["First Name,Last Name,Email,Phone,Status,LTV,Purchases,Subscription", ...contactsList.map((c: any) =>
+                  `"${c.firstName || ""}","${c.lastName || ""}","${c.email || ""}","${c.phone || ""}","${c.status || ""}",${c.customFields?.ltv || 0},${c.customFields?.purchaseCount || 0},"${c.customFields?.subscriptionStatus || ""}"`
+                )].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a"); a.href = url; a.download = "contacts-export.csv"; a.click(); URL.revokeObjectURL(url);
+              }} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <Download className="w-3.5 h-3.5" /> Export
+              </button>
+
+              <button onClick={() => openModal("import")}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <Upload className="w-3.5 h-3.5" /> Import CSV
+              </button>
+
               <button onClick={() => openModal("contact")}
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
                 <Plus className="w-3.5 h-3.5" /> Create Contact
