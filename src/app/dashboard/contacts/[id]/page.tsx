@@ -9,10 +9,12 @@ import {
   Loader2, ExternalLink, TrendingUp, User,
 } from "lucide-react";
 import AIInsights from "@/components/dashboard/ai-insights";
+import { useIndustry } from "@/lib/use-industry";
 
 export default function ContactDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const ic = useIndustry();
   const [contact, setContact] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -31,20 +33,41 @@ export default function ContactDetailPage() {
   const [subEditActiveUntil, setSubEditActiveUntil] = useState("");
 
   useEffect(() => {
-    fetch(`/api/contacts/${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const c = data.data || data;
-        setContact(c);
-        // Init subscription edit fields
-        const cf = c?.customFields || {};
-        setSubEditPlan(cf.subscriptionPlan || "");
-        setSubEditAmount(cf.subscriptionAmount ? String(cf.subscriptionAmount) : "");
-        setSubEditStatus(cf.subscriptionStatus || "never");
-        setSubEditActiveUntil(cf.manualActiveUntil ? cf.manualActiveUntil.split("T")[0] : "");
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const isDemo = demoIndustry && demoIndustry !== "ecommerce" && String(id).startsWith("demo-");
+
+    if (isDemo) {
+      // Fetch from demo contacts API and find the matching one
+      fetch(`/api/demo/contacts?industry=${demoIndustry}&pageSize=200`)
+        .then((r) => r.json())
+        .then((data) => {
+          const c = (data.data || []).find((c: any) => c.id === id);
+          if (c) {
+            setContact(c);
+            const cf = c.customFields || {};
+            setSubEditPlan(cf.subscriptionPlan || "");
+            setSubEditAmount(cf.subscriptionAmount ? String(cf.subscriptionAmount) : "");
+            setSubEditStatus(cf.subscriptionStatus || "never");
+            setSubEditActiveUntil(cf.manualActiveUntil ? cf.manualActiveUntil.split("T")[0] : "");
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else {
+      fetch(`/api/contacts/${id}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const c = data.data || data;
+          setContact(c);
+          const cf = c?.customFields || {};
+          setSubEditPlan(cf.subscriptionPlan || "");
+          setSubEditAmount(cf.subscriptionAmount ? String(cf.subscriptionAmount) : "");
+          setSubEditStatus(cf.subscriptionStatus || "never");
+          setSubEditActiveUntil(cf.manualActiveUntil ? cf.manualActiveUntil.split("T")[0] : "");
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
   }, [id]);
 
   const handleSaveSub = async () => {
@@ -85,7 +108,7 @@ export default function ContactDetailPage() {
   const ltv = parseFloat(cf.ltv || "0");
   const tier = ltv >= 500 ? "whale" : ltv >= 200 ? "mid" : ltv > 0 ? "low" : "none";
   const tierColors = { whale: "bg-violet-100 text-violet-700", mid: "bg-blue-100 text-blue-700", low: "bg-gray-100 text-gray-600", none: "bg-gray-50 text-gray-400" };
-  const tierLabels = { whale: "High Value ($500+)", mid: "Mid-Tier", low: "Low-Tier", none: "No Purchases" };
+  const tierLabels = { whale: `${ic?.highValueLabel || "High Value"} ($500+)`, mid: `${ic?.midTierLabel || "Mid-Tier"}`, low: `${ic?.lowTierLabel || "Low-Tier"}`, none: "No Purchases" };
   const tags = Array.isArray(contact?.tags) ? contact.tags : [];
 
   const handleQuickEmail = async () => {
@@ -123,19 +146,19 @@ export default function ContactDetailPage() {
   if (!contact) return (
     <>
       <Header title="Contact" />
-      <div className="p-6 text-center text-gray-500">Contact not found. <button onClick={() => router.push("/dashboard/contacts")} className="text-indigo-600 hover:underline">Back to contacts</button></div>
+      <div className="p-6 text-center text-gray-500">{ic?.contactLabel || "Contact"} not found. <button onClick={() => router.push("/dashboard/contacts")} className="text-indigo-600 hover:underline">Back to {(ic?.contactLabelPlural || "contacts").toLowerCase()}</button></div>
     </>
   );
 
   return (
     <>
-      <Header title="Contact Detail" />
+      <Header title={ic?.contactLabel ? `${ic.contactLabel} Detail` : "Contact Detail"} />
       <div className="p-6">
 
         {/* Back button */}
         <button onClick={() => router.push("/dashboard/contacts")}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Contacts
+          <ArrowLeft className="w-4 h-4" /> Back to {ic?.contactLabelPlural || "Contacts"}
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
