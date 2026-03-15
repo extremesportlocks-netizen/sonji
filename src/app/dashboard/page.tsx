@@ -367,7 +367,11 @@ export default function DashboardPage() {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/dashboard").then(r => r.json()).then(d => { if (d.ok) setS(d.data); }).catch(() => {}).finally(() => setLoading(false));
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const url = demoIndustry && demoIndustry !== "ecommerce"
+      ? `/api/demo?industry=${demoIndustry}`
+      : "/api/dashboard";
+    fetch(url).then(r => r.json()).then(d => { if (d.ok || d.data) setS(d.data); }).catch(() => {}).finally(() => setLoading(false));
     setLayout(loadLayout());
   }, []);
 
