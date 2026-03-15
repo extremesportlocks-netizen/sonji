@@ -122,6 +122,17 @@ export default function OnboardingPage() {
       }
 
       setProvisionResult({ tenantId: data.tenantId, slug: data.slug });
+
+      // Cache tenant info so dashboard picks it up immediately
+      sessionStorage.setItem("sonji-tenant-verified", "true");
+      sessionStorage.setItem("sonji-tenant", JSON.stringify({
+        id: data.tenantId,
+        slug: data.slug,
+        name: formData.businessName,
+        plan: formData.plan,
+        industry: formData.industry,
+      }));
+
       setStep(4); // Move to "Ready" step
     } catch (err) {
       setError("Network error. Please check your connection and try again.");

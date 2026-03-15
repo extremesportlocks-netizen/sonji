@@ -94,9 +94,13 @@ export default function Header({ title, subtitle }: Props) {
     setShowVideoPanel(false);
   };
 
-  const handleSignOut = () => {
-    // Clear site auth cookie and redirect
+  const handleSignOut = async () => {
+    // Clear all cached session data
+    sessionStorage.removeItem("sonji-tenant-verified");
+    sessionStorage.removeItem("sonji-tenant");
+    sessionStorage.removeItem("sonji-user");
     document.cookie = "site_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    // Redirect to login (Clerk handles the actual sign-out via its middleware)
     window.location.href = "/login";
   };
 

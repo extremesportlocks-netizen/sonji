@@ -13,6 +13,7 @@ import SonjiBox from "@/components/dashboard/sonji-box";
 import MoneyOnTable from "@/components/dashboard/money-on-table";
 import RecoveredRevenue from "@/components/dashboard/recovered-revenue";
 import DealVelocity from "@/components/dashboard/deal-velocity";
+import NewTenantWelcome from "@/components/dashboard/new-tenant-welcome";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
 import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
 
@@ -505,6 +506,9 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* New Tenant Welcome */}
+        <NewTenantWelcome stats={s} />
 
         {/* Widget Library Modal */}
         {showLibrary && (
