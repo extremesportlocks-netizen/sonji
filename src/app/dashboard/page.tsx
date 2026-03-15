@@ -12,6 +12,7 @@ import {
 import SonjiBox from "@/components/dashboard/sonji-box";
 import MoneyOnTable from "@/components/dashboard/money-on-table";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
+import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
 
 // ═══════════════════════════════════════
 // TYPES
@@ -160,11 +161,18 @@ function CustomerTiers({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
   );
 }
 
-function SubscriptionBreakdown({ s }: { s: Stats }) {
+function SubscriptionBreakdown({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
   const totalSubs = Object.values(s.subscriptionBreakdown).reduce((a, b) => a + b, 0) || 1;
+  const subLabelsMap: Record<string, string> = ic ? {
+    active: ic.key === "nonprofit" ? "Active Donors" : ic.key === "agency_consulting" ? "Active Retainers" : ic.key === "fitness_gym" ? "Active Members" : ic.key === "health_wellness" ? "Active Patients" : ic.key === "beauty_salon" ? "Regulars" : "Active",
+    canceled: ic.key === "nonprofit" ? "Lapsed Donors" : "Canceled",
+    expired: "Expired",
+    "one-time": ic.key === "nonprofit" ? "One-Time Gift" : ic.key === "restaurant_food" ? "Walk-In" : "One-Time",
+    never: ic.key === "nonprofit" ? "Prospect" : "No Sub",
+  } : subLabels;
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Subscriptions</h3>
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">{ic?.key === "nonprofit" ? "Donor Status" : ic?.key === "fitness_gym" ? "Membership Status" : ic?.key === "agency_consulting" ? "Client Status" : "Subscriptions"}</h3>
       <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
         {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
           <div key={k} className={`h-full ${subColors[k] || "bg-gray-400"}`} style={{ width: `${(v/totalSubs)*100}%` }} />
@@ -172,7 +180,7 @@ function SubscriptionBreakdown({ s }: { s: Stats }) {
       </div>
       <div className="grid grid-cols-2 gap-2">
         {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).slice(0, 4).map(([k,v]) => (
-          <div key={k} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${subColors[k] || "bg-gray-400"}`} /><span className="text-xs text-gray-500">{subLabels[k] || k}</span><span className="text-xs font-bold text-gray-700 ml-auto">{num(v)}</span></div>
+          <div key={k} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${subColors[k] || "bg-gray-400"}`} /><span className="text-xs text-gray-500">{(ic ? subLabelsMap[k] : subLabels[k]) || k}</span><span className="text-xs font-bold text-gray-700 ml-auto">{num(v)}</span></div>
         ))}
       </div>
     </div>
@@ -372,12 +380,15 @@ function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
     case "revenue_overview": return <SonjiBox stats={s} />;
     case "top_customers": return <TopCustomers s={s} ic={ic} />;
     case "customer_tiers": return <CustomerTiers s={s} ic={ic} />;
-    case "subscription_breakdown": return <SubscriptionBreakdown s={s} />;
+    case "subscription_breakdown": return <SubscriptionBreakdown s={s} ic={ic} />;
     case "recent_contacts": return <RecentContacts s={s} ic={ic} />;
     case "quick_actions": return <QuickActions />;
     case "pipeline": return <Pipeline s={s} />;
     case "open_tasks": return <OpenTasks s={s} />;
-    case "activity_feed": return <ActivityFeed s={s} />;
+    case "activity_feed": {
+      const demoKey = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+      return demoKey ? <IndustryActivityFeed industry={demoKey} /> : <ActivityFeed s={s} />;
+    }
     case "upcoming_meetings": return <UpcomingMeetings />;
     case "revenue_chart": return <RevenueChart s={s} />;
     case "campaign_stats": return <CampaignStats />;
