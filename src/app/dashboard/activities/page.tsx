@@ -132,6 +132,14 @@ const INDUSTRY_ACTIVITIES: Record<string, Activity[]> = {
     { id: "a4", type: "payment", title: "Meal prep subscription — $480", description: "Weekly meal prep March payment processed", contact: "Marcus Rivera", time: "Yesterday", value: 480 },
     { id: "a5", type: "automation", title: "Automation: Post-dining review request", description: "Google review link sent 24 hours after dining experience", contact: "Table 12 — Johnson Party", time: "Yesterday" },
   ],
+  real_estate: [
+    { id: "a1", type: "email_opened", title: "Offer letter opened", description: "Amanda Hill opened the offer letter for 4521 Bayshore Dr", contact: "Amanda Hill", time: "30 min ago" },
+    { id: "a2", type: "sms", title: "SMS: Showing update", description: "Robert Chen texted — 3 showings today, one couple very interested", contact: "Robert Chen", time: "2 hours ago" },
+    { id: "a3", type: "deal_won", title: "Closing completed — $890K", description: "Williams Estate sale closed at First National Title", contact: "Patricia Williams", time: "3 hours ago", value: 26700 },
+    { id: "a4", type: "meeting", title: "Open house completed", description: "Saturday open house at 1234 Gulf Blvd — 12 visitors, 4 sign-ins", contact: "Public", time: "Yesterday" },
+    { id: "a5", type: "form_submitted", title: "Home valuation request", description: "James Rivera requested a market valuation for 789 Sunset Dr", contact: "James Rivera", time: "Yesterday" },
+    { id: "a6", type: "automation", title: "Automation: Anniversary CMA", description: "1-year purchase anniversary — comparative market analysis sent automatically", contact: "Karen Wu", time: "2 days ago" },
+  ],
   nonprofit: [
     { id: "a1", type: "payment", title: "Donation received — $500", description: "Monthly recurring donation from Robert Chen", contact: "Robert Chen", time: "1 hour ago", value: 500 },
     { id: "a2", type: "automation", title: "Automation: Thank you + receipt", description: "Tax-deductible receipt and thank you email auto-sent", contact: "Robert Chen", time: "1 hour ago" },

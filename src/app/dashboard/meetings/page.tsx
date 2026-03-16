@@ -81,6 +81,38 @@ const INDUSTRY_MEETINGS: Record<string, Meeting[]> = {
     { id: "m4", title: "Color Correction Consult", contact: "New Client", time: "11:00 AM", endTime: "11:30 AM", type: "in_person", location: "Consultation Area", color: "bg-amber-100 border-amber-300 text-amber-800", day: 2 },
     { id: "m5", title: "Team Scheduling", contact: "Internal — All Stylists", time: "9:00 AM", endTime: "9:30 AM", type: "in_person", location: "Break Room", color: "bg-gray-100 border-gray-300 text-gray-700", day: 0 },
   ],
+  real_estate: [
+    { id: "m1", title: "Showing — 4521 Bayshore Dr", contact: "Amanda Hill", time: "10:00 AM", endTime: "10:30 AM", type: "in_person", location: "4521 Bayshore Dr", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },
+    { id: "m2", title: "Listing Presentation", contact: "Robert Chen", time: "2:00 PM", endTime: "3:00 PM", type: "in_person", location: "Seller's Home", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 0 },
+    { id: "m3", title: "Closing — Williams Estate", contact: "Patricia Williams", time: "2:00 PM", endTime: "3:30 PM", type: "in_person", location: "First National Title", color: "bg-violet-100 border-violet-300 text-violet-800", day: 2 },
+    { id: "m4", title: "Open House", contact: "Public — 1234 Gulf Blvd", time: "1:00 PM", endTime: "4:00 PM", type: "in_person", location: "1234 Gulf Blvd", color: "bg-amber-100 border-amber-300 text-amber-800", day: 4 },
+    { id: "m5", title: "Team Meeting", contact: "Internal — All Agents", time: "9:00 AM", endTime: "9:30 AM", type: "in_person", location: "Office", color: "bg-gray-100 border-gray-300 text-gray-700", day: 1 },
+  ],
+  coaching_education: [
+    { id: "m1", title: "1:1 Session — Jason Wright", contact: "Jason Wright", time: "9:00 AM", endTime: "10:00 AM", type: "video", location: "Zoom", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },
+    { id: "m2", title: "Mastermind Cohort Call", contact: "6 Participants", time: "11:00 AM", endTime: "12:30 PM", type: "video", location: "Zoom", color: "bg-violet-100 border-violet-300 text-violet-800", day: 1 },
+    { id: "m3", title: "VIP Day — Nathan Harris", contact: "Nathan Harris", time: "9:00 AM", endTime: "5:00 PM", type: "in_person", location: "Office", color: "bg-amber-100 border-amber-300 text-amber-800", day: 3 },
+    { id: "m4", title: "Discovery Call", contact: "New Lead", time: "3:00 PM", endTime: "3:30 PM", type: "video", location: "Zoom", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 2 },
+  ],
+  restaurant_food: [
+    { id: "m1", title: "Catering Tasting", contact: "Apex Financial", time: "11:00 AM", endTime: "12:00 PM", type: "in_person", location: "Private Dining Room", color: "bg-amber-100 border-amber-300 text-amber-800", day: 1 },
+    { id: "m2", title: "Wedding Menu Finalization", contact: "Emily & David", time: "2:00 PM", endTime: "3:00 PM", type: "in_person", location: "Chef's Office", color: "bg-rose-100 border-rose-300 text-rose-800", day: 2 },
+    { id: "m3", title: "Staff Pre-Service Meeting", contact: "All Staff", time: "4:00 PM", endTime: "4:30 PM", type: "in_person", location: "Dining Room", color: "bg-gray-100 border-gray-300 text-gray-700", day: 4 },
+    { id: "m4", title: "Wine Rep Tasting", contact: "Southern Wine & Spirits", time: "10:00 AM", endTime: "11:00 AM", type: "in_person", location: "Bar Area", color: "bg-violet-100 border-violet-300 text-violet-800", day: 3 },
+  ],
+  automotive: [
+    { id: "m1", title: "Fleet Service Block", contact: "Enterprise Fleet (5 vehicles)", time: "7:00 AM", endTime: "5:00 PM", type: "in_person", location: "All Bays", color: "bg-blue-100 border-blue-300 text-blue-800", day: 1 },
+    { id: "m2", title: "Follow-Up — Brake Decline", contact: "James Peterson", time: "10:00 AM", endTime: "10:15 AM", type: "phone", location: "Call", color: "bg-amber-100 border-amber-300 text-amber-800", day: 0 },
+    { id: "m3", title: "Parts Order Review", contact: "Internal — AutoZone Rep", time: "9:00 AM", endTime: "9:30 AM", type: "phone", location: "Call", color: "bg-gray-100 border-gray-300 text-gray-700", day: 2 },
+    { id: "m4", title: "Customer Pickup", contact: "Thomas Brown", time: "3:00 PM", endTime: "3:15 PM", type: "in_person", location: "Front Desk", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 0 },
+  ],
+  nonprofit: [
+    { id: "m1", title: "Gala Planning Committee", contact: "Events Team + Board", time: "10:00 AM", endTime: "11:30 AM", type: "in_person", location: "Conference Room", color: "bg-violet-100 border-violet-300 text-violet-800", day: 0 },
+    { id: "m2", title: "Major Donor Meeting", contact: "Robert Chen", time: "12:00 PM", endTime: "1:00 PM", type: "in_person", location: "Lunch — The Copper Table", color: "bg-amber-100 border-amber-300 text-amber-800", day: 1 },
+    { id: "m3", title: "Sponsorship Call", contact: "Community Bank of FL", time: "2:00 PM", endTime: "2:30 PM", type: "phone", location: "Call", color: "bg-blue-100 border-blue-300 text-blue-800", day: 2 },
+    { id: "m4", title: "Volunteer Orientation", contact: "5 New Volunteers", time: "9:00 AM", endTime: "10:00 AM", type: "in_person", location: "Community Center", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 4 },
+    { id: "m5", title: "Board Meeting", contact: "Board of Directors", time: "6:00 PM", endTime: "8:00 PM", type: "in_person", location: "Board Room", color: "bg-rose-100 border-rose-300 text-rose-800", day: 3 },
+  ],
 };
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];

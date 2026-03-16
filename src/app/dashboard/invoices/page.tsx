@@ -71,6 +71,21 @@ const INDUSTRY_INVOICES: Record<string, Invoice[]> = {
     { id: "i2", number: "DON-002", client: "Apex Financial — Corporate Partnership", amount: 25000, status: "sent", issueDate: "Mar 15", dueDate: "Apr 1", items: 1 },
     { id: "i3", number: "DON-003", client: "Spring Gala Sponsorships", amount: 15000, status: "draft", issueDate: "Mar 20", dueDate: "Apr 10", items: 5 },
   ],
+  real_estate: [
+    { id: "i1", number: "COM-001", client: "Robert Chen — Waterfront Listing (3%)", amount: 36000, status: "sent", issueDate: "Mar 14", dueDate: "At Closing", items: 1 },
+    { id: "i2", number: "COM-002", client: "Amanda Hill — Buyer Agent (2.5%)", amount: 8250, status: "sent", issueDate: "Mar 10", dueDate: "At Closing", items: 1 },
+    { id: "i3", number: "COM-003", client: "Patricia Williams — Estate Sale (3%)", amount: 26700, status: "paid", issueDate: "Feb 28", dueDate: "Mar 14", items: 1 },
+  ],
+  coaching_education: [
+    { id: "i1", number: "INV-C001", client: "Jason Wright — 1:1 Coaching (Month 1)", amount: 833, status: "paid", issueDate: "Mar 1", dueDate: "Mar 1", items: 1 },
+    { id: "i2", number: "INV-C002", client: "Mastermind Cohort — Spring 2026", amount: 48000, status: "paid", issueDate: "Mar 1", dueDate: "Mar 1", items: 6 },
+    { id: "i3", number: "INV-C003", client: "Nathan Harris — VIP Day", amount: 3000, status: "draft", issueDate: "Mar 25", dueDate: "Mar 25", items: 1 },
+  ],
+  restaurant_food: [
+    { id: "i1", number: "INV-R001", client: "Emily & David — Wedding Reception (50%)", amount: 4250, status: "paid", issueDate: "Mar 10", dueDate: "Mar 10", items: 1 },
+    { id: "i2", number: "INV-R002", client: "Apex Financial — Corporate Lunch", amount: 3500, status: "draft", issueDate: "Apr 5", dueDate: "Apr 19", items: 4 },
+    { id: "i3", number: "INV-R003", client: "Marcus Rivera — March Meal Prep", amount: 480, status: "paid", issueDate: "Mar 1", dueDate: "Mar 1", items: 1 },
+  ],
 };
 
 function fmt(n: number) { return n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n.toFixed(0)}`; }
