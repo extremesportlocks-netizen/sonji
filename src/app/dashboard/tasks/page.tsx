@@ -67,6 +67,50 @@ const INDUSTRY_TASKS: Record<string, Task[]> = {
     { id: "dt4", title: "File Mitchell motion", description: "Divorce discovery motion due Friday", priority: "medium", status: "in_progress", assignedTo: "Paralegal", contactName: "Sarah Mitchell", dueDate: "2026-03-20", createdAt: "2026-03-13" },
     { id: "dt5", title: "Send engagement letter to Williams", description: "Estate planning engagement — awaiting signature", priority: "medium", status: "done", assignedTo: "Atty. Hayes", contactName: "Patricia Williams", dueDate: "2026-03-15", createdAt: "2026-03-14" },
   ],
+  fitness_gym: [
+    { id: "dt1", title: "Call Daniel Wright — at risk", description: "14 days no check-in, send trainer personal text", priority: "high", status: "todo", assignedTo: "Coach Jake", contactName: "Daniel Wright", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Set up Saturday HIIT class", description: "New class requested, need instructor + studio", priority: "medium", status: "todo", assignedTo: "Manager", contactName: "Internal", dueDate: "2026-03-20", createdAt: "2026-03-15" },
+    { id: "dt3", title: "Stephanie Clark — renew PT package", description: "Wants unlimited monthly instead of 12-pack", priority: "medium", status: "in_progress", assignedTo: "Coach Sarah", contactName: "Stephanie Clark", dueDate: "2026-03-18", createdAt: "2026-03-15" },
+    { id: "dt4", title: "Brandon Lewis intro session", description: "New trial member — first PT session booked", priority: "high", status: "done", assignedTo: "Coach Jake", contactName: "Brandon Lewis", dueDate: "2026-03-16", createdAt: "2026-03-15" },
+  ],
+  beauty_salon: [
+    { id: "dt1", title: "Order keratin treatment supply", description: "Running low — need 6 kits from Aveda", priority: "high", status: "todo", assignedTo: "Manager", contactName: "Internal", dueDate: "2026-03-18", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Confirm Charlotte bridal trial", description: "Monday 10AM — prep station 1, 2 hours blocked", priority: "high", status: "todo", assignedTo: "Emma", contactName: "Charlotte Davis", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Follow up Nina Patel rebooking", description: "6 weeks since last visit — send personal text", priority: "medium", status: "in_progress", assignedTo: "Alex", contactName: "Nina Patel", dueDate: "2026-03-17", createdAt: "2026-03-15" },
+    { id: "dt4", title: "Post-visit thank you to Amelia", description: "Keratin treatment completed — send aftercare tips", priority: "low", status: "done", assignedTo: "Emma", contactName: "Amelia Wilson", dueDate: "2026-03-15", createdAt: "2026-03-14" },
+  ],
+  real_estate: [
+    { id: "dt1", title: "Submit offer — 4521 Bayshore Dr", description: "Amanda Hill wants to offer $425K, pre-approval attached", priority: "high", status: "todo", assignedTo: "Agent Sarah", contactName: "Amanda Hill", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Confirm Williams closing — March 28", description: "Title company docs ready, confirm with seller", priority: "high", status: "todo", assignedTo: "Agent Sarah", contactName: "Patricia Williams", dueDate: "2026-03-20", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Prepare CMA for Chen waterfront", description: "3 comps needed for listing presentation", priority: "medium", status: "in_progress", assignedTo: "Agent Sarah", contactName: "Robert Chen", dueDate: "2026-03-18", createdAt: "2026-03-15" },
+    { id: "dt4", title: "Set up Saturday open house", description: "1234 Gulf Blvd — signage, flyers, sign-in sheet", priority: "medium", status: "in_progress", assignedTo: "Agent Mike", contactName: "Internal", dueDate: "2026-03-19", createdAt: "2026-03-14" },
+    { id: "dt5", title: "Send anniversary CMA to Karen Wu", description: "1-year purchase anniversary — market update", priority: "low", status: "done", assignedTo: "Agent Mike", contactName: "Karen Wu", dueDate: "2026-03-15", createdAt: "2026-03-10" },
+  ],
+  coaching_education: [
+    { id: "dt1", title: "Review Nathan Harris VIP Day app", description: "Referred by Jason Wright — March 25 date requested", priority: "high", status: "todo", assignedTo: "Coach", contactName: "Nathan Harris", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Check in on Lindsey K.", description: "3 weeks no assignments submitted — stuck intervention", priority: "high", status: "todo", assignedTo: "Coach", contactName: "Lindsey K.", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Prep mastermind Week 3 materials", description: "Scaling strategies module — slides + workbook", priority: "medium", status: "in_progress", assignedTo: "Coach", contactName: "Cohort", dueDate: "2026-03-18", createdAt: "2026-03-14" },
+    { id: "dt4", title: "Send goal-setting template to Jason", description: "Requested after yesterday's session", priority: "low", status: "done", assignedTo: "Coach", contactName: "Jason Wright", dueDate: "2026-03-16", createdAt: "2026-03-15" },
+  ],
+  restaurant_food: [
+    { id: "dt1", title: "Finalize wedding menu — Emily & David", description: "Need final selections by Friday, tasting Monday", priority: "high", status: "todo", assignedTo: "Chef", contactName: "Emily & David", dueDate: "2026-03-20", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Send catering menu to Apex Financial", description: "Corporate lunch for 35 on April 12", priority: "high", status: "todo", assignedTo: "Manager", contactName: "Apex Financial", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Prep Marcus Rivera meal order", description: "Weekly meal prep + added salmon + double rice", priority: "medium", status: "in_progress", assignedTo: "Chef", contactName: "Marcus Rivera", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt4", title: "Reserve corner booth — Michael Rivera", description: "Friday 7:30PM birthday party of 6", priority: "medium", status: "done", assignedTo: "Host", contactName: "Michael Rivera", dueDate: "2026-03-15", createdAt: "2026-03-15" },
+  ],
+  automotive: [
+    { id: "dt1", title: "Call Thomas Brown — post-service noise", description: "Cold-start squealing after timing belt — may need belt tension adjustment", priority: "high", status: "todo", assignedTo: "Steve", contactName: "Thomas Brown", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Schedule Enterprise fleet block", description: "5 vehicles for 30K service next week", priority: "high", status: "todo", assignedTo: "Manager", contactName: "Enterprise Fleet", dueDate: "2026-03-18", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Order brake pads — James Peterson", description: "Full brake job scheduled for Friday", priority: "medium", status: "in_progress", assignedTo: "Parts Dept", contactName: "James Peterson", dueDate: "2026-03-18", createdAt: "2026-03-15" },
+    { id: "dt4", title: "Complete 30K service — Nancy Davis", description: "Oil, filters, tire rotation, inspection", priority: "medium", status: "done", assignedTo: "Tech A", contactName: "Nancy Davis", dueDate: "2026-03-14", createdAt: "2026-03-13" },
+  ],
+  nonprofit: [
+    { id: "dt1", title: "Call Robert Chen — increase to $1K/mo", description: "Major donor wants to discuss increasing monthly contribution", priority: "high", status: "todo", assignedTo: "Director", contactName: "Robert Chen", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Send sponsorship deck to Community Bank", description: "Inquired about Gold/Platinum gala sponsorship", priority: "high", status: "todo", assignedTo: "Events", contactName: "Community Bank", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Finalize gala venue logistics", description: "Seating chart, AV setup, catering timeline", priority: "high", status: "in_progress", assignedTo: "Events", contactName: "Internal", dueDate: "2026-03-25", createdAt: "2026-03-10" },
+    { id: "dt4", title: "Process Sarah Lopez volunteer application", description: "Event planning experience — assign to gala committee", priority: "medium", status: "in_progress", assignedTo: "Outreach", contactName: "Sarah Lopez", dueDate: "2026-03-18", createdAt: "2026-03-16" },
+    { id: "dt5", title: "Send lapsed donor re-engagement emails", description: "12+ months since last donation — 15 donors identified", priority: "medium", status: "done", assignedTo: "Outreach", contactName: "Multiple", dueDate: "2026-03-15", createdAt: "2026-03-10" },
+  ],
 };
 
 const DEFAULT_TASKS: Task[] = [
