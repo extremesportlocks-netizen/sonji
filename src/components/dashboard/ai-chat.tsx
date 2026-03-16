@@ -25,6 +25,10 @@ const DEMO_RESPONSES: Record<string, string> = {
   "team": "**Team Performance**\n\n- Colton (PM/Strategy): 38/40h, $42K managed, $1,105/hr efficiency\n- Rocco (SEO/PPC): 42/40h ⚠️ overloaded, $24.5K managed\n- Mike (Developer): 36/40h, on track with Meridian website\n- Sarah (Designer): 32/40h, capacity available\n\nRecommendation: Rocco is over capacity. Assign Sarah to support the Coastal RE account if it reactivates.",
   "automations": "**Automation Performance (Last 30 Days)**\n\n🔥 Top performers:\n1. New Lead Auto-Response — 47 runs, <60 second response time\n2. Monthly Report Delivery — 15 reports auto-sent to clients\n3. Proposal Follow-Up Sequence — 12 drip sequences running\n\n⚠️ Triggered alerts:\n- Renewal Alert fired for 3 clients approaching contract end\n- Client Going Cold detected Coastal RE velocity drop\n- Scope Creep Detector flagged Meridian (draft — needs configuration)",
   "help": "I can help you with:\n\n📊 **Data queries**: \"How's Brightview doing?\" \"Show me revenue\" \"What's our pipeline?\"\n👥 **Team insights**: \"Who's overloaded?\" \"Team performance\" \"Resource loading\"\n🤖 **Automations**: \"Which automations fired?\" \"What alerts are active?\"\n📋 **Projects**: \"Active projects\" \"Meridian status\" \"Budget tracking\"\n💡 **Recommendations**: \"What should I focus on?\" \"Any concerns?\"\n\nJust ask naturally — I have full context on your CRM data.",
+  "apex": "**Apex Construction** — New Prospect\n\nDiscovery call completed 2 days ago. Interested in social media management at $3K/mo. Qualified lead — $36K annual potential. Next step: Send proposal by Wednesday.\n\nRocco has the notes from the call. Proposal template 'Social Media Retainer' is ready in your email templates.",
+  "meridian": "**Meridian Law Group** — Active Project\n\nWebsite redesign in progress: 62/100 hours logged, $15K budget, 71.1% margin.\n- Mike is on QA browser testing (due March 20)\n- Rocco completed SEO redirect map (127 URLs mapped)\n- Amanda Chen (their contact) opened the proposal email 12 min ago\n\nProject is on track. No concerns.",
+  "invoice": "**Invoicing Summary**\n\nMarch: 3 invoices pending\n- Brightview Hotels: $8,500 retainer (auto-billed, paid ✅)\n- Summit Athletics: $12,000 brand refresh (50% milestone due)\n- Harbor Dental: $5,000 project (final invoice, draft)\n\nTotal AR: $17,000\nOverdue: $0\nAll payments on time this month.",
+  "churn": "**Churn Risk Analysis**\n\n🚨 High Risk (2):\n- Coastal Real Estate — 12 days ghosting, $72K LTV\n- Nova Fitness — Project completed, no renewal discussed\n\n⚠️ Watch (1):\n- Sterling Partners — Scope reduction hints, renewal in 28 days\n\n✅ Healthy (5):\n- Brightview, Meridian, Harbor, Summit, Apex\n\nOverall churn risk: 25% of accounts showing warning signs.",
   "concerns": "**Top 3 Concerns Right Now**\n\n1. 🚨 **Coastal Real Estate** — Ghosting for 12 days, $72K LTV at risk. Action: Call today.\n\n2. ⚠️ **Sterling Partners** — Renewal in 28 days, hinting at scope reduction. Action: Send attribution report + schedule call.\n\n3. 📊 **Rocco is overloaded** — 42/40 hours, managing 4 active accounts. Action: Redistribute or hire.\n\nEverything else looks healthy. Brightview, Meridian, Summit, and Harbor are all on track.",
   "focus": "**Your Focus for Today**\n\n1. 📞 Call Coastal Real Estate — 12 days of silence, $72K at risk\n2. 📊 Review Sterling renewal strategy with Rocco\n3. ✅ Send March reports to Brightview + Harbor (auto-generated, ready to send)\n4. 👀 Check Meridian website QA progress (Mike is at 62/100h)\n5. 📋 Review Apex Construction discovery call notes\n\nYou have 3 meetings today and 2 unread messages.",
 };
@@ -40,6 +44,8 @@ function findResponse(input: string): string {
   if (q.includes("who") || q.includes("staff") || q.includes("hire")) return DEMO_RESPONSES.team;
   if (q.includes("workflow") || q.includes("trigger")) return DEMO_RESPONSES.automations;
   if (q.includes("project") || q.includes("budget") || q.includes("margin")) return DEMO_RESPONSES.projects;
+  if (q.includes("churn") || q.includes("risk") || q.includes("losing")) return DEMO_RESPONSES.churn;
+  if (q.includes("invoice") || q.includes("billing") || q.includes("payment") || q.includes("ar")) return DEMO_RESPONSES.invoice;
   return DEMO_RESPONSES.help;
 }
 
@@ -49,6 +55,18 @@ export default function AIChat() {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard shortcut: Cmd+J or Ctrl+J
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "j") {
+        e.preventDefault();
+        setOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,7 +111,7 @@ export default function AIChat() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-white">Sonji AI</h3>
-                <p className="text-[10px] text-white/60">Ask anything about your business</p>
+                <p className="text-[10px] text-white/60">⌘J to toggle • Ask anything</p>
               </div>
             </div>
             <button onClick={() => setOpen(false)} className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition">
