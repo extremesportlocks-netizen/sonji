@@ -18,6 +18,7 @@ import RevenueForecast from "@/components/dashboard/revenue-forecast";
 import TeamPerformance from "@/components/dashboard/team-performance";
 import ClientHealth from "@/components/dashboard/client-health";
 import TodaysAgenda from "@/components/dashboard/todays-agenda";
+import AwaySummary from "@/components/dashboard/away-summary";
 import NewTenantWelcome from "@/components/dashboard/new-tenant-welcome";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
 import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
@@ -529,6 +530,9 @@ export default function DashboardPage() {
 
         {/* New Tenant Welcome */}
         <NewTenantWelcome stats={s} />
+
+        {/* Away Summary — shows once per session */}
+        <AwaySummary />
 
         {/* Widget Library Modal */}
         {showLibrary && (
