@@ -62,6 +62,7 @@ const allNavItems: NavItem[] = [
   { id: "tasks", label: "Tasks", href: "/dashboard/tasks", icon: CheckSquare, group: "core" },
   { id: "projects", label: "Projects", href: "/dashboard/projects", icon: FolderKanban, group: "core" },
   { id: "meetings", label: "Meetings", href: "/dashboard/meetings", icon: Calendar, group: "core" },
+  { id: "scheduling", label: "Scheduling", href: "/dashboard/scheduling", icon: Calendar, group: "core" },
   { id: "messages", label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3, group: "core" },
   { id: "campaigns", label: "Campaigns", href: "/dashboard/campaigns", icon: Send, group: "core" },
   { id: "email-templates", label: "Email Templates", href: "/dashboard/email-templates", icon: FileText, group: "core" },
@@ -77,6 +78,7 @@ const allNavItems: NavItem[] = [
   { id: "settings", label: "Settings", href: "/dashboard/settings", icon: Settings, group: "system" },
   { id: "integrations", label: "Integrations", href: "/dashboard/integrations", icon: Puzzle, group: "system" },
   { id: "referrals", label: "Referrals", href: "/dashboard/referrals", icon: Users, group: "system" },
+  { id: "team", label: "Team", href: "/dashboard/team", icon: Users, group: "system" },
 ];
 
 const defaultOrder = allNavItems.map((i) => i.id);
