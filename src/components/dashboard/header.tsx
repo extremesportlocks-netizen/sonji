@@ -263,13 +263,45 @@ export default function Header({ title, subtitle }: Props) {
                     <button onClick={() => setShowNotifs(false)} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Mark all read</button>
                   </div>
                   <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
-                    {[
-                      { icon: "🤝", text: "New deal created — Botox Full Face ($850)", time: "5 min ago", unread: true },
-                      { icon: "📧", text: "Win-back campaign sent to 47 contacts", time: "1 hr ago", unread: true },
-                      { icon: "⚡", text: "Stripe sync completed — 4,075 contacts imported", time: "3 hr ago", unread: false },
-                      { icon: "⭐", text: "New 5-star review from Michael Brown", time: "5 hr ago", unread: false },
-                      { icon: "📊", text: "Weekly analytics report ready to view", time: "Yesterday", unread: false },
-                    ].map((n, i) => (
+                    {(() => {
+                      const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+                      const n: { icon: string; text: string; time: string; unread: boolean }[] = {
+                        agency_consulting: [
+                          { icon: "🤝", text: "Deal won — Sterling Partners $10K/mo retainer", time: "1 hr ago", unread: true },
+                          { icon: "👻", text: "Ghosting Alert: Coastal RE email frequency dropped 80%", time: "2 hr ago", unread: true },
+                          { icon: "⚡", text: "Automation: Renewal alert triggered for 3 clients", time: "3 hr ago", unread: false },
+                          { icon: "📧", text: "Brightview Hotels opened March PPC report", time: "4 hr ago", unread: false },
+                          { icon: "📋", text: "New lead: Apex Construction submitted contact form", time: "5 hr ago", unread: false },
+                        ],
+                        health_wellness: [
+                          { icon: "📝", text: "New patient intake: Emily Rodriguez — Botox consultation", time: "30 min ago", unread: true },
+                          { icon: "💳", text: "Payment received: Sarah Thompson $1,600", time: "1 hr ago", unread: true },
+                          { icon: "⚡", text: "Automation: Botox rebooking reminder sent to Maria Santos", time: "2 hr ago", unread: false },
+                          { icon: "⭐", text: "New 5-star review from Michael Brown", time: "Yesterday", unread: false },
+                          { icon: "👻", text: "Ghosting: Patricia Lee missed 2 consecutive appointments", time: "Yesterday", unread: false },
+                        ],
+                        home_services: [
+                          { icon: "🚨", text: "EMERGENCY: Susan Taylor — active roof leak", time: "45 min ago", unread: true },
+                          { icon: "💳", text: "Payment received: Linda Garcia $18,500 deposit", time: "4 hr ago", unread: true },
+                          { icon: "👻", text: "Ghosting: Richard Wilson — estimate 14 days, no response", time: "5 hr ago", unread: false },
+                          { icon: "⭐", text: "New 5-star review from Barbara Martinez", time: "2 days ago", unread: false },
+                          { icon: "⚡", text: "Automation: Maintenance reminders sent to 12 customers", time: "Yesterday", unread: false },
+                        ],
+                        legal: [
+                          { icon: "📎", text: "Marcus Johnson uploaded medical records for PI case", time: "1 hr ago", unread: true },
+                          { icon: "📝", text: "New consultation request: Patricia Williams — estate planning", time: "2 hr ago", unread: true },
+                          { icon: "📅", text: "Deposition scheduled: Mitchell v. Mitchell — Thursday", time: "3 hr ago", unread: false },
+                          { icon: "⚡", text: "Automation: Document reminder sent to Sarah Mitchell", time: "Yesterday", unread: false },
+                          { icon: "💳", text: "Payment received: Harbor Construction $3,750 retainer", time: "Yesterday", unread: false },
+                        ],
+                      }[di || "ecommerce"] || [
+                        { icon: "💳", text: "Subscription payment: Andrew Krieman $165 VIP Monthly", time: "1 hr ago", unread: true },
+                        { icon: "⚡", text: "Automation: Win-back email sent to Raquel Munoz", time: "2 hr ago", unread: true },
+                        { icon: "🔥", text: "Chris Persaud hit VIP milestone — 4th purchase!", time: "4 hr ago", unread: false },
+                        { icon: "⭐", text: "Wayne Barry upgrading to VIP Yearly ($1,485)", time: "6 hr ago", unread: false },
+                        { icon: "⚠️", text: "Payment failed: Andrew Krieman — card declined", time: "8 hr ago", unread: false },
+                      ];
+                      return n.map((n, i) => (
                       <div key={i} className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition cursor-pointer ${n.unread ? "bg-indigo-50/30" : ""}`}>
                         <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>
                         <div className="flex-1 min-w-0">
@@ -278,7 +310,8 @@ export default function Header({ title, subtitle }: Props) {
                         </div>
                         {n.unread && <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-1.5" />}
                       </div>
-                    ))}
+                    ));
+                    })()}
                   </div>
                   <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50">
                     <button onClick={() => { setShowNotifs(false); router.push("/dashboard/activities"); }}
