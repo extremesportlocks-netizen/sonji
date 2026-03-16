@@ -26,6 +26,7 @@ const isPublicRoute = createRouteMatcher([
   "/features",
   "/about",
   "/contact",
+  "/compare",
   "/privacy",
   "/terms",
   "/login(.*)",
@@ -50,8 +51,9 @@ export default clerkMiddleware(async (auth, request) => {
     const { userId } = await auth();
     // Skip password gate if user is signed in via Clerk OR has the site password cookie
     if (authed !== SITE_PASSWORD && !userId) {
-      // Also skip for login/signup/onboarding so new users can register
-      if (!url.pathname.startsWith("/login") && !url.pathname.startsWith("/signup") && !url.pathname.startsWith("/onboarding")) {
+      // Also skip for login/signup/onboarding and marketing pages so they're always accessible
+      const marketingPaths = ["/login", "/signup", "/onboarding", "/compare", "/pricing", "/demo", "/privacy", "/terms"];
+      if (!marketingPaths.some(p => url.pathname.startsWith(p))) {
         url.pathname = "/password-gate";
         return NextResponse.rewrite(url);
       }
