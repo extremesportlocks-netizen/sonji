@@ -23,6 +23,8 @@ import {
   X,
   ChevronDown,
   Trash2,
+  FolderKanban,
+  Rocket,
 } from "lucide-react";
 
 // ────────────────────────────────────
@@ -358,6 +360,9 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
                 <button onClick={() => { setEditing(true); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Edit</button>
                 <button onClick={() => { setExpanded(!expanded); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">{expanded ? "Collapse" : "View Details"}</button>
                 <button onClick={() => { setAddingNote(true); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Add Note</button>
+                {(deal.stage === "Closed Won" || deal.stage === "Contract Signed" || deal.stage === "Active Client") && (
+                  <button onClick={() => { setMenuOpen(false); window.location.href = "/dashboard/projects"; }} className="w-full px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50 text-left flex items-center gap-2"><FolderKanban className="w-3.5 h-3.5" /> Create Project</button>
+                )}
                 <div className="border-t border-gray-100 my-1" />
                 <button onClick={() => { onDelete(deal.id); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left flex items-center gap-2"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
@@ -436,6 +441,14 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
             </div>
           )}
         </div>
+      )}
+
+      {/* Convert to Project — shows on won deals */}
+      {(deal.stage === "Closed Won" || deal.stage === "Contract Signed" || deal.stage === "Active Client") && !editing && !addingNote && (
+        <button onClick={() => window.location.href = "/dashboard/projects"}
+          className="w-full mt-3 flex items-center justify-center gap-2 py-2 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition">
+          <Rocket className="w-3.5 h-3.5" /> Convert to Project
+        </button>
       )}
 
       {/* Add Note */}
