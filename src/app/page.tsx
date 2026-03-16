@@ -97,6 +97,7 @@ export default function HomePage() {
           <div className="hidden md:flex items-center gap-8">
             <a href="#platform" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Platform</a>
             <a href="#features" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Features</a>
+            <Link href="/compare" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Compare</Link>
             <Link href="/pricing" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Pricing</Link>
             <a href="#customers" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Customers</a>
           </div>
@@ -326,6 +327,7 @@ export default function HomePage() {
             <h4 className="text-xs uppercase tracking-[1.5px] text-gray-400 font-semibold mb-4">Company</h4>
             <div className="space-y-2.5">
               <Link href="/pricing" className="block text-sm text-gray-500 hover:text-gray-900 transition">Pricing</Link>
+              <Link href="/compare" className="block text-sm text-gray-500 hover:text-gray-900 transition">Compare</Link>
               <Link href="/login" className="block text-sm text-gray-500 hover:text-gray-900 transition">Login</Link>
               <a href="mailto:hello@sonji.io" className="block text-sm text-gray-500 hover:text-gray-900 transition">Contact</a>
               <a href="/privacy" className="block text-sm text-gray-500 hover:text-gray-900 transition">Privacy Policy</a>
