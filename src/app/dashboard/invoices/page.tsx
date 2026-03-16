@@ -1,16 +1,139 @@
 "use client";
+
+import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
-import Link from "next/link";
-import { Receipt, Plus, Zap } from "lucide-react";
 import { useModal } from "@/components/modals/modal-provider";
+import {
+  Plus, DollarSign, Clock, CheckCircle, AlertTriangle, Send,
+  FileText, MoreHorizontal, Download, Eye, Receipt,
+} from "lucide-react";
+
+interface Invoice {
+  id: string;
+  number: string;
+  client: string;
+  amount: number;
+  status: "paid" | "sent" | "overdue" | "draft";
+  issueDate: string;
+  dueDate: string;
+  items: number;
+}
+
+const INDUSTRY_INVOICES: Record<string, Invoice[]> = {
+  agency_consulting: [
+    { id: "i1", number: "INV-2026-001", client: "Brightview Hotels", amount: 8500, status: "paid", issueDate: "Mar 1", dueDate: "Mar 15", items: 3 },
+    { id: "i2", number: "INV-2026-002", client: "Sterling Partners", amount: 10000, status: "paid", issueDate: "Mar 1", dueDate: "Mar 15", items: 4 },
+    { id: "i3", number: "INV-2026-003", client: "Meridian Law Group", amount: 7500, status: "sent", issueDate: "Mar 10", dueDate: "Mar 24", items: 2 },
+    { id: "i4", number: "INV-2026-004", client: "Summit Athletics", amount: 4000, status: "sent", issueDate: "Mar 12", dueDate: "Mar 26", items: 2 },
+    { id: "i5", number: "INV-2026-005", client: "Coastal Real Estate", amount: 6000, status: "overdue", issueDate: "Feb 15", dueDate: "Mar 1", items: 2 },
+    { id: "i6", number: "INV-2026-006", client: "Harbor Dental", amount: 5000, status: "draft", issueDate: "Mar 16", dueDate: "Mar 30", items: 3 },
+  ],
+  health_wellness: [
+    { id: "i1", number: "INV-001", client: "Sarah Thompson", amount: 1600, status: "paid", issueDate: "Mar 10", dueDate: "Mar 10", items: 1 },
+    { id: "i2", number: "INV-002", client: "Maria Santos", amount: 800, status: "paid", issueDate: "Mar 8", dueDate: "Mar 8", items: 1 },
+    { id: "i3", number: "INV-003", client: "David Kim", amount: 1200, status: "sent", issueDate: "Mar 14", dueDate: "Mar 28", items: 1 },
+    { id: "i4", number: "INV-004", client: "Patricia Lee", amount: 400, status: "overdue", issueDate: "Feb 20", dueDate: "Mar 6", items: 1 },
+  ],
+  ecommerce: [
+    { id: "i1", number: "INV-001", client: "Affiliate payout — March", amount: 2450, status: "draft", issueDate: "Mar 31", dueDate: "Apr 15", items: 12 },
+    { id: "i2", number: "INV-002", client: "Platform fee — Q1 2026", amount: 8500, status: "paid", issueDate: "Jan 1", dueDate: "Jan 15", items: 1 },
+  ],
+};
+
+function fmt(n: number) { return n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n.toFixed(0)}`; }
+
+const statusConfig: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+  paid: { label: "Paid", color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200", icon: CheckCircle },
+  sent: { label: "Sent", color: "text-blue-600", bg: "bg-blue-50 border-blue-200", icon: Send },
+  overdue: { label: "Overdue", color: "text-red-600", bg: "bg-red-50 border-red-200", icon: AlertTriangle },
+  draft: { label: "Draft", color: "text-gray-500", bg: "bg-gray-50 border-gray-200", icon: FileText },
+};
+
 export default function InvoicesPage() {
   const { openModal } = useModal();
-  return (<><Header title="Invoices" /><div className="p-6"><div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-    <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4"><Receipt className="w-8 h-8 text-emerald-500" /></div>
-    <h2 className="text-lg font-semibold text-gray-900 mb-2">Invoicing</h2>
-    <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">Create and send professional invoices, track payments, and manage billing. Powered by your connected Stripe account.</p>
-    <div className="flex items-center justify-center gap-3">
-      <button onClick={() => openModal("invoice")} className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition"><Plus className="w-4 h-4" /> Create Invoice</button>
-      <Link href="/dashboard/settings" className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition"><Zap className="w-4 h-4" /> Connect Stripe</Link>
-    </div></div></div></>);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+
+  useEffect(() => {
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const key = demoIndustry || "ecommerce";
+    setInvoices(INDUSTRY_INVOICES[key] || INDUSTRY_INVOICES.ecommerce);
+  }, []);
+
+  const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);
+  const totalPending = invoices.filter(i => i.status === "sent").reduce((s, i) => s + i.amount, 0);
+  const totalOverdue = invoices.filter(i => i.status === "overdue").reduce((s, i) => s + i.amount, 0);
+
+  return (
+    <>
+      <Header title="Invoices" />
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-2 mb-1"><Receipt className="w-4 h-4 text-indigo-500" /><span className="text-xs text-gray-400 font-medium">Total Invoices</span></div>
+            <p className="text-2xl font-bold text-gray-900">{invoices.length}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-2 mb-1"><CheckCircle className="w-4 h-4 text-emerald-500" /><span className="text-xs text-gray-400 font-medium">Paid</span></div>
+            <p className="text-2xl font-bold text-emerald-600">{fmt(totalPaid)}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-2 mb-1"><Clock className="w-4 h-4 text-blue-500" /><span className="text-xs text-gray-400 font-medium">Pending</span></div>
+            <p className="text-2xl font-bold text-blue-600">{fmt(totalPending)}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-2 mb-1"><AlertTriangle className="w-4 h-4 text-red-500" /><span className="text-xs text-gray-400 font-medium">Overdue</span></div>
+            <p className="text-2xl font-bold text-red-600">{fmt(totalOverdue)}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 className="text-sm font-semibold text-gray-900">All Invoices</h2>
+            <button onClick={() => openModal("invoice")} className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition"><Plus className="w-4 h-4" /> Create Invoice</button>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50/80 border-b border-gray-100">
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-2.5">Invoice</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Client</th>
+                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Amount</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Status</th>
+                <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 py-2.5">Due Date</th>
+                <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-2.5">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {invoices.map(inv => {
+                const sc = statusConfig[inv.status];
+                const Icon = sc.icon;
+                return (
+                  <tr key={inv.id} className="hover:bg-gray-50 transition">
+                    <td className="px-5 py-3">
+                      <p className="text-sm font-medium text-gray-900">{inv.number}</p>
+                      <p className="text-[10px] text-gray-400">{inv.items} line items</p>
+                    </td>
+                    <td className="px-3 py-3"><span className="text-sm text-gray-700">{inv.client}</span></td>
+                    <td className="px-3 py-3 text-right"><span className="text-sm font-bold text-gray-900">${inv.amount.toLocaleString()}</span></td>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${sc.bg} ${sc.color}`}>
+                        <Icon className="w-3 h-3" /> {sc.label}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3"><span className="text-xs text-gray-500">{inv.dueDate}</span></td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"><Eye className="w-3.5 h-3.5" /></button>
+                        <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"><Download className="w-3.5 h-3.5" /></button>
+                        {inv.status === "draft" && <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"><Send className="w-3.5 h-3.5" /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
 }
