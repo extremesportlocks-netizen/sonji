@@ -31,24 +31,24 @@ function Reveal({ children, delay = 0, className = "" }: { children: React.React
 
 /* ═══ DATA ═══ */
 const features = [
-  { icon: Users, title: "Contacts & CRM", desc: "Custom fields, tags, full activity timelines. Import from anywhere in seconds.", color: "bg-blue-50 text-blue-600" },
+  { icon: Users, title: "Contacts & CRM", desc: "Custom fields, tags, full activity timelines. Import from Stripe or CSV in seconds.", color: "bg-blue-50 text-blue-600" },
   { icon: BarChart3, title: "Pipeline & Deals", desc: "Visual Kanban boards. Drag deals through stages. Track value and forecast revenue.", color: "bg-indigo-50 text-indigo-600" },
-  { icon: Mail, title: "Email & SMS", desc: "Campaigns, drip sequences, appointment reminders. No Mailchimp. No Twilio. One place.", color: "bg-emerald-50 text-emerald-600" },
-  { icon: Zap, title: "Automations", desc: "Visual workflow builder. Trigger on any event — new lead, payment, missed meeting.", color: "bg-amber-50 text-amber-600" },
-  { icon: Calendar, title: "Scheduling", desc: "Booking pages, availability rules, confirmations. Embed on your site. Replace Calendly.", color: "bg-violet-50 text-violet-600" },
-  { icon: DollarSign, title: "Invoicing", desc: "Create, send, track invoices. Accept payments via Stripe. Recurring billing built in.", color: "bg-rose-50 text-rose-600" },
-  { icon: FileText, title: "Intake Forms", desc: "Drag-and-drop builder with conditional logic. Embed anywhere. Auto-create contacts.", color: "bg-cyan-50 text-cyan-600" },
-  { icon: MessageSquare, title: "Unified Inbox", desc: "Every email, SMS, and form submission in one timeline per contact.", color: "bg-orange-50 text-orange-600" },
-  { icon: Bot, title: "AI Assistant", desc: "Draft emails, summarize contacts, score leads, analyze pipeline. AI in every workflow.", color: "bg-purple-50 text-purple-600" },
+  { icon: Briefcase, title: "Project Management", desc: "Track time, budgets, margins, and team allocation. Deal closes → project begins. Replace Monday.com.", color: "bg-violet-50 text-violet-600" },
+  { icon: Mail, title: "Email & SMS", desc: "Campaigns, drip sequences, reminders. Bring your own Twilio — no markup, full savings.", color: "bg-emerald-50 text-emerald-600" },
+  { icon: Zap, title: "Automations", desc: "64+ industry-specific workflows. Trigger on any event — new lead, payment, missed meeting.", color: "bg-amber-50 text-amber-600" },
+  { icon: Bot, title: "AI + Ghosting Alerts", desc: "Predictive cooling detection, smart campaigns, contact insights. AI catches what you miss.", color: "bg-purple-50 text-purple-600" },
+  { icon: DollarSign, title: "Invoicing & Payments", desc: "Create, send, track invoices. Stripe-powered payments. Real revenue data — not fake dashboards.", color: "bg-rose-50 text-rose-600" },
+  { icon: Calendar, title: "Scheduling", desc: "Calendar view, booking pages, availability rules, automated reminders. Replace Calendly.", color: "bg-cyan-50 text-cyan-600" },
+  { icon: MessageSquare, title: "Unified Inbox", desc: "Every email, SMS, and form submission in one 3-panel inbox per contact.", color: "bg-orange-50 text-orange-600" },
 ];
 
 const industries = [
-  { icon: Heart, name: "Health & Wellness", desc: "Patient intake, treatment tracking, subscription billing. Med spas, telehealth, fitness.", color: "text-rose-500 bg-rose-50", pipeline: ["Intake", "Review", "Active"] },
-  { icon: Briefcase, name: "Agencies & Consulting", desc: "Client intake, billing, project tracking for agencies, consultants, and service firms.", color: "text-indigo-500 bg-indigo-50", pipeline: ["Lead", "Proposal", "Retained"] },
-  { icon: Home, name: "Real Estate", desc: "Lead pipeline, showing scheduler, commission tracking for agents and brokerages.", color: "text-emerald-500 bg-emerald-50", pipeline: ["Inquiry", "Showing", "Offer"] },
-  { icon: Dumbbell, name: "Fitness & Gym", desc: "Member management, class scheduling, billing, and retention campaigns.", color: "text-orange-500 bg-orange-50", pipeline: ["Trial", "Member", "Renewal"] },
-  { icon: Scissors, name: "Beauty & Salon", desc: "Appointments, client profiles, loyalty tracking, and automated review requests.", color: "text-pink-500 bg-pink-50", pipeline: ["Booked", "Served", "Follow-up"] },
-  { icon: Sparkles, name: "And More", desc: "Coaches, law firms, contractors, restaurants, nonprofits — any business with relationships.", color: "text-gray-500 bg-gray-50", pipeline: ["Lead", "Client", "Retained"] },
+  { icon: Heart, name: "Health & Wellness", desc: "Patient intake, treatment tracking, Botox rebooking, telehealth workflows.", color: "text-rose-500 bg-rose-50", pipeline: ["Intake", "Treatment", "Follow-up"] },
+  { icon: Briefcase, name: "Agencies & Consulting", desc: "Project management, retainer tracking, scope creep detection, client onboarding.", color: "text-indigo-500 bg-indigo-50", pipeline: ["Discovery", "Proposal", "Active"] },
+  { icon: Home, name: "Real Estate", desc: "Lead pipeline, showing scheduler, commission tracking, anniversary CMA.", color: "text-emerald-500 bg-emerald-50", pipeline: ["Lead", "Showing", "Closed"] },
+  { icon: Dumbbell, name: "Fitness & Gym", desc: "Member management, class scheduling, at-risk detection, trial conversion.", color: "text-orange-500 bg-orange-50", pipeline: ["Trial", "Active", "At Risk"] },
+  { icon: Scissors, name: "Beauty & Salon", desc: "Appointments, rebooking reminders, bridal packages, loyalty tracking.", color: "text-pink-500 bg-pink-50", pipeline: ["Booked", "Served", "Rebook"] },
+  { icon: Sparkles, name: "Plus 7 More", desc: "Legal, coaching, home services, restaurants, automotive, nonprofits, e-commerce.", color: "text-gray-500 bg-gray-50", pipeline: ["Lead", "Active", "Won"] },
 ];
 
 const testimonials = [
@@ -275,9 +275,9 @@ export default function HomePage() {
           </Reveal>
           <Reveal><div className="grid md:grid-cols-3 gap-px bg-gray-200 border border-gray-200 rounded-[28px] overflow-hidden text-left">
             {[
-              {name:"Starter",price:"$99",desc:"Everything a small team needs to get organized.",features:["2,500 contacts","3 team members","Email marketing (5K/mo)","1 pipeline","Intake forms","Scheduling"]},
-              {name:"Growth",price:"$199",desc:"For growing businesses that need more power.",popular:true,features:["25,000 contacts","15 team members","Email + SMS","Unlimited pipelines","AI assistant","Custom domain","Automation builder"]},
-              {name:"Scale",price:"$349",desc:"Full platform with white-label and API access.",features:["Unlimited contacts","Unlimited team","Everything in Growth","Full white-label","API access","Affiliate system","Priority support"]},
+              {name:"Starter",price:"$99",desc:"Everything a small team needs to get organized.",features:["2,500 contacts","3 team members","Email marketing (5K/mo)","1 pipeline","Intake forms","Scheduling","Basic automations"]},
+              {name:"Growth",price:"$199",desc:"For growing businesses that need more power.",popular:true,features:["25,000 contacts","15 team members","Email + SMS (BYOK)","Unlimited pipelines","AI assistant + Ghosting Alerts","Project management","Automation builder","Custom domain"]},
+              {name:"Scale",price:"$349",desc:"Full platform with white-label and API access.",features:["Unlimited contacts","Unlimited team","Everything in Growth","Full white-label","API access","Affiliate system","Priority support","Custom integrations"]},
             ].map(plan=>(<div key={plan.name} className={`bg-white p-8 relative ${plan.popular?"bg-gradient-to-b from-indigo-50/30 to-white":""}`}>
               {plan.popular&&<span className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider bg-indigo-600 text-white px-2.5 py-1 rounded-md">Popular</span>}
               <p className="text-xs uppercase tracking-[1.5px] text-gray-400 font-semibold mb-3">{plan.name}</p>
@@ -320,7 +320,7 @@ export default function HomePage() {
           </div>
           <div>
             <h4 className="text-xs uppercase tracking-[1.5px] text-gray-400 font-semibold mb-4">Industries</h4>
-            <div className="space-y-2.5">{["Health & Wellness","Agencies","Real Estate","Fitness & Gym","Beauty & Salon","Professional Services"].map(l=>(<a key={l} href="#features" className="block text-sm text-gray-500 hover:text-gray-900 transition">{l}</a>))}</div>
+            <div className="space-y-2.5">{["Health & Wellness","Agencies","Real Estate","Fitness & Gym","Beauty & Salon","Home Services","Legal","Coaching","Restaurants","Automotive","Nonprofits","E-Commerce"].map(l=>(<a key={l} href="#features" className="block text-sm text-gray-500 hover:text-gray-900 transition">{l}</a>))}</div>
           </div>
           <div>
             <h4 className="text-xs uppercase tracking-[1.5px] text-gray-400 font-semibold mb-4">Company</h4>
