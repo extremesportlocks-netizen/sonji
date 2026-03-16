@@ -314,8 +314,8 @@ export default function Header({ title, subtitle }: Props) {
                     })()}
                   </div>
                   <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50">
-                    <button onClick={() => { setShowNotifs(false); router.push("/dashboard/activities"); }}
-                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium w-full text-center">View all activity</button>
+                    <button onClick={() => { setShowNotifs(false); router.push("/dashboard/notifications"); }}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium w-full text-center">View all notifications</button>
                   </div>
                 </div>
               </>
