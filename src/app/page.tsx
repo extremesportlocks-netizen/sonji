@@ -331,6 +331,7 @@ export default function HomePage() {
               <Link href="/compare" className="block text-sm text-gray-500 hover:text-gray-900 transition">Compare</Link>
               <Link href="/roi" className="block text-sm text-gray-500 hover:text-gray-900 transition">ROI Calculator</Link>
               <Link href="/about" className="block text-sm text-gray-500 hover:text-gray-900 transition">About</Link>
+              <Link href="/changelog" className="block text-sm text-gray-500 hover:text-gray-900 transition">Changelog</Link>
               <Link href="/demo" className="block text-sm text-gray-500 hover:text-gray-900 transition">Demo</Link>
               <Link href="/login" className="block text-sm text-gray-500 hover:text-gray-900 transition">Login</Link>
               <a href="mailto:hello@sonji.io" className="block text-sm text-gray-500 hover:text-gray-900 transition">Contact</a>
