@@ -14,6 +14,7 @@ import MoneyOnTable from "@/components/dashboard/money-on-table";
 import RecoveredRevenue from "@/components/dashboard/recovered-revenue";
 import DealVelocity from "@/components/dashboard/deal-velocity";
 import GhostingAlerts from "@/components/dashboard/ghosting-alerts";
+import RevenueForecast from "@/components/dashboard/revenue-forecast";
 import NewTenantWelcome from "@/components/dashboard/new-tenant-welcome";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
 import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
@@ -69,6 +70,7 @@ const widgetDefs: WidgetDef[] = [
   { type: "recovered_revenue", label: "Sonji Recovered Revenue", icon: TrendingUp, defaultSize: "full", desc: "Revenue recovered through Sonji automations" },
   { type: "deal_velocity", label: "Deal Velocity", icon: Activity, defaultSize: "full", desc: "Pipeline momentum — stalled and slowing deals" },
   { type: "ghosting_alerts", label: "Ghosting Alerts", icon: Activity, defaultSize: "full", desc: "Contacts going cold — predictive cooling detection" },
+  { type: "revenue_forecast", label: "Revenue Forecast", icon: Activity, defaultSize: "half", desc: "3-month revenue projection from recurring + pipeline" },
 ];
 
 const defaultLayout: WidgetConfig[] = [
@@ -408,6 +410,7 @@ function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
     case "recovered_revenue": return <RecoveredRevenue />;
     case "deal_velocity": return <DealVelocity />;
     case "ghosting_alerts": return <GhostingAlerts />;
+    case "revenue_forecast": return <RevenueForecast />;
     default: return <p className="text-sm text-gray-500">Unknown widget</p>;
   }
 }
