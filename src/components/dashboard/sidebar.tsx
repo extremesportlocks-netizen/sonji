@@ -69,6 +69,7 @@ const allNavItems: NavItem[] = [
   // Insight & Control
   { id: "activities", label: "Activities", href: "/dashboard/activities", icon: Activity, group: "insight" },
   { id: "reports", label: "Reports", href: "/dashboard/reports", icon: FileText, group: "insight" },
+  { id: "client-reports", label: "Client Reports", href: "/dashboard/client-reports", icon: FileText, group: "insight" },
   { id: "analytics", label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, group: "insight" },
   { id: "workflows", label: "Automations", href: "/dashboard/workflows", icon: Workflow, group: "insight" },
   // System
