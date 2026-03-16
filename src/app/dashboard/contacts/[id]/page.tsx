@@ -173,9 +173,29 @@ export default function ContactDetailPage() {
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-gray-900">{contact.firstName} {contact.lastName}</h1>
-                  <p className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${tierColors[tier]}`}>
-                    {tier === "whale" && <Crown className="w-3 h-3" />} {tierLabels[tier]}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${tierColors[tier]}`}>
+                      {tier === "whale" && <Crown className="w-3 h-3" />} {tierLabels[tier]}
+                    </p>
+                    {/* Health Score */}
+                    {(() => {
+                      const cf = contact.customFields || {};
+                      const ltv = cf.ltv || 0;
+                      const subStatus = cf.subscriptionStatus || "never";
+                      const daysSince = cf.daysSinceLastPurchase || 999;
+                      let score = 50; // baseline
+                      if (subStatus === "active") score += 25;
+                      if (subStatus === "canceled") score -= 20;
+                      if (ltv > 500) score += 15;
+                      if (ltv > 1000) score += 10;
+                      if (daysSince < 30) score += 10;
+                      if (daysSince > 90) score -= 15;
+                      if (daysSince > 180) score -= 15;
+                      score = Math.max(0, Math.min(100, score));
+                      const color = score >= 80 ? "text-emerald-600 bg-emerald-50" : score >= 50 ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50";
+                      return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${color}`}>Health: {score}</span>;
+                    })()}
+                  </div>
                 </div>
               </div>
 
