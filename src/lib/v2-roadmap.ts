@@ -1,85 +1,113 @@
 /**
- * SONJI V2 ROADMAP — Gemini Analysis + Orlando's Priorities
+ * SONJI V2 ROADMAP — Status as of March 16, 2026
  * 
- * Saved March 15, 2026
- * Source: Gemini deep analysis of Industry Research doc
+ * Source: Gemini deep analysis + Colton feature requests
  * 
  * ═══════════════════════════════════════════════════════════
  * TIER 1 — BUILD NOW (Cross-industry, high ROI)
  * ═══════════════════════════════════════════════════════════
  * 
- * 1. SONJI RECOVERED REVENUE COUNTER ← BUILDING THIS
- *    Every automation logs a dollar value recovered.
- *    Dashboard shows "Sonji has recovered $47,200 for your business."
- *    The number that makes cancellation impossible.
- *    Implementation: new metric in Sonji Box + activity log tracking
+ * ✅ 1. SONJI RECOVERED REVENUE COUNTER — SHIPPED
+ *    Dashboard widget tracks $ recovered by automations per industry.
+ *    src/components/dashboard/recovered-revenue.tsx
  * 
- * 2. DEAL VELOCITY / PIPELINE MOMENTUM ← BUILDING THIS
- *    Cards visually degrade when deals stall.
- *    Orange at 2x expected time, red at 3x.
- *    Shifts focus from "here are my leads" to "these are losing momentum."
+ * ✅ 2. DEAL VELOCITY / PIPELINE MOMENTUM — SHIPPED
+ *    Cards degrade green→amber→red when deals stall.
+ *    src/components/dashboard/deal-velocity.tsx
  * 
- * 3. PREDICTIVE GHOSTING ALERTS
- *    Velocity detection: response time slowing, visit frequency dropping.
- *    Extension of AI Insights engine. Pulse Bar flashes on accumulation.
- *    "Cooling" tag auto-applied when signals align.
+ * ✅ 3. PREDICTIVE GHOSTING ALERTS — SHIPPED
+ *    27 alerts across 12 industries. Severity badges, baseline vs current.
+ *    src/components/dashboard/ghosting-alerts.tsx
  * 
  * ═══════════════════════════════════════════════════════════
- * TIER 2 — INDUSTRY-SPECIFIC HIGH VALUE
+ * TIER 2 — INDUSTRY-SPECIFIC (shipped as automations)
  * ═══════════════════════════════════════════════════════════
  * 
- * HEALTHCARE:
- * - Waitlist Trigger: cancellation within 24hr → auto-SMS waitlist
- * - Consumable Timeline: track units + treatment type → auto-rebook
- *   (Botox 40 units = 3-4 months → trigger at month 3)
- * - "Cleared for Treatment" pipeline stage
- * - Post-Treatment Adherence: Day-3 check-in text
+ * 64 automations across 12 industries:
+ * src/app/dashboard/workflows/page.tsx
  * 
- * AGENCY:
- * - Communication Velocity: monitor email frequency, flag drops
- * - Scope Creep Detector: revisions vs deliverables → upsell trigger
- * - "Waiting on Client" pipeline stage with auto-reminders
+ * HEALTHCARE (8 automations):
+ * ✅ Waitlist Trigger: cancellation → auto-SMS waitlist (draft)
+ * ✅ Consumable Timeline: Botox 12-week rebooking reminder
+ * ✅ Post-Treatment Check-In: Day 3 text
+ * ✅ No-Show Recovery: auto reschedule link
+ * ✅ Review Request: 48hr post-visit
+ * ✅ Appointment Reminder: 24hr SMS
+ * ✅ New Patient Welcome
+ * ✅ Lapsed Win-Back: 90 days
  * 
- * REAL ESTATE:
- * - Anniversary CMA Offer: auto-send comparative market analysis yearly
- * - Pre-Approval Expiring alerts (60-90 day countdown)
- * - Rate Sensitive tags: bulk-SMS when rates drop
- * - Vendor Matchmaker: auto-intro to title company + inspector on contract
+ * AGENCY (8 automations):
+ * ✅ Communication Velocity: client going cold detection
+ * ✅ Scope Creep Detector: revision count > max (draft)
+ * ✅ Renewal Alert: 28 days before contract end
+ * ✅ New Lead Auto-Response
+ * ✅ Proposal Follow-Up: 3-email drip
+ * ✅ Client Onboarding Kickoff: auto-create project
+ * ✅ Monthly Report Delivery
+ * ✅ NPS Survey: 90 days
  * 
- * HOME SERVICES:
- * - Weather-Triggered Nurture: storm → auto-text past roofing clients
- * - "Financing Pending" pipeline stage
- * - Asset Lifecycle tracking: equipment age → replacement offers
- * - Proof of Work: tech clicks "Done" → auto-text photo to homeowner
+ * HOME SERVICES (6 automations):
+ * ✅ Weather-Triggered Nurture: storm alert (draft)
+ * ✅ Estimate Auto-Reply + Follow-Up
+ * ✅ Job Completion + Review
+ * ✅ Seasonal HVAC Reminder
+ * ✅ Maintenance Plan Anniversary
  * 
- * AUTOMOTIVE:
- * - Declined Service Recovery: tag declined work → 30-day follow-up with discount
- * - Lease/Warranty Expiration countdown
- * - Premium Loaner Pipeline: notify when loaner available
+ * AUTOMOTIVE (4 automations):
+ * ✅ Declined Service Recovery: 30-day follow-up with discount
+ * ✅ Service Appointment Reminder
+ * ✅ Service Complete Notification
+ * ✅ Maintenance Due Reminder
  * 
- * COACHING:
- * - Time-to-Transformation metric in Sonji Box
- * - "Stuck" Intervention: 14 days no check-in → auto coach email
- * - Dopamine Strike: milestone reached → instant testimonial request
- * - Cohort Pairing: same-week enrollees paired as accountability partners
+ * COACHING (4 automations):
+ * ✅ "Stuck" Intervention: 14 days no check-in
+ * ✅ Program Completion Celebration
+ * ✅ Application Received
+ * ✅ Session Reminder
  * 
- * E-COMMERCE:
- * - VIP Escalation: 4th purchase triggers unprompted gift
- * - Empty Bottle Replenishment: calculate usage window → reorder SMS
- * - High-Intent Abandoned Cart: $500+ cart → personal video from founder
+ * E-COMMERCE (5 automations):
+ * ✅ VIP Escalation: 4th purchase milestone
+ * ✅ Cancellation Save Attempt
+ * ✅ Win-Back: 60 days
+ * ✅ Welcome + First Purchase Offer
+ * ✅ Subscription Renewal Reminder
+ * 
+ * Also shipped: FITNESS (5), BEAUTY (5), REAL ESTATE (4),
+ * LEGAL (4), RESTAURANT (4), NONPROFIT (4)
  * 
  * ═══════════════════════════════════════════════════════════
- * TIER 3 — PLATFORM FEATURES (V2+)
+ * TIER 2.5 — COLTON'S FEATURE REQUESTS (all shipped)
  * ═══════════════════════════════════════════════════════════
  * 
- * - GrapeJS page/funnel builder (kills GHL objection)
- * - Custom AI agents per tenant for site edits (premium upsell)
- * - Google Analytics integration (page views + sources widgets)
- * - Multi-tenant provisioning (real signups, not just demo)
- * - Stripe billing for Sonji subscriptions
- * - White-label theming engine (DB-driven CSS vars)
- * - Mobile PWA
- * - Template marketplace
+ * ✅ SMS Cost Optimization: BYOK Twilio (tenant brings their own key)
+ * ✅ Analytics Accuracy: real Stripe data, not GHL fake numbers
+ * ✅ Project Management System:
+ *    - Projects page: grid + list view, budget, margin, resource loading
+ *    - Project detail: tasks, time tracking, budget breakdown, team
+ *    - Live timer: start/stop, real-time counter
+ *    - Deal → Project handoff: "Convert to Project" button on won deals
+ *    - All 12 industries have demo projects
+ * 
+ * ═══════════════════════════════════════════════════════════
+ * TIER 3 — PLATFORM FEATURES (not yet built)
+ * ═══════════════════════════════════════════════════════════
+ * 
+ * 🔲 GrapeJS page/funnel builder — the GHL killer feature. Dedicated session.
+ * 🔲 Stripe billing for Sonji subscriptions — pricing page → real checkout
+ * 🔲 White-label theming engine — DB-driven CSS vars per tenant
+ * 🔲 ESL Portal rebuild — replace Thrasker
+ * 🔲 Mobile PWA
+ * 🔲 Template marketplace
+ * 🔲 Google Analytics integration
+ * 🔲 Custom AI agents per tenant
+ * 
+ * ═══════════════════════════════════════════════════════════
+ * STATS (as of March 16, 2026)
+ * ═══════════════════════════════════════════════════════════
+ * 116 commits | 24,400+ lines | 119 files | 27 pages
+ * 64 automations | 27 ghosting alerts | 16 dashboard widgets
+ * 9 modals | 26 API routes | 16 services
+ * 12 industry demos | 0 empty states
  */
 
-export const V2_ROADMAP_VERSION = "2026-03-15";
+export const V2_ROADMAP_VERSION = "2026-03-16";
