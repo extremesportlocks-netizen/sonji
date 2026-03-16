@@ -313,9 +313,14 @@ export default function PricingPage() {
       <section className="py-20 px-6 text-center">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to simplify everything?</h2>
         <p className="text-gray-500 mb-8">Start your 14-day free trial. No credit card required.</p>
-        <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-lg shadow-indigo-500/25">
-          Get Started Free <ArrowRight className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center justify-center gap-4">
+          <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition shadow-lg shadow-indigo-500/25">
+            Get Started Free <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link href="/roi" className="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-xl transition">
+            Calculate ROI
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}
