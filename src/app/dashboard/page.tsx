@@ -17,6 +17,7 @@ import GhostingAlerts from "@/components/dashboard/ghosting-alerts";
 import RevenueForecast from "@/components/dashboard/revenue-forecast";
 import TeamPerformance from "@/components/dashboard/team-performance";
 import ClientHealth from "@/components/dashboard/client-health";
+import TodaysAgenda from "@/components/dashboard/todays-agenda";
 import NewTenantWelcome from "@/components/dashboard/new-tenant-welcome";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
 import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
@@ -75,6 +76,7 @@ const widgetDefs: WidgetDef[] = [
   { type: "revenue_forecast", label: "Revenue Forecast", icon: Activity, defaultSize: "half", desc: "3-month revenue projection from recurring + pipeline" },
   { type: "team_performance", label: "Team Performance", icon: Activity, defaultSize: "half", desc: "Per-member utilization, tasks, and revenue efficiency" },
   { type: "client_health", label: "Client Health", icon: Activity, defaultSize: "half", desc: "0-100 health score per client — combines all signals" },
+  { type: "todays_agenda", label: "Today's Agenda", icon: Activity, defaultSize: "half", desc: "Timeline of meetings, tasks, calls, and deadlines for today" },
 ];
 
 const defaultLayout: WidgetConfig[] = [
@@ -96,6 +98,8 @@ const defaultLayout: WidgetConfig[] = [
   { id: "w12", type: "campaign_stats", size: "half" },
   { id: "w17", type: "revenue_forecast", size: "half" },
   { id: "w18", type: "team_performance", size: "half" },
+  { id: "w20", type: "todays_agenda", size: "half" },
+  { id: "w19", type: "client_health", size: "half" },
 ];
 
 // ═══════════════════════════════════════
@@ -419,6 +423,7 @@ function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
     case "revenue_forecast": return <RevenueForecast />;
     case "team_performance": return <TeamPerformance />;
     case "client_health": return <ClientHealth />;
+    case "todays_agenda": return <TodaysAgenda />;
     default: return <p className="text-sm text-gray-500">Unknown widget</p>;
   }
 }
