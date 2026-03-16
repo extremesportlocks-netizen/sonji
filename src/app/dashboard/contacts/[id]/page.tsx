@@ -9,6 +9,7 @@ import {
   Loader2, ExternalLink, TrendingUp, User,
 } from "lucide-react";
 import AIInsights from "@/components/dashboard/ai-insights";
+import ContactJourney from "@/components/dashboard/contact-journey";
 import { useIndustry } from "@/lib/use-industry";
 
 export default function ContactDetailPage() {
@@ -237,6 +238,9 @@ export default function ContactDetailPage() {
 
             {/* AI Insights */}
             <AIInsights contact={contact} />
+
+            {/* Customer Journey Timeline */}
+            <ContactJourney contact={contact} />
 
             {/* Quick Actions */}
             <div className="bg-white rounded-xl border border-gray-100 p-4">
