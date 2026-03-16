@@ -108,6 +108,80 @@ const priorityStyles: Record<string, string> = {
   low: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
+// ─── DYNAMIC DETAIL GENERATOR ───
+// For projects without handcrafted detail data, generate plausible detail from summary info
+
+const PROJECT_SUMMARIES: Record<string, Record<string, { name: string; client: string; budgetAmount: number; budgetType: string; hourlyRate: number; hoursLogged: number; hoursEstimated: number; costIncurred: number; revenue: number; margin: number; startDate: string; dueDate: string; manager: string; tasksTotal: number; tasksDone: number }>> = {
+  agency_consulting: {
+    p2: { name: "SEO + PPC Management", client: "Brightview Hotels", budgetAmount: 8500, budgetType: "retainer", hourlyRate: 125, hoursLogged: 52, hoursEstimated: 68, costIncurred: 3640, revenue: 8500, margin: 57.2, startDate: "2026-01-01", dueDate: "2026-12-31", manager: "Rocco", tasksTotal: 18, tasksDone: 12 },
+    p3: { name: "Brand Identity Refresh", client: "Summit Athletics", budgetAmount: 12000, budgetType: "fixed", hourlyRate: 140, hoursLogged: 28, hoursEstimated: 80, costIncurred: 1960, revenue: 12000, margin: 83.7, startDate: "2026-03-01", dueDate: "2026-05-15", manager: "Colton", tasksTotal: 16, tasksDone: 5 },
+    p4: { name: "Social Media Management", client: "Apex Construction", budgetAmount: 3000, budgetType: "retainer", hourlyRate: 100, hoursLogged: 0, hoursEstimated: 30, costIncurred: 0, revenue: 3000, margin: 100, startDate: "2026-04-01", dueDate: "2026-06-30", manager: "Rocco", tasksTotal: 8, tasksDone: 0 },
+    p5: { name: "Content Strategy", client: "Harbor Dental", budgetAmount: 5000, budgetType: "fixed", hourlyRate: 120, hoursLogged: 18, hoursEstimated: 40, costIncurred: 1260, revenue: 5000, margin: 74.8, startDate: "2026-02-20", dueDate: "2026-04-15", manager: "Colton", tasksTotal: 12, tasksDone: 6 },
+    p6: { name: "Full Stack Marketing", client: "Sterling Partners", budgetAmount: 10000, budgetType: "retainer", hourlyRate: 150, hoursLogged: 58, hoursEstimated: 67, costIncurred: 4060, revenue: 10000, margin: 59.4, startDate: "2026-01-15", dueDate: "2026-12-31", manager: "Rocco", tasksTotal: 22, tasksDone: 18 },
+  },
+};
+
+function generateProjectDetail(id: string, industry: string): ProjectDetail | null {
+  const industryData = PROJECT_SUMMARIES[industry];
+  const summary = industryData?.[id];
+  if (!summary) return null;
+
+  const taskNames = [
+    "Research & Discovery", "Strategy Document", "Creative Brief", "Initial Design",
+    "Client Review Round 1", "Revisions", "Content Creation", "Development",
+    "Testing & QA", "Client Review Round 2", "Final Revisions", "Launch Prep",
+    "Go Live", "Post-Launch Monitoring", "Monthly Report", "Performance Review",
+    "Optimization Pass", "Quarterly Review", "Client Presentation", "Training Session",
+    "Documentation", "Handoff",
+  ];
+  const team = [
+    { name: summary.manager, role: "Project Manager", hours: Math.round(summary.hoursLogged * 0.3), allocation: 30 },
+    { name: "Team Member A", role: "Specialist", hours: Math.round(summary.hoursLogged * 0.45), allocation: 50 },
+    { name: "Team Member B", role: "Support", hours: Math.round(summary.hoursLogged * 0.25), allocation: 20 },
+  ];
+
+  const tasks: ProjectTask[] = taskNames.slice(0, summary.tasksTotal).map((name, i) => ({
+    id: `t${i + 1}`,
+    title: name,
+    status: i < summary.tasksDone ? "done" : i < summary.tasksDone + 2 ? "in_progress" : "todo",
+    assignee: team[i % team.length].name,
+    hoursEstimated: Math.round(summary.hoursEstimated / summary.tasksTotal),
+    hoursLogged: i < summary.tasksDone ? Math.round(summary.hoursLogged / summary.tasksDone) : i < summary.tasksDone + 2 ? Math.round(summary.hoursLogged / summary.tasksTotal) : 0,
+    dueDate: summary.dueDate,
+    priority: i < 3 ? "high" : i < summary.tasksTotal - 2 ? "medium" : "low",
+  }));
+
+  const timeEntries: TimeEntry[] = [
+    { id: "te1", user: team[0].name, task: tasks[0]?.title || "General", hours: 2.5, date: "2026-03-14", description: "Strategy review and planning session", billable: true },
+    { id: "te2", user: team[1].name, task: tasks[1]?.title || "General", hours: 4, date: "2026-03-14", description: "Deliverable creation and refinement", billable: true },
+    { id: "te3", user: team[2].name, task: tasks[2]?.title || "General", hours: 1.5, date: "2026-03-13", description: "Research and support tasks", billable: true },
+    { id: "te4", user: team[0].name, task: tasks[3]?.title || "General", hours: 3, date: "2026-03-13", description: "Client communication and review", billable: true },
+  ];
+
+  return {
+    id,
+    name: summary.name,
+    client: summary.client,
+    status: summary.tasksDone === summary.tasksTotal ? "completed" : summary.hoursLogged === 0 ? "planning" : "active",
+    budgetAmount: summary.budgetAmount,
+    budgetType: summary.budgetType,
+    hourlyRate: summary.hourlyRate,
+    retainerHours: summary.budgetType === "retainer" ? summary.hoursEstimated : 0,
+    hoursLogged: summary.hoursLogged,
+    hoursEstimated: summary.hoursEstimated,
+    costIncurred: summary.costIncurred,
+    revenue: summary.revenue,
+    margin: summary.margin,
+    startDate: summary.startDate,
+    dueDate: summary.dueDate,
+    manager: summary.manager,
+    description: `${summary.name} for ${summary.client}. ${summary.budgetType === "retainer" ? "Monthly retainer engagement." : "Fixed-price project."}`,
+    tasks,
+    timeEntries,
+    team,
+  };
+}
+
 // ─── MAIN COMPONENT ───
 
 export default function ProjectDetailPage() {
@@ -121,9 +195,19 @@ export default function ProjectDetailPage() {
   const [timerTask, setTimerTask] = useState("");
 
   useEffect(() => {
-    // Load demo project
+    // Load demo project — p1 has full handcrafted detail
     const p = DEMO_PROJECTS[id as string];
-    if (p) setProject(p);
+    if (p) {
+      setProject(p);
+      setLoading(false);
+      return;
+    }
+
+    // For any other project ID, generate detail from the projects page data
+    // Import the project list and build a detail view
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const generated = generateProjectDetail(id as string, demoIndustry || "agency_consulting");
+    if (generated) setProject(generated);
     setLoading(false);
   }, [id]);
 
