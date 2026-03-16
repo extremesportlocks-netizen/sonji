@@ -49,6 +49,38 @@ const INDUSTRY_ALERTS: Record<string, CoolingContact[]> = {
     { id: "g1", name: "Richard Wilson", email: "richard.w@gmail.com", signal: "Estimate sent 14 days ago — usually decides within 3 days", severity: "critical", daysSinceActivity: 14, baselineFrequency: "3-day decision", currentFrequency: "14 days, no response", ltv: 3500, action: "Follow-up call with urgency" },
     { id: "g2", name: "Thomas Brown", email: "thomas.b@outlook.com", signal: "HVAC maintenance plan — skipped spring tune-up appointment", severity: "warning", daysSinceActivity: 30, baselineFrequency: "Seasonal (spring/fall)", currentFrequency: "Skipped spring", ltv: 8200, action: "Schedule reschedule call" },
   ],
+  fitness_gym: [
+    { id: "g1", name: "Daniel Wright", email: "daniel.w@gmail.com", signal: "Was 4x/week gym goer — down to 0 visits in 14 days", severity: "critical", daysSinceActivity: 14, baselineFrequency: "4 visits/week", currentFrequency: "0 visits in 14 days", ltv: 1440, action: "Trainer personal outreach" },
+    { id: "g2", name: "Stephanie Clark", email: "steph.c@gmail.com", signal: "PT client cancelled last 2 sessions — was never a cancel", severity: "warning", daysSinceActivity: 10, baselineFrequency: "2 sessions/week", currentFrequency: "2 cancellations", ltv: 2880, action: "Coach check-in text" },
+  ],
+  beauty_salon: [
+    { id: "g1", name: "Harper Garcia", email: "harper.g@gmail.com", signal: "Monthly blowout regular — 8 weeks since last visit (usually 4)", severity: "critical", daysSinceActivity: 56, baselineFrequency: "Every 4 weeks", currentFrequency: "8 weeks gap", ltv: 1920, action: "Send rebooking offer" },
+    { id: "g2", name: "Amelia Wilson", email: "amelia.w@outlook.com", signal: "Keratin treatment overdue — was on exact 12-week cycle", severity: "warning", daysSinceActivity: 90, baselineFrequency: "Every 12 weeks", currentFrequency: "No rebook at 12 weeks", ltv: 2100, action: "Personal text from stylist" },
+  ],
+  real_estate: [
+    { id: "g1", name: "Amanda Hill", email: "amanda.h@gmail.com", signal: "Active buyer went silent — was viewing 3 properties/week, now zero", severity: "critical", daysSinceActivity: 10, baselineFrequency: "3 viewings/week", currentFrequency: "10 days, no activity", ltv: 8250, action: "Urgent: personal call" },
+    { id: "g2", name: "James Peterson", email: "james.p@outlook.com", signal: "Pre-approved buyer — hasn't responded to last 2 property matches", severity: "warning", daysSinceActivity: 7, baselineFrequency: "Same-day responses", currentFrequency: "7 days silence", ltv: 12000, action: "Text: 'Still looking?'" },
+  ],
+  legal: [
+    { id: "g1", name: "Marcus Johnson", email: "marcus.j@gmail.com", signal: "PI client — hasn't returned document request in 21 days", severity: "critical", daysSinceActivity: 21, baselineFrequency: "3-day turnaround", currentFrequency: "21 days, no response", ltv: 45000, action: "Attorney call — case at risk" },
+    { id: "g2", name: "Sarah Mitchell", email: "sarah.m@outlook.com", signal: "Divorce client — missed scheduled check-in, no reschedule", severity: "warning", daysSinceActivity: 12, baselineFrequency: "Weekly check-ins", currentFrequency: "Missed + no reply", ltv: 5000, action: "Paralegal follow-up" },
+  ],
+  coaching_education: [
+    { id: "g1", name: "Jason Wright", email: "jason.w@gmail.com", signal: "1:1 coaching client — missed last session, no reschedule in 10 days", severity: "critical", daysSinceActivity: 10, baselineFrequency: "Weekly sessions", currentFrequency: "Missed + 10 days silent", ltv: 5000, action: "Personal text from coach" },
+    { id: "g2", name: "Cohort Member #4", email: "lindsey.k@gmail.com", signal: "Mastermind participant — hasn't completed any assignments in 3 weeks", severity: "warning", daysSinceActivity: 21, baselineFrequency: "Weekly submissions", currentFrequency: "3 weeks no submissions", ltv: 8000, action: "Schedule 1:1 check-in" },
+  ],
+  restaurant_food: [
+    { id: "g1", name: "Emily & David", email: "emily.david@gmail.com", signal: "Wedding catering client — hasn't responded to menu finalization in 12 days", severity: "critical", daysSinceActivity: 12, baselineFrequency: "2-day responses", currentFrequency: "12 days silence", ltv: 8500, action: "Urgent call — deadline approaching" },
+    { id: "g2", name: "Marcus Rivera", email: "marcus.r@outlook.com", signal: "Weekly meal prep customer — skipped this week's order", severity: "warning", daysSinceActivity: 7, baselineFrequency: "Weekly orders", currentFrequency: "Skipped this week", ltv: 1920, action: "Text: 'Want to order this week?'" },
+  ],
+  automotive: [
+    { id: "g1", name: "James Peterson", email: "james.p@gmail.com", signal: "Brake job recommended 30 days ago — usually schedules within a week", severity: "critical", daysSinceActivity: 30, baselineFrequency: "1-week scheduling", currentFrequency: "30 days, no booking", ltv: 3200, action: "Safety follow-up call" },
+    { id: "g2", name: "Nancy Davis", email: "nancy.d@outlook.com", signal: "30K service customer — 6 months overdue for 60K service", severity: "warning", daysSinceActivity: 180, baselineFrequency: "Every 30K miles", currentFrequency: "6 months overdue", ltv: 2800, action: "Maintenance reminder email" },
+  ],
+  nonprofit: [
+    { id: "g1", name: "Robert Chen", email: "robert.c@gmail.com", signal: "Major donor ($5K+/yr) — missed annual gala RSVP deadline, usually first to respond", severity: "critical", daysSinceActivity: 14, baselineFrequency: "Immediate RSVPs", currentFrequency: "No response to gala invite", ltv: 25000, action: "ED personal call" },
+    { id: "g2", name: "Monthly Donor Group", email: "3 donors", signal: "3 monthly donors' cards declined this month — higher than usual", severity: "warning", daysSinceActivity: 5, baselineFrequency: "0-1 failures/month", currentFrequency: "3 failures this month", ltv: 3600, action: "Payment update reminder emails" },
+  ],
 };
 
 export default function GhostingAlerts() {
