@@ -148,7 +148,7 @@ export default function HomePage() {
             <p className="text-[13px] font-semibold font-mono text-indigo-600 mb-2 flex items-center gap-3">[01]<span className="h-px flex-1 max-w-[60px] bg-gray-200"/></p>
             <p className="text-xs uppercase tracking-[2px] text-gray-400 font-semibold mb-3">Powerful platform</p>
             <h2 className="text-[clamp(32px,4vw,48px)] font-extrabold tracking-tight leading-[1.1] mb-4">Your business at<br/>full throttle.</h2>
-            <p className="text-[17px] text-gray-500 max-w-[560px] leading-relaxed">Run your entire operation from one dashboard. Customer management, billing, email, SMS, analytics, AI automation — unified and built for how you actually work.</p>
+            <p className="text-[17px] text-gray-500 max-w-[560px] leading-relaxed">CRM, project management, AI automations, and predictive analytics — all in one platform. 19 dashboard widgets. 64 pre-built automations. 12 industry templates. No hidden fees.</p>
           </Reveal>
           <div className="grid md:grid-cols-2 gap-4 mt-12">
             {[
