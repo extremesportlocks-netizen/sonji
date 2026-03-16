@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Building2, Users, Handshake, CheckSquare, Calendar,
   BarChart3, Workflow, Activity, FileText, Settings, ChevronDown, Search,
   Plus, Star, MessageSquare, ChevronsLeft, ChevronsRight, ClipboardList,
-  DollarSign, Send, Puzzle, GripVertical, X,
+  DollarSign, Send, Puzzle, GripVertical, X, FolderKanban,
 } from "lucide-react";
 
 const DEMO_NAMES: Record<string,{ name: string; initial: string }> = {
@@ -27,17 +27,17 @@ const DEMO_NAMES: Record<string,{ name: string; initial: string }> = {
 
 // Industry-specific sidebar label overrides
 const INDUSTRY_NAV_LABELS: Record<string, Record<string, string>> = {
-  health_wellness: { contacts: "Patients", deals: "Treatments", companies: "Providers", invoices: "Billing" },
-  fitness_gym: { contacts: "Members", deals: "Memberships", companies: "Locations" },
-  beauty_salon: { contacts: "Clients", deals: "Appointments", invoices: "Billing" },
-  agency_consulting: { contacts: "Clients", deals: "Projects", companies: "Accounts", invoices: "Billing" },
-  real_estate: { contacts: "Leads", deals: "Transactions", companies: "Brokerages" },
-  home_services: { contacts: "Customers", deals: "Jobs", companies: "Properties" },
-  legal: { contacts: "Clients", deals: "Cases", companies: "Firms" },
-  coaching_education: { contacts: "Students", deals: "Enrollments", invoices: "Payments" },
-  restaurant_food: { contacts: "Customers", deals: "Orders", invoices: "Checks" },
-  automotive: { contacts: "Customers", deals: "Work Orders", companies: "Fleets" },
-  nonprofit: { contacts: "Supporters", deals: "Campaigns", companies: "Partners", invoices: "Donations" },
+  health_wellness: { contacts: "Patients", deals: "Treatments", companies: "Providers", invoices: "Billing", projects: "Operations" },
+  fitness_gym: { contacts: "Members", deals: "Memberships", companies: "Locations", projects: "Programs" },
+  beauty_salon: { contacts: "Clients", deals: "Appointments", invoices: "Billing", projects: "Services" },
+  agency_consulting: { contacts: "Clients", deals: "Pipeline", companies: "Accounts", invoices: "Billing", projects: "Projects" },
+  real_estate: { contacts: "Leads", deals: "Transactions", companies: "Brokerages", projects: "Listings" },
+  home_services: { contacts: "Customers", deals: "Estimates", companies: "Properties", projects: "Jobs" },
+  legal: { contacts: "Clients", deals: "Cases", companies: "Firms", projects: "Matters" },
+  coaching_education: { contacts: "Students", deals: "Enrollments", invoices: "Payments", projects: "Programs" },
+  restaurant_food: { contacts: "Customers", deals: "Orders", invoices: "Checks", projects: "Events" },
+  automotive: { contacts: "Customers", deals: "Work Orders", companies: "Fleets", projects: "Service Jobs" },
+  nonprofit: { contacts: "Supporters", deals: "Campaigns", companies: "Partners", invoices: "Donations", projects: "Programs" },
 };
 
 // ────────────────────────────────────
@@ -60,6 +60,7 @@ const allNavItems: NavItem[] = [
   { id: "contacts", label: "Contacts", href: "/dashboard/contacts", icon: Users, group: "core" },
   { id: "deals", label: "Deals", href: "/dashboard/deals", icon: Handshake, group: "core" },
   { id: "tasks", label: "Tasks", href: "/dashboard/tasks", icon: CheckSquare, group: "core" },
+  { id: "projects", label: "Projects", href: "/dashboard/projects", icon: FolderKanban, group: "core" },
   { id: "meetings", label: "Meetings", href: "/dashboard/meetings", icon: Calendar, group: "core" },
   { id: "messages", label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3, group: "core" },
   { id: "campaigns", label: "Campaigns", href: "/dashboard/campaigns", icon: Send, group: "core" },

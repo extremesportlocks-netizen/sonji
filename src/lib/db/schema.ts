@@ -363,3 +363,66 @@ export const apiKeys = pgTable("api_keys", {
   revokedAt: timestamp("revoked_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+/**
+ * PROJECTS — Operations/delivery tracking.
+ * A project is created when a deal is won (sales → ops handoff).
+ * Tracks time, budget, team allocation, and profit margins.
+ */
+export const projects = pgTable("projects", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  dealId: uuid("deal_id").references(() => deals.id),
+  contactId: uuid("contact_id").references(() => contacts.id),
+  companyId: uuid("company_id").references(() => companies.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 50 }).notNull().default("planning"), // planning, active, on_hold, completed, canceled
+  priority: varchar("priority", { length: 20 }).notNull().default("medium"),
+
+  // Budget & Financial
+  budgetAmount: decimal("budget_amount", { precision: 12, scale: 2 }), // Total budget for the project
+  budgetType: varchar("budget_type", { length: 20 }).default("fixed"), // fixed, hourly, retainer
+  hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }), // For hourly projects
+  retainerHours: integer("retainer_hours"), // Monthly retainer hours
+  costRate: decimal("cost_rate", { precision: 8, scale: 2 }), // Internal cost per hour (for margin calc)
+
+  // Timeline
+  startDate: date("start_date"),
+  dueDate: date("due_date"),
+  completedAt: timestamp("completed_at"),
+
+  // Team
+  managerId: uuid("manager_id").references(() => users.id),
+  teamMembers: jsonb("team_members").default([]), // Array of { userId, role, allocation% }
+
+  // Tracking
+  totalHoursLogged: decimal("total_hours_logged", { precision: 8, scale: 2 }).default("0"),
+  totalCostIncurred: decimal("total_cost_incurred", { precision: 12, scale: 2 }).default("0"),
+
+  // Metadata
+  tags: jsonb("tags").default([]),
+  customFields: jsonb("custom_fields").default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * TIME ENTRIES — Time tracking per project/task.
+ * Feeds into budget tracking, resource loading, and profit margins.
+ */
+export const timeEntries = pgTable("time_entries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  projectId: uuid("project_id").notNull().references(() => projects.id),
+  taskId: uuid("task_id").references(() => tasks.id),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  description: text("description"),
+  hours: decimal("hours", { precision: 6, scale: 2 }).notNull(),
+  date: date("date").notNull(),
+  billable: boolean("billable").default(true),
+  hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }), // Override rate for this entry
+  costRate: decimal("cost_rate", { precision: 8, scale: 2 }), // Internal cost rate
+  status: varchar("status", { length: 20 }).default("logged"), // logged, approved, invoiced
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
