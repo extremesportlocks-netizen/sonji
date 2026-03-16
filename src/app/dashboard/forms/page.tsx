@@ -50,6 +50,49 @@ const INDUSTRY_FORMS: Record<string, Form[]> = {
     { id: "f3", name: "Affiliate Application", type: "Onboarding", submissions: 14, conversionRate: 3.1, status: "active", lastSubmission: "1 week ago", fields: 10 },
     { id: "f4", name: "Customer Satisfaction", type: "Survey", submissions: 89, conversionRate: 24, status: "active", lastSubmission: "Yesterday", fields: 6 },
   ],
+  fitness_gym: [
+    { id: "f1", name: "Free Trial Signup", type: "Lead Capture", submissions: 78, conversionRate: 28.5, status: "active", lastSubmission: "2 hours ago", fields: 6 },
+    { id: "f2", name: "PT Intake Form", type: "Intake", submissions: 34, conversionRate: 100, status: "active", lastSubmission: "Yesterday", fields: 12 },
+    { id: "f3", name: "Class Feedback", type: "Survey", submissions: 45, conversionRate: 35, status: "active", lastSubmission: "2 days ago", fields: 5 },
+  ],
+  beauty_salon: [
+    { id: "f1", name: "Online Booking Form", type: "Lead Capture", submissions: 156, conversionRate: 42.3, status: "active", lastSubmission: "1 hour ago", fields: 7 },
+    { id: "f2", name: "Bridal Inquiry", type: "Lead Capture", submissions: 12, conversionRate: 58, status: "active", lastSubmission: "3 days ago", fields: 10 },
+    { id: "f3", name: "Post-Visit Feedback", type: "Survey", submissions: 67, conversionRate: 32, status: "active", lastSubmission: "Yesterday", fields: 4 },
+  ],
+  legal: [
+    { id: "f1", name: "Free Consultation Request", type: "Lead Capture", submissions: 45, conversionRate: 18.7, status: "active", lastSubmission: "3 hours ago", fields: 8 },
+    { id: "f2", name: "Client Intake Questionnaire", type: "Intake", submissions: 28, conversionRate: 100, status: "active", lastSubmission: "1 day ago", fields: 22 },
+    { id: "f3", name: "Document Upload Portal", type: "Intake", submissions: 18, conversionRate: 100, status: "active", lastSubmission: "Yesterday", fields: 4 },
+    { id: "f4", name: "Client Satisfaction", type: "Survey", submissions: 12, conversionRate: 45, status: "active", lastSubmission: "1 week ago", fields: 6 },
+  ],
+  automotive: [
+    { id: "f1", name: "Service Appointment Request", type: "Lead Capture", submissions: 92, conversionRate: 65, status: "active", lastSubmission: "1 hour ago", fields: 7 },
+    { id: "f2", name: "Vehicle Check-In Form", type: "Intake", submissions: 88, conversionRate: 100, status: "active", lastSubmission: "2 hours ago", fields: 10 },
+    { id: "f3", name: "Service Feedback", type: "Survey", submissions: 34, conversionRate: 48, status: "active", lastSubmission: "2 days ago", fields: 5 },
+  ],
+  coaching_education: [
+    { id: "f1", name: "Program Application", type: "Lead Capture", submissions: 34, conversionRate: 24, status: "active", lastSubmission: "1 day ago", fields: 12 },
+    { id: "f2", name: "Discovery Call Booking", type: "Lead Capture", submissions: 56, conversionRate: 32, status: "active", lastSubmission: "4 hours ago", fields: 6 },
+    { id: "f3", name: "Session Feedback", type: "Survey", submissions: 22, conversionRate: 78, status: "active", lastSubmission: "2 days ago", fields: 5 },
+  ],
+  restaurant_food: [
+    { id: "f1", name: "Reservation Form", type: "Lead Capture", submissions: 234, conversionRate: 85, status: "active", lastSubmission: "20 min ago", fields: 5 },
+    { id: "f2", name: "Catering Inquiry", type: "Lead Capture", submissions: 18, conversionRate: 28, status: "active", lastSubmission: "2 days ago", fields: 8 },
+    { id: "f3", name: "Dining Feedback", type: "Survey", submissions: 78, conversionRate: 22, status: "active", lastSubmission: "Yesterday", fields: 4 },
+  ],
+  nonprofit: [
+    { id: "f1", name: "Donation Form", type: "Lead Capture", submissions: 189, conversionRate: 12.5, status: "active", lastSubmission: "1 hour ago", fields: 6 },
+    { id: "f2", name: "Volunteer Application", type: "Onboarding", submissions: 34, conversionRate: 68, status: "active", lastSubmission: "3 days ago", fields: 10 },
+    { id: "f3", name: "Event RSVP", type: "Lead Capture", submissions: 112, conversionRate: 45, status: "active", lastSubmission: "4 hours ago", fields: 4 },
+    { id: "f4", name: "Impact Survey", type: "Survey", submissions: 28, conversionRate: 35, status: "active", lastSubmission: "1 week ago", fields: 8 },
+  ],
+  real_estate: [
+    { id: "f1", name: "Property Inquiry", type: "Lead Capture", submissions: 124, conversionRate: 15.2, status: "active", lastSubmission: "2 hours ago", fields: 7 },
+    { id: "f2", name: "Home Valuation Request", type: "Lead Capture", submissions: 45, conversionRate: 22, status: "active", lastSubmission: "Yesterday", fields: 6 },
+    { id: "f3", name: "Open House Sign-In", type: "Lead Capture", submissions: 67, conversionRate: 34, status: "active", lastSubmission: "3 days ago", fields: 5 },
+    { id: "f4", name: "Buyer Questionnaire", type: "Intake", submissions: 28, conversionRate: 100, status: "active", lastSubmission: "1 day ago", fields: 12 },
+  ],
 };
 
 const typeStyles: Record<string, string> = {

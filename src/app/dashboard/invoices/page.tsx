@@ -38,6 +38,39 @@ const INDUSTRY_INVOICES: Record<string, Invoice[]> = {
     { id: "i1", number: "INV-001", client: "Affiliate payout — March", amount: 2450, status: "draft", issueDate: "Mar 31", dueDate: "Apr 15", items: 12 },
     { id: "i2", number: "INV-002", client: "Platform fee — Q1 2026", amount: 8500, status: "paid", issueDate: "Jan 1", dueDate: "Jan 15", items: 1 },
   ],
+  home_services: [
+    { id: "i1", number: "INV-1001", client: "Linda Garcia", amount: 18500, status: "sent", issueDate: "Mar 12", dueDate: "Mar 26", items: 4 },
+    { id: "i2", number: "INV-1002", client: "Thomas Brown", amount: 8200, status: "paid", issueDate: "Mar 10", dueDate: "Mar 24", items: 3 },
+    { id: "i3", number: "INV-1003", client: "Susan Taylor", amount: 2800, status: "paid", issueDate: "Mar 12", dueDate: "Mar 12", items: 2 },
+    { id: "i4", number: "INV-1004", client: "Barbara Martinez", amount: 4200, status: "draft", issueDate: "Mar 16", dueDate: "Mar 30", items: 3 },
+    { id: "i5", number: "INV-1005", client: "Richard Wilson", amount: 3500, status: "overdue", issueDate: "Feb 28", dueDate: "Mar 14", items: 2 },
+  ],
+  legal: [
+    { id: "i1", number: "INV-L001", client: "Marcus Johnson — PI Retainer", amount: 5000, status: "paid", issueDate: "Mar 1", dueDate: "Mar 1", items: 1 },
+    { id: "i2", number: "INV-L002", client: "Sarah Mitchell — Divorce Filing", amount: 2500, status: "paid", issueDate: "Mar 5", dueDate: "Mar 19", items: 2 },
+    { id: "i3", number: "INV-L003", client: "Harbor Construction — Contract Review", amount: 3750, status: "sent", issueDate: "Mar 14", dueDate: "Mar 28", items: 3 },
+    { id: "i4", number: "INV-L004", client: "Patricia Williams — Estate Planning", amount: 4500, status: "draft", issueDate: "Mar 16", dueDate: "Mar 30", items: 2 },
+  ],
+  fitness_gym: [
+    { id: "i1", number: "INV-G001", client: "Stephanie Clark — PT 12-Pack", amount: 960, status: "paid", issueDate: "Mar 1", dueDate: "Mar 1", items: 1 },
+    { id: "i2", number: "INV-G002", client: "Brandon Lewis — Monthly Membership", amount: 79, status: "paid", issueDate: "Mar 1", dueDate: "Mar 1", items: 1 },
+    { id: "i3", number: "INV-G003", client: "Daniel Wright — Monthly Membership", amount: 79, status: "overdue", issueDate: "Mar 1", dueDate: "Mar 5", items: 1 },
+  ],
+  beauty_salon: [
+    { id: "i1", number: "INV-B001", client: "Charlotte Davis — Bridal Package (50%)", amount: 600, status: "paid", issueDate: "Mar 10", dueDate: "Mar 10", items: 1 },
+    { id: "i2", number: "INV-B002", client: "Amelia Wilson — Keratin Treatment", amount: 350, status: "paid", issueDate: "Mar 14", dueDate: "Mar 14", items: 1 },
+    { id: "i3", number: "INV-B003", client: "Harper Garcia — Blowout Membership", amount: 120, status: "sent", issueDate: "Mar 15", dueDate: "Mar 20", items: 1 },
+  ],
+  automotive: [
+    { id: "i1", number: "INV-A001", client: "Thomas Brown — Timing Belt", amount: 1200, status: "paid", issueDate: "Mar 16", dueDate: "Mar 16", items: 3 },
+    { id: "i2", number: "INV-A002", client: "James Peterson — Full Brake Job", amount: 850, status: "sent", issueDate: "Mar 16", dueDate: "Mar 23", items: 4 },
+    { id: "i3", number: "INV-A003", client: "Nancy Davis — 30K Service", amount: 450, status: "paid", issueDate: "Mar 14", dueDate: "Mar 14", items: 5 },
+  ],
+  nonprofit: [
+    { id: "i1", number: "DON-001", client: "Robert Chen — Monthly Donation", amount: 500, status: "paid", issueDate: "Mar 1", dueDate: "Mar 1", items: 1 },
+    { id: "i2", number: "DON-002", client: "Apex Financial — Corporate Partnership", amount: 25000, status: "sent", issueDate: "Mar 15", dueDate: "Apr 1", items: 1 },
+    { id: "i3", number: "DON-003", client: "Spring Gala Sponsorships", amount: 15000, status: "draft", issueDate: "Mar 20", dueDate: "Apr 10", items: 5 },
+  ],
 };
 
 function fmt(n: number) { return n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n.toFixed(0)}`; }
