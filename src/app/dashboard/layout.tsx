@@ -5,6 +5,7 @@ import Sidebar from "@/components/dashboard/sidebar";
 import CommandPalette from "@/components/dashboard/command-palette";
 import PulseBar from "@/components/dashboard/pulse-bar";
 import DemoBar from "@/components/dashboard/demo-bar";
+import AIChat from "@/components/dashboard/ai-chat";
 import { ModalProvider } from "@/components/modals/modal-provider";
 import { CRMProvider } from "@/lib/crm-store";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar-context";
@@ -33,6 +34,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <PulseBar stats={healthStats} />
         {children}
       </main>
+      <AIChat />
     </div>
   );
 }
