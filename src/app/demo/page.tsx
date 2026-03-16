@@ -5,7 +5,7 @@ import {
   Play, Pause, ChevronLeft, ChevronRight, Volume2, VolumeX,
   LayoutDashboard, Users, Handshake, MessageSquare, FileText,
   DollarSign, Zap, BarChart3, Sparkles, ArrowRight, Check,
-  Calendar, CheckSquare, Bot, Globe, Shield,
+  Calendar, CheckSquare, Bot, Globe, Shield, Briefcase,
 } from "lucide-react";
 
 // ────────────────────────────────────
@@ -21,7 +21,7 @@ interface Slide {
   icon: React.ElementType;
   iconColor: string;
   gradient: string;
-  mockup: "dashboard" | "contacts" | "deals" | "messages" | "forms" | "invoices" | "workflows" | "analytics" | "industries" | "onboarding" | "pricing" | "hero";
+  mockup: "dashboard" | "contacts" | "deals" | "messages" | "forms" | "invoices" | "workflows" | "analytics" | "industries" | "onboarding" | "pricing" | "hero" | "projects" | "ghosting";
 }
 
 const slides: Slide[] = [
@@ -104,9 +104,9 @@ const slides: Slide[] = [
   {
     id: "workflows",
     section: "AUTOMATIONS",
-    title: "Set it. Forget it. Grow.",
-    subtitle: "Visual workflow builder with triggers, conditions, and actions. Zero manual work.",
-    bullets: ["17 trigger types", "11 action types", "Conditional branching", "Time delays and sequences"],
+    title: "64 workflows. Zero manual work.",
+    subtitle: "Industry-specific automations that run your follow-ups, reminders, and win-backs automatically.",
+    bullets: ["64 pre-built automations", "12 industry templates", "Toggle on/off instantly", "Trigger → action chains"],
     icon: Zap,
     iconColor: "text-amber-400",
     gradient: "from-amber-950 via-slate-950 to-orange-950",
@@ -127,8 +127,8 @@ const slides: Slide[] = [
     id: "industries",
     section: "12 INDUSTRIES",
     title: "Pre-configured for your business.",
-    subtitle: "Custom pipelines, forms, email templates, and automations — tailored to your vertical.",
-    bullets: ["Health & Wellness", "Real Estate", "Home Services", "Agencies", "Legal", "E-Commerce", "And 6 more..."],
+    subtitle: "Every page adapts — terminology, pipelines, automations, and demo data tailored to your vertical.",
+    bullets: ["Health & Wellness", "Agencies & Consulting", "Real Estate", "Home Services", "Legal", "Fitness, Beauty, Automotive, Coaching, Restaurant, Nonprofit, E-Commerce"],
     icon: Globe,
     iconColor: "text-teal-400",
     gradient: "from-teal-950 via-slate-950 to-cyan-950",
@@ -156,10 +156,32 @@ const slides: Slide[] = [
     mockup: "pricing",
   },
   {
+    id: "projects",
+    section: "PROJECT MANAGEMENT",
+    title: "From close to delivery.",
+    subtitle: "Track time, budgets, margins, and team allocation. Deals become projects. Revenue becomes profit.",
+    bullets: ["Time tracking with live timer", "Budget vs. actual tracking", "Team resource loading", "Profit margin per project"],
+    icon: Briefcase,
+    iconColor: "text-violet-400",
+    gradient: "from-violet-950 via-slate-950 to-indigo-950",
+    mockup: "projects",
+  },
+  {
+    id: "ghosting",
+    section: "PREDICTIVE AI",
+    title: "Catch them before they leave.",
+    subtitle: "Ghosting Alerts detect velocity shifts — when a fast responder goes quiet, you know before it's too late.",
+    bullets: ["Baseline vs. current frequency", "Critical and warning severity", "LTV at risk calculation", "Recommended next action"],
+    icon: Shield,
+    iconColor: "text-rose-400",
+    gradient: "from-rose-950 via-slate-950 to-red-950",
+    mockup: "ghosting",
+  },
+  {
     id: "cta",
     section: "READY?",
-    title: "Replace $700/month with one tool.",
-    subtitle: "Start your 14-day free trial. No credit card required.",
+    title: "Your CRM. Your rules. One price.",
+    subtitle: "Start your 14-day free trial. No credit card. No per-user fees. No hidden usage charges.",
     icon: ArrowRight,
     iconColor: "text-white",
     gradient: "from-indigo-600 via-violet-600 to-purple-600",
@@ -538,6 +560,75 @@ function MockIndustries() {
   );
 }
 
+function MockProjects() {
+  const projects = [
+    { name: "Website Redesign", client: "Meridian Law", budget: "$15K", hours: "62/100h", margin: "71.1%", status: "active", pct: 62 },
+    { name: "SEO + PPC", client: "Brightview Hotels", budget: "$8.5K/mo", hours: "52/68h", margin: "57.2%", status: "active", pct: 76 },
+    { name: "Brand Refresh", client: "Summit Athletics", budget: "$12K", hours: "28/80h", margin: "83.7%", status: "active", pct: 35 },
+    { name: "Social Media", client: "Apex Construction", budget: "$3K/mo", hours: "0/30h", margin: "—", status: "planning", pct: 0 },
+  ];
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-2 mb-2">
+        {[{ l: "Active", v: "6" }, { l: "Revenue", v: "$64.5K" }, { l: "Hours", v: "295h" }, { l: "Avg Margin", v: "66.4%" }].map(s => (
+          <div key={s.l} className="bg-white/10 rounded-lg p-2 text-center">
+            <p className="text-[10px] text-white/50">{s.l}</p>
+            <p className="text-sm font-bold">{s.v}</p>
+          </div>
+        ))}
+      </div>
+      {projects.map(p => (
+        <div key={p.name} className="bg-white/10 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <p className="text-sm font-semibold">{p.name}</p>
+              <p className="text-[10px] text-white/50">{p.client}</p>
+            </div>
+            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${p.status === "active" ? "bg-emerald-500/20 text-emerald-300" : "bg-blue-500/20 text-blue-300"}`}>{p.status}</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-white/60 mb-1.5">
+            <span>{p.budget}</span><span>{p.hours}</span><span className={p.margin !== "—" ? "text-emerald-300 font-bold" : ""}>{p.margin}</span>
+          </div>
+          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full ${p.pct > 70 ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${p.pct}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MockGhosting() {
+  const alerts = [
+    { name: "Coastal Real Estate", signal: "Email frequency dropped 80%", severity: "critical", days: 12, ltv: "$72K", baseline: "5/week", current: "1/week" },
+    { name: "Patricia Lee", signal: "Missed 2 consecutive appointments", severity: "critical", days: 18, ltv: "$3.6K", baseline: "Monthly visits", current: "2 missed" },
+    { name: "Andrew Krieman", signal: "VIP purchase frequency dropped to 0", severity: "critical", days: 34, ltv: "$5.4K", baseline: "Weekly", current: "34 days inactive" },
+    { name: "Summit Athletics", signal: "No response to last 2 deliverables", severity: "warning", days: 8, ltv: "$36K", baseline: "Same-day", current: "8 days silence" },
+  ];
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        <span className="text-xs font-bold text-red-300">3 critical alerts</span>
+      </div>
+      {alerts.map(a => (
+        <div key={a.name} className={`rounded-xl p-3 ${a.severity === "critical" ? "bg-red-500/10 border border-red-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-semibold">{a.name}</span>
+            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${a.severity === "critical" ? "bg-red-500/20 text-red-300" : "bg-amber-500/20 text-amber-300"}`}>{a.severity}</span>
+          </div>
+          <p className="text-[10px] text-white/60 mb-1.5">{a.signal}</p>
+          <div className="flex items-center gap-3 text-[9px] text-white/40">
+            <span>{a.baseline} → {a.current}</span>
+            <span>{a.days}d inactive</span>
+            <span className="text-white/60 font-bold">LTV: {a.ltv}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function getMockup(type: string) {
   switch (type) {
     case "dashboard": return <MockDashboard />;
@@ -551,6 +642,8 @@ function getMockup(type: string) {
     case "pricing": return <MockPricing />;
     case "industries": return <MockIndustries />;
     case "onboarding": return <MockOnboarding />;
+    case "projects": return <MockProjects />;
+    case "ghosting": return <MockGhosting />;
     default: return null;
   }
 }
