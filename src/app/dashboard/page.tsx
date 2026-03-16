@@ -83,6 +83,7 @@ const defaultLayout: WidgetConfig[] = [
   { id: "w7", type: "pipeline", size: "half" },
   { id: "w8", type: "open_tasks", size: "half" },
   { id: "w15", type: "deal_velocity", size: "full" },
+  { id: "w16", type: "ghosting_alerts", size: "full" },
   { id: "w9", type: "activity_feed", size: "full" },
   { id: "w10", type: "revenue_chart", size: "full" },
   { id: "w11", type: "upcoming_meetings", size: "half" },
