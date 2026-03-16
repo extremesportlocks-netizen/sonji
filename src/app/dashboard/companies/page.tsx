@@ -55,6 +55,43 @@ const INDUSTRY_COMPANIES: Record<string, Company[]> = {
     { id: "c1", name: "DraftKings", domain: "draftkings.com", industry: "Sports Betting", revenue: "$3.7B", employeeCount: 6000, status: "partner", contacts: 0, deals: 0, totalValue: 0 },
     { id: "c2", name: "Telegram (ESL Channel)", domain: "t.me/eslsports", industry: "Social Media", revenue: "—", employeeCount: 0, status: "active", contacts: 0, deals: 0, totalValue: 0 },
   ],
+  fitness_gym: [
+    { id: "c1", name: "Iron Republic Gym", domain: "ironrepublic.com", industry: "Fitness", revenue: "$2.5M", employeeCount: 18, status: "active", contacts: 450, deals: 0, totalValue: 380000 },
+    { id: "c2", name: "SupplementKing", domain: "supplementking.com", industry: "Retail", revenue: "$8M", employeeCount: 45, status: "partner", contacts: 1, deals: 0, totalValue: 0 },
+    { id: "c3", name: "FitTech Solutions", domain: "fittech.io", industry: "Software", revenue: "$4M", employeeCount: 20, status: "active", contacts: 2, deals: 0, totalValue: 0 },
+  ],
+  beauty_salon: [
+    { id: "c1", name: "Luxe Beauty Studio", domain: "luxebeauty.com", industry: "Beauty", revenue: "$1.2M", employeeCount: 12, status: "active", contacts: 280, deals: 0, totalValue: 185000 },
+    { id: "c2", name: "Aveda Distribution", domain: "aveda.com", industry: "Product Supplier", revenue: "$1.4B", employeeCount: 5000, status: "partner", contacts: 1, deals: 0, totalValue: 0 },
+    { id: "c3", name: "Wedding Wire", domain: "weddingwire.com", industry: "Marketplace", revenue: "$500M", employeeCount: 1200, status: "partner", contacts: 1, deals: 0, totalValue: 0 },
+  ],
+  real_estate: [
+    { id: "c1", name: "Summit Realty Group", domain: "summitrealty.com", industry: "Real Estate", revenue: "$4.5M", employeeCount: 22, status: "active", contacts: 340, deals: 12, totalValue: 2400000 },
+    { id: "c2", name: "First National Title", domain: "firstnationaltitle.com", industry: "Title Company", revenue: "$12M", employeeCount: 35, status: "partner", contacts: 3, deals: 0, totalValue: 0 },
+    { id: "c3", name: "Coastal Mortgage", domain: "coastalmortgage.com", industry: "Lending", revenue: "$28M", employeeCount: 80, status: "partner", contacts: 2, deals: 0, totalValue: 0 },
+    { id: "c4", name: "HomeInspect Pro", domain: "homeinspectpro.com", industry: "Inspection", revenue: "$2M", employeeCount: 8, status: "active", contacts: 1, deals: 0, totalValue: 0 },
+  ],
+  coaching_education: [
+    { id: "c1", name: "Elevate Coaching Co.", domain: "elevatecoaching.com", industry: "Coaching", revenue: "$800K", employeeCount: 3, status: "active", contacts: 85, deals: 8, totalValue: 128000 },
+    { id: "c2", name: "Kajabi", domain: "kajabi.com", industry: "Platform", revenue: "$250M", employeeCount: 300, status: "partner", contacts: 0, deals: 0, totalValue: 0 },
+    { id: "c3", name: "Zoom", domain: "zoom.us", industry: "Video Platform", revenue: "$4.5B", employeeCount: 7400, status: "partner", contacts: 0, deals: 0, totalValue: 0 },
+  ],
+  restaurant_food: [
+    { id: "c1", name: "The Copper Table", domain: "coppertable.com", industry: "Restaurant", revenue: "$3.2M", employeeCount: 28, status: "active", contacts: 1200, deals: 0, totalValue: 420000 },
+    { id: "c2", name: "Sysco Foods", domain: "sysco.com", industry: "Food Distributor", revenue: "$68B", employeeCount: 72000, status: "partner", contacts: 1, deals: 0, totalValue: 0 },
+    { id: "c3", name: "Apex Financial Group", domain: "apexfinancial.com", industry: "Corporate Client", revenue: "$50M", employeeCount: 180, status: "active", contacts: 2, deals: 1, totalValue: 3500 },
+  ],
+  automotive: [
+    { id: "c1", name: "Precision Auto Service", domain: "precisionauto.com", industry: "Auto Repair", revenue: "$1.8M", employeeCount: 8, status: "active", contacts: 620, deals: 0, totalValue: 280000 },
+    { id: "c2", name: "AutoZone", domain: "autozone.com", industry: "Parts Supplier", revenue: "$16.2B", employeeCount: 100000, status: "partner", contacts: 1, deals: 0, totalValue: 0 },
+    { id: "c3", name: "Enterprise Fleet Management", domain: "enterprisefleet.com", industry: "Fleet", revenue: "$8B", employeeCount: 6000, status: "active", contacts: 3, deals: 2, totalValue: 18000 },
+  ],
+  nonprofit: [
+    { id: "c1", name: "Harbor Community Foundation", domain: "harborfoundation.org", industry: "Nonprofit", revenue: "—", employeeCount: 12, status: "active", contacts: 850, deals: 0, totalValue: 285000 },
+    { id: "c2", name: "Apex Financial Group", domain: "apexfinancial.com", industry: "Corporate Donor", revenue: "$50M", employeeCount: 180, status: "partner", contacts: 2, deals: 1, totalValue: 25000 },
+    { id: "c3", name: "United Way SWFL", domain: "unitedwayswfl.org", industry: "Nonprofit Partner", revenue: "—", employeeCount: 25, status: "partner", contacts: 1, deals: 0, totalValue: 0 },
+    { id: "c4", name: "Community Bank of FL", domain: "communitybankfl.com", industry: "Banking", revenue: "$180M", employeeCount: 120, status: "prospect", contacts: 1, deals: 0, totalValue: 0 },
+  ],
 };
 
 function fmt(n: number) { return n >= 1e6 ? `$${(n/1e6).toFixed(1)}M` : n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n}`; }
