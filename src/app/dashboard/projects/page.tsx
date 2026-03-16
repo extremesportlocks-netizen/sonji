@@ -9,7 +9,7 @@ import {
   Plus, MoreHorizontal, Search, X, Columns3, List, LayoutGrid,
   Clock, DollarSign, Users, Calendar, TrendingUp, AlertTriangle,
   CheckCircle, Pause, ChevronRight, ArrowUpRight, Briefcase,
-  Timer, PieChart, Target,
+  Timer, PieChart, Target, Rocket,
 } from "lucide-react";
 
 // ─── TYPES ───
@@ -140,6 +140,7 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dealConversion, setDealConversion] = useState<{ name: string; client: string; budget: number } | null>(null);
 
   // Load projects
   const [projects, setProjects] = useState<Project[]>([]);
@@ -147,6 +148,15 @@ export default function ProjectsPage() {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
     const key = demoIndustry || "agency_consulting";
     setProjects(DEMO_PROJECTS[key] || DEFAULT_PROJECTS);
+
+    // Check for deal → project conversion
+    try {
+      const raw = sessionStorage.getItem("sonji-new-project");
+      if (raw) {
+        setDealConversion(JSON.parse(raw));
+        sessionStorage.removeItem("sonji-new-project");
+      }
+    } catch {}
   }, []);
 
   const filtered = projects.filter(p => {
@@ -167,6 +177,44 @@ export default function ProjectsPage() {
     <>
       <Header title="Projects" />
       <div className="p-6 space-y-4">
+
+        {/* Deal → Project Conversion Banner */}
+        {dealConversion && (
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <Rocket className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Create project from won deal</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    <span className="font-medium text-gray-700">{dealConversion.name}</span> for {dealConversion.client} — ${dealConversion.budget?.toLocaleString() || "0"} budget
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => {
+                  const newProject: Project = {
+                    id: `p${Date.now()}`, name: dealConversion.name, client: dealConversion.client,
+                    status: "planning", priority: "high", budgetAmount: dealConversion.budget || 0,
+                    budgetType: "fixed", hourlyRate: 0, retainerHours: 0, hoursLogged: 0,
+                    hoursEstimated: 0, costIncurred: 0, revenue: dealConversion.budget || 0,
+                    margin: 100, startDate: new Date().toISOString().split("T")[0],
+                    dueDate: "", manager: "", teamSize: 0, tasksTotal: 0, tasksDone: 0, tags: ["From Deal"],
+                  };
+                  setProjects(prev => [newProject, ...prev]);
+                  setDealConversion(null);
+                }} className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition">
+                  <Plus className="w-4 h-4" /> Create Project
+                </button>
+                <button onClick={() => setDealConversion(null)} className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition">
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

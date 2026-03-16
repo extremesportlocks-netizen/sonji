@@ -445,7 +445,12 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
 
       {/* Convert to Project — shows on won deals */}
       {(deal.stage === "Closed Won" || deal.stage === "Contract Signed" || deal.stage === "Active Client") && !editing && !addingNote && (
-        <button onClick={() => window.location.href = "/dashboard/projects"}
+        <button onClick={() => {
+          sessionStorage.setItem("sonji-new-project", JSON.stringify({
+            name: deal.title, client: deal.contactName, budget: deal.value, dealId: deal.id,
+          }));
+          window.location.href = "/dashboard/projects";
+        }}
           className="w-full mt-3 flex items-center justify-center gap-2 py-2 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition">
           <Rocket className="w-3.5 h-3.5" /> Convert to Project
         </button>
