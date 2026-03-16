@@ -51,6 +51,36 @@ const INDUSTRY_MEETINGS: Record<string, Meeting[]> = {
     { id: "m2", title: "VIP Customer Check-in", contact: "Andrew Krieman", time: "2:00 PM", endTime: "2:30 PM", type: "phone", location: "Call", color: "bg-violet-100 border-violet-300 text-violet-800", day: 1 },
     { id: "m3", title: "Picks Review", contact: "Internal", time: "7:00 AM", endTime: "7:30 AM", type: "video", location: "Zoom", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 2 },
   ],
+  home_services: [
+    { id: "m1", title: "Site Visit — Garcia Roof", contact: "Linda Garcia", time: "8:00 AM", endTime: "9:00 AM", type: "in_person", location: "1234 Palm Beach Blvd", color: "bg-amber-100 border-amber-300 text-amber-800", day: 0 },
+    { id: "m2", title: "Estimate Follow-Up", contact: "Richard Wilson", time: "10:00 AM", endTime: "10:15 AM", type: "phone", location: "Call", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },
+    { id: "m3", title: "HVAC Install Walkthrough", contact: "Thomas Brown", time: "9:00 AM", endTime: "10:00 AM", type: "in_person", location: "4567 Cypress Dr", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 2 },
+    { id: "m4", title: "Crew Schedule Meeting", contact: "Internal — All Crews", time: "7:00 AM", endTime: "7:30 AM", type: "in_person", location: "Office", color: "bg-gray-100 border-gray-300 text-gray-700", day: 0 },
+    { id: "m5", title: "Crew Schedule Meeting", contact: "Internal — All Crews", time: "7:00 AM", endTime: "7:30 AM", type: "in_person", location: "Office", color: "bg-gray-100 border-gray-300 text-gray-700", day: 3 },
+    { id: "m6", title: "Emergency Leak Assessment", contact: "Susan Taylor", time: "11:00 AM", endTime: "12:00 PM", type: "in_person", location: "1847 Palm Beach Blvd", color: "bg-red-100 border-red-300 text-red-800", day: 0 },
+  ],
+  legal: [
+    { id: "m1", title: "Client Meeting — Johnson PI", contact: "Marcus Johnson", time: "10:00 AM", endTime: "11:00 AM", type: "in_person", location: "Conference Room A", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },
+    { id: "m2", title: "Mediation Prep", contact: "Harbor Construction", time: "2:00 PM", endTime: "3:30 PM", type: "in_person", location: "Conference Room B", color: "bg-violet-100 border-violet-300 text-violet-800", day: 1 },
+    { id: "m3", title: "Phone Consult — Williams Estate", contact: "Patricia Williams", time: "3:00 PM", endTime: "3:45 PM", type: "phone", location: "Call", color: "bg-amber-100 border-amber-300 text-amber-800", day: 2 },
+    { id: "m4", title: "Deposition — Mitchell", contact: "Opposing Counsel", time: "9:00 AM", endTime: "12:00 PM", type: "in_person", location: "Court Reporter Office", color: "bg-red-100 border-red-300 text-red-800", day: 3 },
+    { id: "m5", title: "Partner Meeting", contact: "Internal — Sterling & Hayes", time: "8:30 AM", endTime: "9:00 AM", type: "in_person", location: "Partner Office", color: "bg-gray-100 border-gray-300 text-gray-700", day: 1 },
+  ],
+  fitness_gym: [
+    { id: "m1", title: "PT Session — Stephanie Clark", contact: "Stephanie Clark", time: "6:00 AM", endTime: "7:00 AM", type: "in_person", location: "Gym Floor", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 0 },
+    { id: "m2", title: "New Member Tour", contact: "Brandon Lewis", time: "10:00 AM", endTime: "10:30 AM", type: "in_person", location: "Front Desk", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },
+    { id: "m3", title: "PT Session — Stephanie Clark", contact: "Stephanie Clark", time: "6:00 AM", endTime: "7:00 AM", type: "in_person", location: "Gym Floor", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 2 },
+    { id: "m4", title: "HIIT Class", contact: "Group — 25 members", time: "6:00 PM", endTime: "6:45 PM", type: "in_person", location: "Studio A", color: "bg-amber-100 border-amber-300 text-amber-800", day: 0 },
+    { id: "m5", title: "HIIT Class", contact: "Group — 25 members", time: "6:00 PM", endTime: "6:45 PM", type: "in_person", location: "Studio A", color: "bg-amber-100 border-amber-300 text-amber-800", day: 2 },
+    { id: "m6", title: "Member Retention Review", contact: "Internal", time: "9:00 AM", endTime: "9:30 AM", type: "video", location: "Zoom", color: "bg-gray-100 border-gray-300 text-gray-700", day: 4 },
+  ],
+  beauty_salon: [
+    { id: "m1", title: "Bridal Trial — Charlotte Davis", contact: "Charlotte Davis", time: "10:00 AM", endTime: "12:00 PM", type: "in_person", location: "Station 1", color: "bg-rose-100 border-rose-300 text-rose-800", day: 0 },
+    { id: "m2", title: "Keratin Treatment", contact: "Amelia Wilson", time: "2:00 PM", endTime: "4:00 PM", type: "in_person", location: "Station 2", color: "bg-violet-100 border-violet-300 text-violet-800", day: 1 },
+    { id: "m3", title: "Blowout + Style", contact: "Harper Garcia", time: "3:00 PM", endTime: "3:45 PM", type: "in_person", location: "Station 1", color: "bg-blue-100 border-blue-300 text-blue-800", day: 3 },
+    { id: "m4", title: "Color Correction Consult", contact: "New Client", time: "11:00 AM", endTime: "11:30 AM", type: "in_person", location: "Consultation Area", color: "bg-amber-100 border-amber-300 text-amber-800", day: 2 },
+    { id: "m5", title: "Team Scheduling", contact: "Internal — All Stylists", time: "9:00 AM", endTime: "9:30 AM", type: "in_person", location: "Break Room", color: "bg-gray-100 border-gray-300 text-gray-700", day: 0 },
+  ],
 };
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
