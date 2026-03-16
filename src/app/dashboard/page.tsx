@@ -15,6 +15,8 @@ import RecoveredRevenue from "@/components/dashboard/recovered-revenue";
 import DealVelocity from "@/components/dashboard/deal-velocity";
 import GhostingAlerts from "@/components/dashboard/ghosting-alerts";
 import RevenueForecast from "@/components/dashboard/revenue-forecast";
+import TeamPerformance from "@/components/dashboard/team-performance";
+import ClientHealth from "@/components/dashboard/client-health";
 import NewTenantWelcome from "@/components/dashboard/new-tenant-welcome";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
 import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
@@ -71,6 +73,8 @@ const widgetDefs: WidgetDef[] = [
   { type: "deal_velocity", label: "Deal Velocity", icon: Activity, defaultSize: "full", desc: "Pipeline momentum — stalled and slowing deals" },
   { type: "ghosting_alerts", label: "Ghosting Alerts", icon: Activity, defaultSize: "full", desc: "Contacts going cold — predictive cooling detection" },
   { type: "revenue_forecast", label: "Revenue Forecast", icon: Activity, defaultSize: "half", desc: "3-month revenue projection from recurring + pipeline" },
+  { type: "team_performance", label: "Team Performance", icon: Activity, defaultSize: "half", desc: "Per-member utilization, tasks, and revenue efficiency" },
+  { type: "client_health", label: "Client Health", icon: Activity, defaultSize: "half", desc: "0-100 health score per client — combines all signals" },
 ];
 
 const defaultLayout: WidgetConfig[] = [
@@ -90,6 +94,8 @@ const defaultLayout: WidgetConfig[] = [
   { id: "w10", type: "revenue_chart", size: "full" },
   { id: "w11", type: "upcoming_meetings", size: "half" },
   { id: "w12", type: "campaign_stats", size: "half" },
+  { id: "w17", type: "revenue_forecast", size: "half" },
+  { id: "w18", type: "team_performance", size: "half" },
 ];
 
 // ═══════════════════════════════════════
@@ -411,6 +417,8 @@ function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
     case "deal_velocity": return <DealVelocity />;
     case "ghosting_alerts": return <GhostingAlerts />;
     case "revenue_forecast": return <RevenueForecast />;
+    case "team_performance": return <TeamPerformance />;
+    case "client_health": return <ClientHealth />;
     default: return <p className="text-sm text-gray-500">Unknown widget</p>;
   }
 }
