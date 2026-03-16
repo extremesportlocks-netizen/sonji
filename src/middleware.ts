@@ -53,7 +53,7 @@ export default clerkMiddleware(async (auth, request) => {
     // Skip password gate if user is signed in via Clerk OR has the site password cookie
     if (authed !== SITE_PASSWORD && !userId) {
       // Also skip for login/signup/onboarding and marketing pages so they're always accessible
-      const marketingPaths = ["/login", "/signup", "/onboarding", "/compare", "/pricing", "/demo", "/privacy", "/terms", "/roi"];
+      const marketingPaths = ["/login", "/signup", "/onboarding", "/compare", "/pricing", "/demo", "/privacy", "/terms", "/roi", "/about"];
       const isMarketingPage = url.pathname === "/" || marketingPaths.some(p => url.pathname.startsWith(p));
       if (!isMarketingPage) {
         url.pathname = "/password-gate";
