@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/dashboard/header";
-import { useCRM } from "@/lib/crm-store";
+import { useCRM, type Task } from "@/lib/crm-store";
 import { useModal } from "@/components/modals/modal-provider";
+import { useIndustry } from "@/lib/use-industry";
 import {
   Plus,
   MoreHorizontal,
@@ -19,6 +20,61 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
+// ─── DEMO SEED TASKS ───
+
+const INDUSTRY_TASKS: Record<string, Task[]> = {
+  agency_consulting: [
+    { id: "dt1", title: "Send March report to Brightview", description: "ROAS report + recommendations", priority: "high", status: "todo", assignedTo: "Rocco", contactName: "Brightview Hotels", dueDate: "2026-03-18", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Review Summit brand mockups", description: "Color palette + typography", priority: "high", status: "todo", assignedTo: "Colton", contactName: "Summit Athletics", dueDate: "2026-03-17", createdAt: "2026-03-15" },
+    { id: "dt3", title: "Follow up on Apex proposal", description: "Social media management $3K/mo", priority: "medium", status: "todo", assignedTo: "Rocco", contactName: "Apex Construction", dueDate: "2026-03-19", createdAt: "2026-03-14" },
+    { id: "dt4", title: "Meridian website — QA browser testing", description: "Test Chrome, Safari, Firefox, mobile", priority: "high", status: "in_progress", assignedTo: "Mike", contactName: "Meridian Law Group", dueDate: "2026-03-20", createdAt: "2026-03-14" },
+    { id: "dt5", title: "SEO redirect map — final review", description: "127 redirects mapped, need sign-off", priority: "medium", status: "in_progress", assignedTo: "Rocco", contactName: "Meridian Law Group", dueDate: "2026-03-18", createdAt: "2026-03-13" },
+    { id: "dt6", title: "Sterling Partners renewal prep", description: "Attribution report + retention strategy", priority: "high", status: "in_progress", assignedTo: "Rocco", contactName: "Sterling Partners", dueDate: "2026-03-22", createdAt: "2026-03-12" },
+    { id: "dt7", title: "Harbor Dental — schedule April content", description: "Approved posts ready to schedule", priority: "low", status: "done", assignedTo: "Colton", contactName: "Harbor Dental", dueDate: "2026-03-15", createdAt: "2026-03-10" },
+    { id: "dt8", title: "Nova Fitness email automation — launch", description: "3-email sequence activated", priority: "medium", status: "done", assignedTo: "Colton", contactName: "Nova Fitness", dueDate: "2026-03-14", createdAt: "2026-03-08" },
+    { id: "dt9", title: "Coastal RE monthly PPC optimization", description: "Adjust bids, add negative keywords", priority: "medium", status: "done", assignedTo: "Rocco", contactName: "Coastal Real Estate", dueDate: "2026-03-12", createdAt: "2026-03-05" },
+  ],
+  health_wellness: [
+    { id: "dt1", title: "Prepare chart for Emily Rodriguez", description: "New patient consultation tomorrow", priority: "high", status: "todo", assignedTo: "Front Desk", contactName: "Emily Rodriguez", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Call Patricia Lee — missed appointments", description: "2 consecutive no-shows, check in", priority: "high", status: "todo", assignedTo: "Dr. Patel", contactName: "Patricia Lee", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Order Botox supply — running low", description: "Current stock: 3 vials, need 10+", priority: "medium", status: "todo", assignedTo: "Office Manager", contactName: "Internal", dueDate: "2026-03-18", createdAt: "2026-03-15" },
+    { id: "dt4", title: "Sarah Thompson dosage review", description: "Week 4 — weight loss slowing, assess", priority: "high", status: "in_progress", assignedTo: "Dr. Patel", contactName: "Sarah Thompson", dueDate: "2026-03-17", createdAt: "2026-03-14" },
+    { id: "dt5", title: "Update consent forms for telehealth", description: "New state regulations effective April 1", priority: "medium", status: "in_progress", assignedTo: "Office Manager", contactName: "Internal", dueDate: "2026-03-25", createdAt: "2026-03-10" },
+    { id: "dt6", title: "David Kim — book IV therapy 4-pack", description: "Patient confirmed wants to proceed", priority: "medium", status: "done", assignedTo: "Front Desk", contactName: "David Kim", dueDate: "2026-03-15", createdAt: "2026-03-14" },
+    { id: "dt7", title: "Send post-treatment check-in to Michael", description: "Day 3 after Botox", priority: "low", status: "done", assignedTo: "Dr. Kim", contactName: "Michael Brown", dueDate: "2026-03-14", createdAt: "2026-03-11" },
+  ],
+  ecommerce: [
+    { id: "dt1", title: "Contact Andrew Krieman — payment failed", description: "VIP Monthly $165 card declined", priority: "high", status: "todo", assignedTo: "Orlando", contactName: "Andrew Krieman", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Write NCAAB picks for Thursday slate", description: "4 games, need by 5pm", priority: "high", status: "todo", assignedTo: "Orlando", contactName: "All Subscribers", dueDate: "2026-03-18", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Reply to Wayne Barry — upgrade question", description: "Wants to switch monthly to yearly VIP", priority: "medium", status: "todo", assignedTo: "Orlando", contactName: "Wayne Barry", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt4", title: "Win-back campaign — review open rates", description: "60-day inactive sequence sent yesterday", priority: "medium", status: "in_progress", assignedTo: "Orlando", contactName: "Lapsed Customers", dueDate: "2026-03-18", createdAt: "2026-03-15" },
+    { id: "dt5", title: "NFL player props feature — scope it", description: "Tyler McLaughlin requested, popular ask", priority: "low", status: "in_progress", assignedTo: "Orlando", contactName: "Feature Request", dueDate: "2026-03-25", createdAt: "2026-03-15" },
+    { id: "dt6", title: "Weekly newsletter — sent", description: "Picks preview sent to 94 subscribers", priority: "high", status: "done", assignedTo: "Orlando", contactName: "All Subscribers", dueDate: "2026-03-15", createdAt: "2026-03-15" },
+    { id: "dt7", title: "Ship VIP gift to Chris Persaud", description: "4th purchase milestone — surprise merch", priority: "medium", status: "done", assignedTo: "Orlando", contactName: "Chris Persaud", dueDate: "2026-03-14", createdAt: "2026-03-13" },
+  ],
+  home_services: [
+    { id: "dt1", title: "Emergency: Call Susan Taylor ASAP", description: "Active roof leak — needs same-day response", priority: "high", status: "todo", assignedTo: "Mike", contactName: "Susan Taylor", dueDate: "2026-03-16", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Follow up with Richard Wilson", description: "Gutter estimate sent 14 days ago, no response", priority: "high", status: "todo", assignedTo: "Steve", contactName: "Richard Wilson", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Order materials — Garcia roof job", description: "Shingles + underlayment for March 20 start", priority: "high", status: "in_progress", assignedTo: "Mike", contactName: "Linda Garcia", dueDate: "2026-03-18", createdAt: "2026-03-15" },
+    { id: "dt4", title: "HVAC install — confirm Thursday crew", description: "2 techs needed for Thomas Brown job", priority: "medium", status: "in_progress", assignedTo: "Steve", contactName: "Thomas Brown", dueDate: "2026-03-18", createdAt: "2026-03-14" },
+    { id: "dt5", title: "Send maintenance plan renewals", description: "12 customers approaching annual renewal", priority: "medium", status: "done", assignedTo: "Office", contactName: "Multiple", dueDate: "2026-03-15", createdAt: "2026-03-10" },
+    { id: "dt6", title: "Complete emergency leak patch", description: "Susan Taylor — temporary fix before full repair", priority: "high", status: "done", assignedTo: "Crew A", contactName: "Susan Taylor", dueDate: "2026-03-16", createdAt: "2026-03-16" },
+  ],
+  legal: [
+    { id: "dt1", title: "Review Johnson medical records", description: "Received from Southwest General — need for PI case", priority: "high", status: "todo", assignedTo: "Atty. Sterling", contactName: "Marcus Johnson", dueDate: "2026-03-18", createdAt: "2026-03-16" },
+    { id: "dt2", title: "Draft Williams estate plan", description: "Trust setup after husband's passing", priority: "high", status: "todo", assignedTo: "Atty. Hayes", contactName: "Patricia Williams", dueDate: "2026-03-20", createdAt: "2026-03-16" },
+    { id: "dt3", title: "Prepare mediation brief — Harbor", description: "Contract dispute mediation next week", priority: "high", status: "in_progress", assignedTo: "Atty. Sterling", contactName: "Harbor Construction", dueDate: "2026-03-19", createdAt: "2026-03-14" },
+    { id: "dt4", title: "File Mitchell motion", description: "Divorce discovery motion due Friday", priority: "medium", status: "in_progress", assignedTo: "Paralegal", contactName: "Sarah Mitchell", dueDate: "2026-03-20", createdAt: "2026-03-13" },
+    { id: "dt5", title: "Send engagement letter to Williams", description: "Estate planning engagement — awaiting signature", priority: "medium", status: "done", assignedTo: "Atty. Hayes", contactName: "Patricia Williams", dueDate: "2026-03-15", createdAt: "2026-03-14" },
+  ],
+};
+
+const DEFAULT_TASKS: Task[] = [
+  { id: "dt1", title: "Follow up with new lead", description: "Submitted contact form yesterday", priority: "high", status: "todo", assignedTo: "Team", contactName: "New Lead", dueDate: "2026-03-17", createdAt: "2026-03-16" },
+  { id: "dt2", title: "Send weekly update email", description: "Status update to active clients", priority: "medium", status: "in_progress", assignedTo: "Team", contactName: "All Clients", dueDate: "2026-03-18", createdAt: "2026-03-15" },
+  { id: "dt3", title: "Review analytics report", description: "Monthly performance review", priority: "low", status: "done", assignedTo: "Team", contactName: "Internal", dueDate: "2026-03-15", createdAt: "2026-03-10" },
+];
+
 const statusColumns = [
   { id: "todo", name: "To Do", color: "text-gray-700", borderColor: "border-gray-300", bgColor: "bg-gray-50", dotColor: "bg-gray-400" },
   { id: "in_progress", name: "In Progress", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50", dotColor: "bg-blue-500" },
@@ -32,11 +88,33 @@ const priorityStyles: Record<string, string> = {
 };
 
 export default function TasksPage() {
-  const { tasks, updateTask, deleteTask } = useCRM();
+  const { tasks: crmTasks, updateTask, deleteTask, addTask } = useCRM();
   const { openModal } = useModal();
+  const ic = useIndustry();
   const [search, setSearch] = useState("");
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [demoTasks, setDemoTasks] = useState<Task[]>([]);
+
+  // Seed demo tasks when CRM store is empty
+  useEffect(() => {
+    if (crmTasks.length > 0) return; // Real data exists, don't seed
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const key = demoIndustry || "ecommerce";
+    setDemoTasks(INDUSTRY_TASKS[key] || DEFAULT_TASKS);
+  }, [crmTasks.length]);
+
+  const tasks = crmTasks.length > 0 ? crmTasks : demoTasks;
+
+  // Demo task update/delete for local state
+  const handleUpdateTask = (id: string, updates: Partial<Task>) => {
+    if (crmTasks.length > 0) { updateTask(id, updates); return; }
+    setDemoTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
+  const handleDeleteTask = (id: string) => {
+    if (crmTasks.length > 0) { deleteTask(id); return; }
+    setDemoTasks(prev => prev.filter(t => t.id !== id));
+  };
 
   const filtered = tasks.filter((t) => {
     if (!search) return true;
@@ -70,7 +148,7 @@ export default function TasksPage() {
     e.preventDefault();
     const taskId = e.dataTransfer.getData("text/plain");
     if (taskId) {
-      updateTask(taskId, { status: newStatus as "todo" | "in_progress" | "done" });
+      handleUpdateTask(taskId, { status: newStatus as "todo" | "in_progress" | "done" });
     }
     setDragOverCol(null);
     setDraggingId(null);
@@ -160,7 +238,7 @@ export default function TasksPage() {
                             <h4 className="text-sm font-semibold text-gray-900 leading-snug">{task.title}</h4>
                           </div>
                           <button
-                            onClick={() => deleteTask(task.id)}
+                            onClick={() => handleDeleteTask(task.id)}
                             className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition opacity-0 group-hover:opacity-100"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
