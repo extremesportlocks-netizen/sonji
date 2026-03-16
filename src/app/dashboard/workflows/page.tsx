@@ -1,28 +1,243 @@
 "use client";
+
+import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
-import { Workflow, Plus, Zap, Clock, Filter } from "lucide-react";
+import { useIndustry } from "@/lib/use-industry";
+import {
+  Workflow, Plus, Zap, Clock, Mail, MessageSquare, UserPlus, AlertTriangle,
+  CheckCircle, Play, Pause, MoreHorizontal, ChevronRight, Star, TrendingDown,
+  Calendar, DollarSign, Bell, Shield, Target, ArrowRight, Power,
+  ToggleLeft, ToggleRight, Filter, Search, X,
+} from "lucide-react";
+
+// ─── TYPES ───
+
+interface Automation {
+  id: string;
+  name: string;
+  description: string;
+  trigger: string;
+  triggerIcon: React.ElementType;
+  actions: string[];
+  status: "active" | "paused" | "draft";
+  runsLast30: number;
+  lastRun: string;
+  category: string;
+}
+
+// ─── INDUSTRY AUTOMATIONS ───
+
+const INDUSTRY_AUTOMATIONS: Record<string, Automation[]> = {
+  agency_consulting: [
+    { id: "a1", name: "New Lead Auto-Response", description: "Send welcome email within 60 seconds of form submission", trigger: "Form submitted", triggerIcon: UserPlus, actions: ["Send welcome email", "Create task for account manager", "Add tag: New Lead"], status: "active", runsLast30: 47, lastRun: "2 hours ago", category: "Lead Capture" },
+    { id: "a2", name: "Proposal Follow-Up Sequence", description: "3-email drip after proposal is sent — Day 2, Day 5, Day 10", trigger: "Deal moves to 'Proposal Sent'", triggerIcon: Mail, actions: ["Wait 2 days → Send check-in email", "Wait 3 days → Send case study email", "Wait 5 days → Send 'decision time' email"], status: "active", runsLast30: 12, lastRun: "1 day ago", category: "Sales" },
+    { id: "a3", name: "Client Onboarding Kickoff", description: "Auto-create project, assign tasks, send welcome packet when deal is won", trigger: "Deal moves to 'Contract Signed'", triggerIcon: CheckCircle, actions: ["Create project from template", "Assign onboarding tasks to team", "Send client welcome email", "Create Slack notification"], status: "active", runsLast30: 4, lastRun: "3 days ago", category: "Onboarding" },
+    { id: "a4", name: "Renewal Alert (28 Days)", description: "Notify account manager when retainer is 28 days from renewal", trigger: "28 days before contract end", triggerIcon: AlertTriangle, actions: ["Create task: Schedule renewal call", "Send internal Slack alert", "Send client check-in email"], status: "active", runsLast30: 6, lastRun: "5 days ago", category: "Retention" },
+    { id: "a5", name: "Client Going Cold", description: "Alert when client email frequency drops by 50% over 2 weeks", trigger: "Communication velocity drops", triggerIcon: TrendingDown, actions: ["Add tag: Cooling", "Create urgent task for AM", "Send 'checking in' email"], status: "active", runsLast30: 3, lastRun: "1 week ago", category: "Retention" },
+    { id: "a6", name: "Monthly Report Delivery", description: "Auto-send performance report to all active retainer clients on the 1st", trigger: "1st of every month", triggerIcon: Calendar, actions: ["Generate analytics report", "Send report email to client", "Create task: Review report in meeting"], status: "active", runsLast30: 15, lastRun: "Mar 1", category: "Reporting" },
+    { id: "a7", name: "Scope Creep Detector", description: "Alert when revision count exceeds deliverable limit", trigger: "Revision count > max revisions", triggerIcon: Shield, actions: ["Flag project as over-scope", "Notify project manager", "Draft upsell email for extended support"], status: "draft", runsLast30: 0, lastRun: "Never", category: "Operations" },
+    { id: "a8", name: "NPS Survey After 90 Days", description: "Send satisfaction survey 90 days into retainer", trigger: "90 days after deal closed", triggerIcon: Star, actions: ["Send NPS survey email", "If score < 7 → create urgent task", "If score 9-10 → request testimonial"], status: "paused", runsLast30: 0, lastRun: "2 weeks ago", category: "Feedback" },
+  ],
+  health_wellness: [
+    { id: "a1", name: "New Patient Welcome", description: "Send welcome email + intake forms when new patient is created", trigger: "Contact created", triggerIcon: UserPlus, actions: ["Send welcome email with intake link", "Create task: Prepare chart", "Schedule reminder for Day 3 check-in"], status: "active", runsLast30: 34, lastRun: "1 hour ago", category: "Onboarding" },
+    { id: "a2", name: "Appointment Reminder (24hr)", description: "Send SMS reminder 24 hours before scheduled appointment", trigger: "24 hours before appointment", triggerIcon: Calendar, actions: ["Send SMS: 'Reminder: Your appointment is tomorrow at {time}'", "If no reply → send email backup"], status: "active", runsLast30: 89, lastRun: "30 min ago", category: "Appointments" },
+    { id: "a3", name: "No-Show Recovery", description: "Auto-send reschedule link when patient misses appointment", trigger: "Appointment marked no-show", triggerIcon: AlertTriangle, actions: ["Send SMS with reschedule link", "Wait 2 days → Follow-up email", "Add tag: No-Show", "Create task for front desk"], status: "active", runsLast30: 8, lastRun: "Yesterday", category: "Recovery" },
+    { id: "a4", name: "Post-Treatment Check-In", description: "Day 3 text message checking on recovery and satisfaction", trigger: "3 days after treatment completed", triggerIcon: MessageSquare, actions: ["Send SMS: 'Hi {name}, checking in on your recovery...'", "If reply contains 'pain' or 'swelling' → alert provider"], status: "active", runsLast30: 22, lastRun: "2 hours ago", category: "Follow-up" },
+    { id: "a5", name: "Botox Rebooking (12 Weeks)", description: "Auto-trigger rebooking reminder when Botox results start to fade", trigger: "12 weeks after Botox treatment", triggerIcon: Clock, actions: ["Send SMS: 'Time for your touch-up!'", "Wait 3 days → Send email with booking link", "Add tag: Rebook Due"], status: "active", runsLast30: 15, lastRun: "3 days ago", category: "Rebooking" },
+    { id: "a6", name: "Waitlist Auto-Fill", description: "When cancellation within 24hr, auto-SMS waitlisted patients", trigger: "Appointment canceled < 24hr notice", triggerIcon: Zap, actions: ["Query waitlist for matching time", "Send SMS to top 3: 'Slot just opened!'", "First reply 'YES' → auto-book"], status: "draft", runsLast30: 0, lastRun: "Never", category: "Scheduling" },
+    { id: "a7", name: "Review Request (48hr Post-Visit)", description: "Ask for Google review 48 hours after successful treatment", trigger: "48 hours after treatment", triggerIcon: Star, actions: ["Send email: 'How was your visit?'", "Include direct Google review link", "If 5-star → add tag: Promoter"], status: "active", runsLast30: 18, lastRun: "Yesterday", category: "Reviews" },
+    { id: "a8", name: "Lapsed Patient Win-Back", description: "Re-engage patients who haven't visited in 90+ days", trigger: "90 days since last visit", triggerIcon: TrendingDown, actions: ["Send 'We miss you' email with offer", "Wait 7 days → SMS follow-up", "Add tag: Win-Back"], status: "active", runsLast30: 11, lastRun: "4 days ago", category: "Retention" },
+  ],
+  home_services: [
+    { id: "a1", name: "Estimate Request Auto-Reply", description: "Instant acknowledgment + next steps when estimate form submitted", trigger: "Form submitted", triggerIcon: UserPlus, actions: ["Send confirmation email", "Create task: Schedule site visit", "SMS: 'Got your request! We'll call within 1 hour'"], status: "active", runsLast30: 28, lastRun: "3 hours ago", category: "Lead Capture" },
+    { id: "a2", name: "Estimate Follow-Up (48hr)", description: "Follow up if estimate hasn't been accepted in 48 hours", trigger: "48 hours after estimate sent", triggerIcon: Clock, actions: ["Send 'Any questions?' email", "Wait 3 days → Call task for sales", "Wait 7 days → Final follow-up with urgency"], status: "active", runsLast30: 15, lastRun: "Yesterday", category: "Sales" },
+    { id: "a3", name: "Job Completion + Review", description: "Send invoice and review request when job marked complete", trigger: "Job status → Completed", triggerIcon: CheckCircle, actions: ["Send digital invoice", "Wait 24hr → Send review request with Google link", "Add tag: Completed"], status: "active", runsLast30: 12, lastRun: "2 days ago", category: "Follow-up" },
+    { id: "a4", name: "Storm Alert Outreach", description: "Mass-text past customers when severe weather hits their area", trigger: "Weather alert (manual trigger)", triggerIcon: AlertTriangle, actions: ["SMS to past roofing customers in ZIP", "'Checking in after the storm — priority scheduling available'"], status: "draft", runsLast30: 0, lastRun: "Never", category: "Proactive" },
+    { id: "a5", name: "Seasonal HVAC Reminder", description: "Pre-summer AC check campaign to past HVAC customers", trigger: "April 1st annually", triggerIcon: Calendar, actions: ["Filter: past HVAC customers", "Send 'Beat the heat' email with booking link", "SMS follow-up 3 days later"], status: "active", runsLast30: 0, lastRun: "Last April", category: "Seasonal" },
+    { id: "a6", name: "Maintenance Plan Anniversary", description: "Remind customers to renew annual maintenance plan", trigger: "30 days before plan expires", triggerIcon: Bell, actions: ["Send renewal reminder email", "Wait 7 days → Phone call task", "If renewed → Send thank you"], status: "active", runsLast30: 4, lastRun: "1 week ago", category: "Retention" },
+  ],
+  ecommerce: [
+    { id: "a1", name: "Welcome + First Purchase Offer", description: "New subscriber gets welcome email with 10% off first purchase", trigger: "Contact created (subscriber)", triggerIcon: UserPlus, actions: ["Send welcome email with discount code", "Wait 3 days → 'Did you see our picks?'", "Wait 7 days → 'Last chance for 10% off'"], status: "active", runsLast30: 23, lastRun: "4 hours ago", category: "Onboarding" },
+    { id: "a2", name: "Win-Back (60 Days Inactive)", description: "Re-engage customers who haven't purchased in 60+ days", trigger: "60 days since last purchase", triggerIcon: TrendingDown, actions: ["Send 'We miss you' email", "Wait 5 days → SMS with special offer", "Add tag: Win-Back"], status: "active", runsLast30: 47, lastRun: "1 day ago", category: "Retention" },
+    { id: "a3", name: "VIP Milestone (4th Purchase)", description: "Celebrate and reward on 4th purchase with surprise gift", trigger: "Purchase count = 4", triggerIcon: Star, actions: ["Add tag: VIP", "Send congratulations email", "Create task: Ship surprise gift", "Upgrade tier in CRM"], status: "active", runsLast30: 6, lastRun: "3 days ago", category: "Loyalty" },
+    { id: "a4", name: "Subscription Renewal Reminder", description: "Heads-up 7 days before subscription auto-renews", trigger: "7 days before renewal", triggerIcon: Clock, actions: ["Send renewal reminder email", "Include current plan details + upgrade option"], status: "active", runsLast30: 18, lastRun: "Yesterday", category: "Billing" },
+    { id: "a5", name: "Cancellation Save Attempt", description: "Trigger win-back sequence when subscription is canceled", trigger: "Subscription canceled", triggerIcon: AlertTriangle, actions: ["Send 'Sorry to see you go' email", "Wait 1 day → Send survey", "Wait 7 days → Send special comeback offer", "Create task: Personal outreach for VIPs"], status: "active", runsLast30: 9, lastRun: "2 days ago", category: "Recovery" },
+  ],
+};
+
+const DEFAULT_AUTOMATIONS: Automation[] = [
+  { id: "a1", name: "New Contact Welcome", description: "Send welcome email when contact is created", trigger: "Contact created", triggerIcon: UserPlus, actions: ["Send welcome email", "Create follow-up task"], status: "active", runsLast30: 15, lastRun: "2 hours ago", category: "Onboarding" },
+  { id: "a2", name: "Follow-Up Reminder (72hr)", description: "Auto-create task if no activity in 72 hours", trigger: "No activity for 72 hours", triggerIcon: Clock, actions: ["Create follow-up task", "Send internal notification"], status: "active", runsLast30: 8, lastRun: "Yesterday", category: "Follow-up" },
+  { id: "a3", name: "Deal Won → Thank You", description: "Send thank you email when deal is marked won", trigger: "Deal stage → Won", triggerIcon: CheckCircle, actions: ["Send thank you email", "Create onboarding task", "Notify team via Slack"], status: "active", runsLast30: 3, lastRun: "3 days ago", category: "Sales" },
+];
+
+const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+  active: { label: "Active", color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+  paused: { label: "Paused", color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
+  draft: { label: "Draft", color: "text-gray-500", bg: "bg-gray-50 border-gray-200" },
+};
+
+// ─── MAIN COMPONENT ───
+
 export default function WorkflowsPage() {
-  return (<><Header title="Workflows" /><div className="p-6"><div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-    <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-4"><Workflow className="w-8 h-8 text-amber-500" /></div>
-    <h2 className="text-lg font-semibold text-gray-900 mb-2">Automations</h2>
-    <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">Build automated workflows triggered by contact events, deal stage changes, and form submissions. Set up email sequences, task assignments, and notifications — no code required.</p>
-    <button className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition mx-auto"><Plus className="w-4 h-4" /> Create Workflow</button>
-    <div className="grid grid-cols-3 gap-4 mt-8 max-w-lg mx-auto">
-      <div className="p-4 bg-gray-50 rounded-xl text-center">
-        <Zap className="w-5 h-5 text-amber-400 mx-auto mb-2" />
-        <p className="text-xs font-medium text-gray-600">17 Triggers</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">Contact, deal, form events</p>
+  const ic = useIndustry();
+  const [automations, setAutomations] = useState<Automation[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  useEffect(() => {
+    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const key = demoIndustry || "ecommerce";
+    setAutomations(INDUSTRY_AUTOMATIONS[key] || DEFAULT_AUTOMATIONS);
+  }, []);
+
+  const toggleStatus = (id: string) => {
+    setAutomations(prev => prev.map(a => a.id === id ? { ...a, status: a.status === "active" ? "paused" : "active" } : a));
+  };
+
+  const filtered = automations.filter(a => {
+    if (search) { const q = search.toLowerCase(); if (!a.name.toLowerCase().includes(q) && !a.description.toLowerCase().includes(q)) return false; }
+    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    if (categoryFilter !== "all" && a.category !== categoryFilter) return false;
+    return true;
+  });
+
+  const categories = Array.from(new Set(automations.map(a => a.category)));
+  const activeCount = automations.filter(a => a.status === "active").length;
+  const totalRuns = automations.reduce((s, a) => s + a.runsLast30, 0);
+
+  return (
+    <>
+      <Header title="Automations" />
+      <div className="p-6 space-y-4">
+
+        {/* Summary */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className="w-4 h-4 text-amber-500" />
+              <span className="text-xs text-gray-400 font-medium">Active Automations</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{activeCount}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Play className="w-4 h-4 text-emerald-500" />
+              <span className="text-xs text-gray-400 font-medium">Runs (Last 30 Days)</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{totalRuns}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Workflow className="w-4 h-4 text-indigo-500" />
+              <span className="text-xs text-gray-400 font-medium">Total Workflows</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{automations.length}</p>
+          </div>
+        </div>
+
+        {/* Toolbar */}
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-2">
+              {[{ key: "all", label: "All" }, { key: "active", label: "Active" }, { key: "paused", label: "Paused" }, { key: "draft", label: "Draft" }].map(f => (
+                <button key={f.key} onClick={() => setStatusFilter(f.key)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${statusFilter === f.key ? "bg-indigo-50 text-indigo-600 border border-indigo-200" : "text-gray-500 hover:bg-gray-50"}`}>
+                  {f.label}
+                </button>
+              ))}
+              <div className="w-px h-6 bg-gray-200 mx-1" />
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+                className="text-xs font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                <option value="all">All Categories</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input type="text" placeholder="Search automations..." value={search} onChange={(e) => setSearch(e.target.value)}
+                  className="w-48 pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>}
+              </div>
+              <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                <Plus className="w-4 h-4" /> New Automation
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Automation Cards */}
+        <div className="space-y-3">
+          {filtered.map(a => {
+            const sc = statusConfig[a.status];
+            const TriggerIcon = a.triggerIcon;
+            return (
+              <div key={a.id} className="bg-white rounded-xl border border-gray-100 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition">
+                <div className="flex items-center gap-4 p-5">
+                  {/* Toggle */}
+                  <button onClick={() => toggleStatus(a.id)} className="flex-shrink-0">
+                    {a.status === "active" ? (
+                      <ToggleRight className="w-8 h-8 text-emerald-500" />
+                    ) : (
+                      <ToggleLeft className="w-8 h-8 text-gray-300" />
+                    )}
+                  </button>
+
+                  {/* Trigger Icon */}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${a.status === "active" ? "bg-indigo-50" : "bg-gray-50"}`}>
+                    <TriggerIcon className={`w-5 h-5 ${a.status === "active" ? "text-indigo-600" : "text-gray-400"}`} />
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-sm font-semibold text-gray-900">{a.name}</h3>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sc.bg} ${sc.color}`}>{sc.label}</span>
+                      <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{a.category}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">{a.description}</p>
+
+                    {/* Trigger + Actions Flow */}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">⚡ {a.trigger}</span>
+                      {a.actions.slice(0, 2).map((act, i) => (
+                        <span key={i} className="flex items-center gap-1 text-[10px] text-gray-400">
+                          <ArrowRight className="w-2.5 h-2.5" />
+                          <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600">{act.length > 40 ? act.slice(0, 40) + "..." : act}</span>
+                        </span>
+                      ))}
+                      {a.actions.length > 2 && <span className="text-[10px] text-gray-400">+{a.actions.length - 2} more</span>}
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-6 flex-shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-gray-900">{a.runsLast30}</p>
+                      <p className="text-[10px] text-gray-400">runs / 30d</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">{a.lastRun}</p>
+                      <p className="text-[10px] text-gray-400">last run</p>
+                    </div>
+                    <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
+              <Workflow className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">No automations match your filters</p>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="p-4 bg-gray-50 rounded-xl text-center">
-        <Filter className="w-5 h-5 text-amber-400 mx-auto mb-2" />
-        <p className="text-xs font-medium text-gray-600">11 Actions</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">Email, SMS, tasks, tags</p>
-      </div>
-      <div className="p-4 bg-gray-50 rounded-xl text-center">
-        <Clock className="w-5 h-5 text-amber-400 mx-auto mb-2" />
-        <p className="text-xs font-medium text-gray-600">Delays</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">Wait hours or days</p>
-      </div>
-    </div>
-  </div></div></>);
+    </>
+  );
 }

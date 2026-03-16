@@ -70,7 +70,7 @@ const allNavItems: NavItem[] = [
   { id: "activities", label: "Activities", href: "/dashboard/activities", icon: Activity, group: "insight" },
   { id: "reports", label: "Reports", href: "/dashboard/reports", icon: FileText, group: "insight" },
   { id: "analytics", label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, group: "insight" },
-  { id: "workflows", label: "Workflows", href: "/dashboard/workflows", icon: Workflow, group: "insight" },
+  { id: "workflows", label: "Automations", href: "/dashboard/workflows", icon: Workflow, group: "insight" },
   // System
   { id: "settings", label: "Settings", href: "/dashboard/settings", icon: Settings, group: "system" },
   { id: "integrations", label: "Integrations", href: "/dashboard/settings?tab=integrations", icon: Puzzle, group: "system" },
