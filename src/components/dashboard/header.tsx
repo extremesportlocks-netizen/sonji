@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import {
   Search, Bell, Plus, ChevronDown, Phone, Mail, Video,
   Users, Handshake, CheckSquare, Calendar, DollarSign,
@@ -24,10 +23,21 @@ interface Props { title: string; subtitle?: string; }
 export default function Header({ title, subtitle }: Props) {
   const { openModal } = useModal();
   const router = useRouter();
-  const { user } = useUser();
-  const userName = user?.firstName || "User";
-  const userEmail = user?.emailAddresses?.[0]?.emailAddress || "hello@sonji.io";
-  const userInitial = userName[0]?.toUpperCase() || "U";
+  const [userName, setUserName] = useState("Orlando");
+  const [userEmail, setUserEmail] = useState("hello@sonji.io");
+  const [userInitial, setUserInitial] = useState("O");
+
+  useEffect(() => {
+    // Try to get user info from Clerk or session
+    try {
+      const cached = sessionStorage.getItem("sonji-user");
+      if (cached) {
+        const u = JSON.parse(cached);
+        if (u.name) { setUserName(u.name.split(" ")[0]); setUserInitial(u.name[0].toUpperCase()); }
+        if (u.email) setUserEmail(u.email);
+      }
+    } catch {}
+  }, []);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPhonePanel, setShowPhonePanel] = useState(false);
