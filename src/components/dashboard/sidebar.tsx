@@ -75,7 +75,8 @@ const allNavItems: NavItem[] = [
   { id: "workflows", label: "Automations", href: "/dashboard/workflows", icon: Workflow, group: "insight" },
   // System
   { id: "settings", label: "Settings", href: "/dashboard/settings", icon: Settings, group: "system" },
-  { id: "integrations", label: "Integrations", href: "/dashboard/settings?tab=integrations", icon: Puzzle, group: "system" },
+  { id: "integrations", label: "Integrations", href: "/dashboard/integrations", icon: Puzzle, group: "system" },
+  { id: "referrals", label: "Referrals", href: "/dashboard/referrals", icon: Users, group: "system" },
 ];
 
 const defaultOrder = allNavItems.map((i) => i.id);
