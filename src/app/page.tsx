@@ -96,7 +96,7 @@ export default function HomePage() {
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#platform" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Platform</a>
-            <a href="#features" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Features</a>
+            <Link href="/features" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Features</Link>
             <Link href="/compare" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Compare</Link>
             <Link href="/about" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">About</Link>
             <Link href="/pricing" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition">Pricing</Link>
