@@ -9,12 +9,13 @@ import { Loader2 } from "lucide-react";
  * TENANT GATE
  * 
  * Wraps the dashboard layout. On load:
- * 1. If not signed in → redirect to /login
- * 2. If signed in but no tenant → redirect to /onboarding
- * 3. If signed in + has tenant → render children
+ * 1. If signed in via Clerk → resolve tenant from /api/me
+ *    - Has tenant → set industry, render dashboard
+ *    - No tenant → redirect to /onboarding
+ * 2. If not signed in → allow access (demo/password-gate mode)
  * 
- * Stores tenant info in sessionStorage for subsequent page loads
- * (avoids hitting /api/me on every navigation).
+ * Sets localStorage("sonji-demo-industry") from tenant.industry
+ * so all dashboard widgets show the correct industry data.
  */
 export default function TenantGate({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
@@ -25,45 +26,54 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (!isLoaded) return;
 
-    // Not signed in → login
+    // Not signed in → allow access for demo/password-gate visitors
     if (!isSignedIn) {
-      router.replace("/login");
+      setHasAccess(true);
+      setChecked(true);
       return;
     }
 
     // Check if we already verified this session
     const cached = sessionStorage.getItem("sonji-tenant-verified");
     if (cached === "true") {
-      // Ensure industry is set for widgets
       try {
         const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
-        if (tenant.industry) localStorage.setItem("sonji-demo-industry", tenant.industry);
+        // Only set industry from tenant if demo bar hasn't been manually switched
+        const currentDemo = localStorage.getItem("sonji-demo-industry");
+        if (tenant.industry && (!currentDemo || currentDemo === tenant.industry)) {
+          localStorage.setItem("sonji-demo-industry", tenant.industry);
+        }
       } catch {}
       setHasAccess(true);
       setChecked(true);
       return;
     }
 
-    // Check /api/me for tenant
+    // Signed in → check /api/me for tenant
     fetch("/api/me")
       .then(r => r.json())
       .then(data => {
         if (data.data?.hasTenant) {
+          const tenant = data.data.tenant;
+          const user = data.data.user;
+
           sessionStorage.setItem("sonji-tenant-verified", "true");
-          sessionStorage.setItem("sonji-tenant", JSON.stringify(data.data.tenant));
-          sessionStorage.setItem("sonji-user", JSON.stringify(data.data.user));
-          // Set industry for dashboard widgets — bridges tenant → widget data
-          if (data.data.tenant?.industry) {
-            localStorage.setItem("sonji-demo-industry", data.data.tenant.industry);
+          sessionStorage.setItem("sonji-tenant", JSON.stringify(tenant));
+          sessionStorage.setItem("sonji-user", JSON.stringify(user));
+
+          // Set industry for dashboard widgets
+          if (tenant.industry) {
+            localStorage.setItem("sonji-demo-industry", tenant.industry);
           }
+
           setHasAccess(true);
         } else {
-          // No tenant — send to onboarding
+          // Signed in but no tenant → send to onboarding
           router.replace("/onboarding");
         }
       })
       .catch(() => {
-        // API error — allow access anyway (may be in dev mode / password gate)
+        // API error — allow access anyway (graceful degradation)
         setHasAccess(true);
       })
       .finally(() => setChecked(true));

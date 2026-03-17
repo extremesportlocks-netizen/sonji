@@ -55,6 +55,7 @@ export default function SignupPage() {
             },
           }}
           fallbackRedirectUrl="/onboarding"
+          forceRedirectUrl="/onboarding"
           signInUrl="/login"
         />
         <p className="text-xs text-gray-400 mt-6 text-center max-w-sm">

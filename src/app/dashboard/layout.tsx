@@ -6,6 +6,7 @@ import CommandPalette from "@/components/dashboard/command-palette";
 import PulseBar from "@/components/dashboard/pulse-bar";
 import DemoBar from "@/components/dashboard/demo-bar";
 import AIChat from "@/components/dashboard/ai-chat";
+import TenantGate from "@/components/dashboard/tenant-gate";
 import { ModalProvider } from "@/components/modals/modal-provider";
 import { CRMProvider } from "@/lib/crm-store";
 import { SidebarProvider, useSidebar } from "@/lib/sidebar-context";
@@ -52,12 +53,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <CRMProvider>
-      <ModalProvider>
-        <SidebarProvider>
-          <DashboardContent>{children}</DashboardContent>
-        </SidebarProvider>
-      </ModalProvider>
-    </CRMProvider>
+    <TenantGate>
+      <CRMProvider>
+        <ModalProvider>
+          <SidebarProvider>
+            <DashboardContent>{children}</DashboardContent>
+          </SidebarProvider>
+        </ModalProvider>
+      </CRMProvider>
+    </TenantGate>
   );
 }

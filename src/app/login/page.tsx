@@ -41,6 +41,7 @@ export default function LoginPage() {
             },
           }}
           fallbackRedirectUrl="/dashboard"
+          forceRedirectUrl="/dashboard"
           signUpUrl="/signup"
         />
       </div>
