@@ -39,29 +39,9 @@ const isPublicRoute = createRouteMatcher([
   "/api/(.*)",
 ]);
 
-// Site password protection
-const SITE_PASSWORD = process.env.SITE_PASSWORD || "";
-
 export default clerkMiddleware(async (auth, request) => {
   const url = request.nextUrl.clone();
   const hostname = request.headers.get("host") || "";
-
-  // ─── PASSWORD GATE ───
-  // Bypass for: API routes, Clerk-authenticated users, specific paths
-  if (SITE_PASSWORD && url.pathname !== "/password-gate" && url.pathname !== "/api/auth-password" && !url.pathname.startsWith("/api/inngest") && !url.pathname.startsWith("/api/webhooks")) {
-    const authed = request.cookies.get("site_auth")?.value;
-    const { userId } = await auth();
-    // Skip password gate if user is signed in via Clerk OR has the site password cookie
-    if (authed !== SITE_PASSWORD && !userId) {
-      // Also skip for login/signup/onboarding and marketing pages so they're always accessible
-      const marketingPaths = ["/login", "/signup", "/onboarding", "/compare", "/pricing", "/demo", "/privacy", "/terms", "/roi", "/about", "/changelog", "/features"];
-      const isMarketingPage = url.pathname === "/" || marketingPaths.some(p => url.pathname.startsWith(p));
-      if (!isMarketingPage) {
-        url.pathname = "/password-gate";
-        return NextResponse.rewrite(url);
-      }
-    }
-  }
 
   // ─── PROTECT DASHBOARD ROUTES ───
   if (!isPublicRoute(request)) {

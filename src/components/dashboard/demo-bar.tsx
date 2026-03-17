@@ -45,6 +45,7 @@ export default function DemoBar() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
   const [isRealTenant, setIsRealTenant] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     setActive(getDemoIndustry());
@@ -53,13 +54,20 @@ export default function DemoBar() {
 
     // Check if this is a real authenticated tenant
     const verified = sessionStorage.getItem("sonji-tenant-verified");
-    if (verified === "true") setIsRealTenant(true);
+    if (verified === "true") {
+      setIsRealTenant(true);
+      // Check if user is owner — owners get the demo bar as their "brain mode"
+      try {
+        const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
+        if (user.role === "owner") setIsOwner(true);
+      } catch {}
+    }
 
     return () => window.removeEventListener("sonji-demo-change", handler);
   }, []);
 
-  // Hide demo bar for real authenticated tenants
-  if (isRealTenant) return null;
+  // Hide demo bar for real tenants UNLESS they're an owner (brain mode)
+  if (isRealTenant && !isOwner) return null;
 
   const current = INDUSTRIES.find(i => i.key === active);
 
