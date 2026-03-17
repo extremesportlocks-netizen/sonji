@@ -62,6 +62,48 @@ const INDUSTRY_HEALTH: Record<string, ClientHealth[]> = {
     { name: "Harbor Construction", score: 85, trend: "up", signal: "Mediation prep underway, fully engaged", lastActivity: "Yesterday" },
     { name: "Patricia Williams", score: 78, trend: "up", signal: "New client — engagement letter pending", lastActivity: "Today" },
   ],
+  fitness_gym: [
+    { name: "Stephanie Clark", score: 92, trend: "up", signal: "Just purchased PT 12-pack, highly engaged", lastActivity: "Yesterday" },
+    { name: "Brandon Lewis", score: 75, trend: "up", signal: "New trial member — 3 check-ins in first week", lastActivity: "Today" },
+    { name: "Daniel Wright", score: 28, trend: "down", signal: "14 days no check-in — at-risk member", lastActivity: "14 days ago" },
+    { name: "Alex Rivera", score: 55, trend: "stable", signal: "Attends group classes only, moderate engagement", lastActivity: "5 days ago" },
+  ],
+  beauty_salon: [
+    { name: "Charlotte Davis", score: 95, trend: "up", signal: "Bridal package booked — $1,200 commitment", lastActivity: "Yesterday" },
+    { name: "Amelia Wilson", score: 82, trend: "stable", signal: "Regular keratin client, consistent 6-week cycle", lastActivity: "2 days ago" },
+    { name: "Harper Garcia", score: 78, trend: "up", signal: "Just booked online — new recurring client potential", lastActivity: "Today" },
+    { name: "Nina Patel", score: 35, trend: "down", signal: "6 weeks overdue for rebooking — going cold", lastActivity: "6 weeks ago" },
+  ],
+  real_estate: [
+    { name: "Amanda Hill", score: 88, trend: "up", signal: "Submitting offer today — highly motivated buyer", lastActivity: "30 min ago" },
+    { name: "Robert Chen", score: 82, trend: "stable", signal: "Active listing — 3 showings this week", lastActivity: "Today" },
+    { name: "Patricia Williams", score: 90, trend: "up", signal: "Closing complete — commission received", lastActivity: "3 hours ago" },
+    { name: "James Rivera", score: 45, trend: "down", signal: "Submitted valuation request but hasn't responded since", lastActivity: "8 days ago" },
+  ],
+  coaching_education: [
+    { name: "Jason Wright", score: 92, trend: "up", signal: "Active 1:1 client, highly engaged, refers others", lastActivity: "2 hours ago" },
+    { name: "Mastermind Cohort", score: 88, trend: "stable", signal: "6 participants, all engaged, week 3 of 12", lastActivity: "Yesterday" },
+    { name: "Nathan Harris", score: 70, trend: "up", signal: "VIP Day application — new prospect, high intent", lastActivity: "Today" },
+    { name: "Lindsey K.", score: 32, trend: "down", signal: "3 weeks no assignments — stuck intervention needed", lastActivity: "21 days ago" },
+  ],
+  restaurant_food: [
+    { name: "Apex Financial Group", score: 85, trend: "up", signal: "Corporate catering inquiry — $3.5K opportunity", lastActivity: "Today" },
+    { name: "Michael Rivera", score: 78, trend: "stable", signal: "Regular diner, birthday reservation this week", lastActivity: "2 hours ago" },
+    { name: "Marcus Rivera", score: 90, trend: "up", signal: "Weekly meal prep subscriber — $480/mo recurring", lastActivity: "Today" },
+    { name: "Emily & David", score: 88, trend: "stable", signal: "Wedding reception deposit paid, menu finalization pending", lastActivity: "Yesterday" },
+  ],
+  automotive: [
+    { name: "Thomas Brown", score: 72, trend: "down", signal: "Post-service noise complaint — needs follow-up call", lastActivity: "8 hours ago" },
+    { name: "Enterprise Fleet", score: 88, trend: "up", signal: "5 vehicles need service — $4.8K opportunity", lastActivity: "Today" },
+    { name: "Nancy Davis", score: 92, trend: "up", signal: "Left 5-star review after 30K service", lastActivity: "Yesterday" },
+    { name: "James Peterson", score: 48, trend: "down", signal: "Declined brake service 30 days ago — safety concern", lastActivity: "30 days ago" },
+  ],
+  nonprofit: [
+    { name: "Robert Chen", score: 95, trend: "up", signal: "Major donor wants to increase to $1K/mo", lastActivity: "Today" },
+    { name: "Amanda Hill", score: 82, trend: "stable", signal: "Gala RSVP'd, active volunteer", lastActivity: "4 hours ago" },
+    { name: "Community Bank", score: 70, trend: "up", signal: "Sponsorship inquiry — Gold/Platinum tier interest", lastActivity: "Yesterday" },
+    { name: "David Park", score: 28, trend: "down", signal: "12 months since last donation — lapsed donor", lastActivity: "12 months ago" },
+  ],
 };
 
 export default function ClientHealth() {

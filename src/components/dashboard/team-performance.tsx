@@ -47,6 +47,39 @@ const INDUSTRY_TEAMS: Record<string, TeamMember[]> = {
     { name: "Atty. Hayes", role: "Associate", hoursLogged: 38, capacity: 40, tasksCompleted: 10, tasksTotal: 14, revenueManaged: 9500, efficiency: 250 },
     { name: "Paralegal", role: "Support", hoursLogged: 40, capacity: 40, tasksCompleted: 14, tasksTotal: 16, revenueManaged: 0, efficiency: 0 },
   ],
+  fitness_gym: [
+    { name: "Jake", role: "Owner / Head Coach", hoursLogged: 42, capacity: 40, tasksCompleted: 18, tasksTotal: 22, revenueManaged: 42000, efficiency: 1000 },
+    { name: "Coach Sarah", role: "Personal Trainer", hoursLogged: 35, capacity: 40, tasksCompleted: 12, tasksTotal: 14, revenueManaged: 14400, efficiency: 411 },
+    { name: "Coach Mike", role: "Group Fitness", hoursLogged: 28, capacity: 40, tasksCompleted: 8, tasksTotal: 10, revenueManaged: 8000, efficiency: 286 },
+  ],
+  beauty_salon: [
+    { name: "Emma", role: "Owner / Senior Stylist", hoursLogged: 38, capacity: 40, tasksCompleted: 16, tasksTotal: 20, revenueManaged: 28400, efficiency: 747 },
+    { name: "Alex", role: "Stylist", hoursLogged: 36, capacity: 40, tasksCompleted: 14, tasksTotal: 16, revenueManaged: 12000, efficiency: 333 },
+    { name: "Nina", role: "Junior Stylist", hoursLogged: 32, capacity: 40, tasksCompleted: 10, tasksTotal: 12, revenueManaged: 6800, efficiency: 213 },
+  ],
+  real_estate: [
+    { name: "Sarah", role: "Lead Agent", hoursLogged: 45, capacity: 40, tasksCompleted: 12, tasksTotal: 15, revenueManaged: 71000, efficiency: 1578 },
+    { name: "Agent Mike", role: "Agent", hoursLogged: 38, capacity: 40, tasksCompleted: 8, tasksTotal: 12, revenueManaged: 26700, efficiency: 703 },
+  ],
+  coaching_education: [
+    { name: "Coach", role: "Head Coach", hoursLogged: 30, capacity: 40, tasksCompleted: 14, tasksTotal: 18, revenueManaged: 56833, efficiency: 1894 },
+    { name: "VA Jordan", role: "Virtual Assistant", hoursLogged: 20, capacity: 20, tasksCompleted: 18, tasksTotal: 20, revenueManaged: 0, efficiency: 0 },
+  ],
+  restaurant_food: [
+    { name: "Chef Marco", role: "Executive Chef", hoursLogged: 50, capacity: 50, tasksCompleted: 8, tasksTotal: 10, revenueManaged: 82000, efficiency: 1640 },
+    { name: "Sophia", role: "Front of House", hoursLogged: 45, capacity: 45, tasksCompleted: 22, tasksTotal: 25, revenueManaged: 0, efficiency: 0 },
+    { name: "David", role: "Host / Events", hoursLogged: 40, capacity: 40, tasksCompleted: 15, tasksTotal: 18, revenueManaged: 7750, efficiency: 194 },
+  ],
+  automotive: [
+    { name: "Tom", role: "Owner / Estimator", hoursLogged: 44, capacity: 40, tasksCompleted: 12, tasksTotal: 15, revenueManaged: 24500, efficiency: 557 },
+    { name: "Service Mgr", role: "Service Manager", hoursLogged: 40, capacity: 40, tasksCompleted: 18, tasksTotal: 22, revenueManaged: 0, efficiency: 0 },
+    { name: "Tech A", role: "Lead Tech", hoursLogged: 42, capacity: 40, tasksCompleted: 8, tasksTotal: 10, revenueManaged: 0, efficiency: 0 },
+  ],
+  nonprofit: [
+    { name: "Amy", role: "Executive Director", hoursLogged: 42, capacity: 40, tasksCompleted: 14, tasksTotal: 18, revenueManaged: 26500, efficiency: 631 },
+    { name: "Events Lead", role: "Event Coordinator", hoursLogged: 38, capacity: 40, tasksCompleted: 12, tasksTotal: 15, revenueManaged: 15000, efficiency: 395 },
+    { name: "Outreach", role: "Donor Relations", hoursLogged: 35, capacity: 40, tasksCompleted: 16, tasksTotal: 20, revenueManaged: 6500, efficiency: 186 },
+  ],
 };
 
 function fmt(n: number) { return n >= 1e3 ? `$${(n/1e3).toFixed(1)}K` : `$${n}`; }

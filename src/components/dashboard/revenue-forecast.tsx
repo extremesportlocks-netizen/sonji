@@ -72,6 +72,62 @@ const INDUSTRY_FORECASTS: Record<string, ForecastData> = {
       { name: "Jun", recurring: 8750, pipeline: 3000, total: 11750 },
     ],
   },
+  fitness_gym: {
+    currentMRR: 42000, pipelineWeighted: 4800, confidenceLevel: "High",
+    months: [
+      { name: "Apr", recurring: 42000, pipeline: 3200, total: 45200 },
+      { name: "May", recurring: 43500, pipeline: 1600, total: 45100 },
+      { name: "Jun", recurring: 44000, pipeline: 1200, total: 45200 },
+    ],
+  },
+  beauty_salon: {
+    currentMRR: 28400, pipelineWeighted: 3600, confidenceLevel: "Medium",
+    months: [
+      { name: "Apr", recurring: 28400, pipeline: 2400, total: 30800 },
+      { name: "May", recurring: 29200, pipeline: 1200, total: 30400 },
+      { name: "Jun", recurring: 30000, pipeline: 800, total: 30800 },
+    ],
+  },
+  real_estate: {
+    currentMRR: 0, pipelineWeighted: 71000, confidenceLevel: "Low",
+    months: [
+      { name: "Apr", recurring: 0, pipeline: 36000, total: 36000 },
+      { name: "May", recurring: 0, pipeline: 26700, total: 26700 },
+      { name: "Jun", recurring: 0, pipeline: 8300, total: 8300 },
+    ],
+  },
+  coaching_education: {
+    currentMRR: 56833, pipelineWeighted: 8000, confidenceLevel: "High",
+    months: [
+      { name: "Apr", recurring: 56833, pipeline: 5000, total: 61833 },
+      { name: "May", recurring: 56833, pipeline: 3000, total: 59833 },
+      { name: "Jun", recurring: 48000, pipeline: 8000, total: 56000 },
+    ],
+  },
+  restaurant_food: {
+    currentMRR: 82000, pipelineWeighted: 7750, confidenceLevel: "High",
+    months: [
+      { name: "Apr", recurring: 82000, pipeline: 4250, total: 86250 },
+      { name: "May", recurring: 84000, pipeline: 3500, total: 87500 },
+      { name: "Jun", recurring: 85000, pipeline: 2000, total: 87000 },
+    ],
+  },
+  automotive: {
+    currentMRR: 24500, pipelineWeighted: 6800, confidenceLevel: "Medium",
+    months: [
+      { name: "Apr", recurring: 24500, pipeline: 4800, total: 29300 },
+      { name: "May", recurring: 25000, pipeline: 2000, total: 27000 },
+      { name: "Jun", recurring: 25500, pipeline: 1500, total: 27000 },
+    ],
+  },
+  nonprofit: {
+    currentMRR: 6500, pipelineWeighted: 40000, confidenceLevel: "Medium",
+    months: [
+      { name: "Apr", recurring: 6500, pipeline: 25000, total: 31500 },
+      { name: "May", recurring: 7000, pipeline: 15000, total: 22000 },
+      { name: "Jun", recurring: 7000, pipeline: 5000, total: 12000 },
+    ],
+  },
 };
 
 const DEFAULT_FORECAST: ForecastData = {
