@@ -42,6 +42,42 @@ const DEMO_REPORTS: Record<string, ClientReport[]> = {
     { id: "r1", client: "ESL Sports Monthly", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 14985, leads: 23, conversions: 18, sessions: 0, roas: 0 } },
     { id: "r2", client: "ESL Sports Monthly", period: "February 2026", status: "viewed", sentDate: "Mar 1", metrics: { revenue: 13200, leads: 19, conversions: 14, sessions: 0, roas: 0 } },
   ],
+  home_services: [
+    { id: "r1", client: "Monthly Business Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 33500, leads: 12, conversions: 8, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Business Report", period: "February 2026", status: "viewed", sentDate: "Mar 2", metrics: { revenue: 28900, leads: 9, conversions: 6, sessions: 0, roas: 0 } },
+  ],
+  fitness_gym: [
+    { id: "r1", client: "Monthly Membership Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 42000, leads: 34, conversions: 18, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Membership Report", period: "February 2026", status: "viewed", sentDate: "Mar 1", metrics: { revenue: 38500, leads: 28, conversions: 15, sessions: 0, roas: 0 } },
+  ],
+  beauty_salon: [
+    { id: "r1", client: "Monthly Salon Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 28400, leads: 45, conversions: 38, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Salon Report", period: "February 2026", status: "viewed", sentDate: "Mar 2", metrics: { revenue: 25200, leads: 40, conversions: 34, sessions: 0, roas: 0 } },
+  ],
+  real_estate: [
+    { id: "r1", client: "Quarterly Market Report", period: "Q1 2026", status: "draft", sentDate: null, metrics: { revenue: 71000, leads: 67, conversions: 4, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Quarterly Market Report", period: "Q4 2025", status: "viewed", sentDate: "Jan 5", metrics: { revenue: 58000, leads: 52, conversions: 3, sessions: 0, roas: 0 } },
+  ],
+  legal: [
+    { id: "r1", client: "Monthly Practice Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 16750, leads: 12, conversions: 6, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Practice Report", period: "February 2026", status: "viewed", sentDate: "Mar 1", metrics: { revenue: 14200, leads: 10, conversions: 5, sessions: 0, roas: 0 } },
+  ],
+  coaching_education: [
+    { id: "r1", client: "Monthly Coaching Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 56833, leads: 8, conversions: 4, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Coaching Report", period: "February 2026", status: "viewed", sentDate: "Mar 1", metrics: { revenue: 48000, leads: 6, conversions: 3, sessions: 0, roas: 0 } },
+  ],
+  restaurant_food: [
+    { id: "r1", client: "Monthly Revenue Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 82000, leads: 234, conversions: 198, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Revenue Report", period: "February 2026", status: "viewed", sentDate: "Mar 1", metrics: { revenue: 74500, leads: 198, conversions: 172, sessions: 0, roas: 0 } },
+  ],
+  automotive: [
+    { id: "r1", client: "Monthly Service Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 24500, leads: 67, conversions: 52, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Service Report", period: "February 2026", status: "viewed", sentDate: "Mar 1", metrics: { revenue: 21800, leads: 58, conversions: 45, sessions: 0, roas: 0 } },
+  ],
+  nonprofit: [
+    { id: "r1", client: "Monthly Impact Report", period: "March 2026", status: "draft", sentDate: null, metrics: { revenue: 26500, leads: 34, conversions: 28, sessions: 0, roas: 0 } },
+    { id: "r2", client: "Monthly Impact Report", period: "February 2026", status: "viewed", sentDate: "Mar 1", metrics: { revenue: 22000, leads: 28, conversions: 22, sessions: 0, roas: 0 } },
+  ],
 };
 
 function fmt(n: number) { return n >= 1e3 ? `$${(n / 1e3).toFixed(1)}K` : `$${n}`; }

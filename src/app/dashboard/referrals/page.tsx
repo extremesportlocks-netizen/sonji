@@ -55,6 +55,78 @@ const INDUSTRY_REFERRALS: Record<string, { link: string; referrals: Referral[]; 
       { id: "r3", referrer: "Tyler McLaughlin", referred: "Reddit r/sportsbetting", date: "Feb 20", status: "converted", revenue: 1485, commission: 445 },
     ],
   },
+  fitness_gym: {
+    link: "https://sonji.io/ref/iron-republic",
+    totalCommission: 960, totalReferred: 12, conversionRate: 42,
+    referrals: [
+      { id: "r1", referrer: "Stephanie Clark", referred: "2 coworkers", date: "Mar 12", status: "converted", revenue: 158, commission: 48 },
+      { id: "r2", referrer: "Brandon Lewis", referred: "College roommate", date: "Mar 14", status: "pending", revenue: 0, commission: 0 },
+    ],
+  },
+  beauty_salon: {
+    link: "https://sonji.io/ref/luxe-beauty",
+    totalCommission: 1250, totalReferred: 18, conversionRate: 55,
+    referrals: [
+      { id: "r1", referrer: "Charlotte Davis", referred: "Bridal party (4)", date: "Mar 10", status: "converted", revenue: 2400, commission: 240 },
+      { id: "r2", referrer: "Amelia Wilson", referred: "Sister", date: "Mar 14", status: "active", revenue: 350, commission: 35 },
+    ],
+  },
+  real_estate: {
+    link: "https://sonji.io/ref/summit-realty",
+    totalCommission: 8900, totalReferred: 6, conversionRate: 33,
+    referrals: [
+      { id: "r1", referrer: "Amanda Hill", referred: "Colleague at work", date: "Mar 8", status: "active", revenue: 0, commission: 0 },
+      { id: "r2", referrer: "Karen Wu", referred: "Neighbor selling home", date: "Feb 15", status: "converted", revenue: 890000, commission: 8900 },
+    ],
+  },
+  home_services: {
+    link: "https://sonji.io/ref/apex-roofing",
+    totalCommission: 2800, totalReferred: 15, conversionRate: 40,
+    referrals: [
+      { id: "r1", referrer: "Linda Garcia", referred: "Nextdoor neighbors (3)", date: "Mar 12", status: "converted", revenue: 12500, commission: 1250 },
+      { id: "r2", referrer: "Thomas Brown", referred: "Barbara Martinez", date: "Mar 5", status: "converted", revenue: 4200, commission: 420 },
+    ],
+  },
+  legal: {
+    link: "https://sonji.io/ref/sterling-law",
+    totalCommission: 3200, totalReferred: 8, conversionRate: 25,
+    referrals: [
+      { id: "r1", referrer: "Marcus Johnson", referred: "Friend (PI case)", date: "Mar 10", status: "active", revenue: 0, commission: 0 },
+      { id: "r2", referrer: "Harbor Construction", referred: "Subcontractor", date: "Feb 20", status: "converted", revenue: 8500, commission: 850 },
+    ],
+  },
+  coaching_education: {
+    link: "https://sonji.io/ref/elevate-coaching",
+    totalCommission: 4500, totalReferred: 10, conversionRate: 30,
+    referrals: [
+      { id: "r1", referrer: "Jason Wright", referred: "Nathan Harris", date: "Mar 14", status: "pending", revenue: 0, commission: 0 },
+      { id: "r2", referrer: "Mastermind Cohort", referred: "3 referrals total", date: "Mar 1", status: "converted", revenue: 15000, commission: 1500 },
+    ],
+  },
+  restaurant_food: {
+    link: "https://sonji.io/ref/copper-table",
+    totalCommission: 680, totalReferred: 22, conversionRate: 68,
+    referrals: [
+      { id: "r1", referrer: "Michael Rivera", referred: "Work colleagues (4)", date: "Mar 12", status: "converted", revenue: 1200, commission: 120 },
+      { id: "r2", referrer: "Apex Financial Group", referred: "Client entertainment", date: "Mar 8", status: "active", revenue: 3500, commission: 350 },
+    ],
+  },
+  automotive: {
+    link: "https://sonji.io/ref/precision-auto",
+    totalCommission: 1200, totalReferred: 18, conversionRate: 45,
+    referrals: [
+      { id: "r1", referrer: "Thomas Brown", referred: "Wife's car", date: "Mar 14", status: "converted", revenue: 450, commission: 45 },
+      { id: "r2", referrer: "Enterprise Fleet", referred: "Corporate fleet referral", date: "Mar 1", status: "converted", revenue: 4800, commission: 480 },
+    ],
+  },
+  nonprofit: {
+    link: "https://sonji.io/ref/harbor-foundation",
+    totalCommission: 0, totalReferred: 12, conversionRate: 50,
+    referrals: [
+      { id: "r1", referrer: "Robert Chen", referred: "Business partner", date: "Mar 10", status: "converted", revenue: 12000, commission: 0 },
+      { id: "r2", referrer: "Amanda Hill", referred: "Community group", date: "Mar 5", status: "active", revenue: 0, commission: 0 },
+    ],
+  },
 };
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
