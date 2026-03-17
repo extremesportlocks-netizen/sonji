@@ -128,8 +128,24 @@ export default function MeetingsPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
-    setMeetings(INDUSTRY_MEETINGS[key] || INDUSTRY_MEETINGS.ecommerce);
+    if (demoIndustry && INDUSTRY_MEETINGS[demoIndustry]) {
+      setMeetings(INDUSTRY_MEETINGS[demoIndustry]);
+      return;
+    }
+    fetch("/api/meetings").then(r => r.json()).then(data => {
+      if (data?.data?.length) {
+        setMeetings(data.data.map((m: any) => ({
+          id: m.id, title: m.title || "Meeting", contactName: m.contactName || "",
+          date: m.startsAt ? new Date(m.startsAt).toISOString().split("T")[0] : "",
+          day: m.startsAt ? ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(m.startsAt).getDay()] : "",
+          startTime: m.startsAt ? new Date(m.startsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "",
+          endTime: m.endsAt ? new Date(m.endsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "",
+          type: m.type || "call", location: m.location || "", color: "bg-indigo-500",
+        })));
+      } else {
+        setMeetings(INDUSTRY_MEETINGS.ecommerce);
+      }
+    }).catch(() => setMeetings(INDUSTRY_MEETINGS.ecommerce));
   }, []);
 
   const today = new Date();

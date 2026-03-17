@@ -127,15 +127,41 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
-    setNotifs(INDUSTRY_NOTIFS[key] || INDUSTRY_NOTIFS.ecommerce);
+    if (di && INDUSTRY_NOTIFS[di]) {
+      setNotifs(INDUSTRY_NOTIFS[di]);
+      return;
+    }
+    // Try real API
+    fetch("/api/notifications").then(r => r.json()).then(data => {
+      if (data?.notifications?.length) {
+        setNotifs(data.notifications.map((n: any) => ({
+          id: n.id, type: n.type?.split(".")[0] || "system",
+          title: n.title, detail: n.body || "",
+          time: new Date(n.createdAt).toLocaleDateString(), read: n.read, icon: "🔔",
+        })));
+      } else {
+        setNotifs(INDUSTRY_NOTIFS.ecommerce);
+      }
+    }).catch(() => setNotifs(INDUSTRY_NOTIFS.ecommerce));
   }, []);
 
   const filtered = filter === "unread" ? notifs.filter(n => !n.read) : notifs;
   const unreadCount = notifs.filter(n => !n.read).length;
 
-  const markAllRead = () => setNotifs(prev => prev.map(n => ({ ...n, read: true })));
-  const markRead = (id: string) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const markAllRead = () => {
+    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+    fetch("/api/notifications", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true }),
+    }).catch(() => {});
+  };
+  const markRead = (id: string) => {
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    fetch("/api/notifications", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [id] }),
+    }).catch(() => {});
+  };
 
   return (
     <>

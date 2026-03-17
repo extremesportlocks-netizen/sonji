@@ -114,10 +114,32 @@ export default function MessagesPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
-    const msgs = INDUSTRY_MESSAGES[key] || DEFAULT_MESSAGES;
-    setMessages(msgs);
-    if (msgs.length > 0) setSelected(msgs[0]);
+    if (demoIndustry && INDUSTRY_MESSAGES[demoIndustry]) {
+      const msgs = INDUSTRY_MESSAGES[demoIndustry];
+      setMessages(msgs);
+      if (msgs.length > 0) setSelected(msgs[0]);
+      return;
+    }
+    fetch("/api/messages?limit=50").then(r => r.json()).then(data => {
+      if (data?.data?.length) {
+        const msgs = data.data.map((m: any) => ({
+          id: m.id, from: m.contactId || "Unknown", subject: m.subject || "(no subject)",
+          preview: (m.body || "").substring(0, 120), body: m.body || "",
+          time: new Date(m.createdAt).toLocaleDateString(), channel: m.channel || "email",
+          read: m.status !== "new", starred: false,
+        }));
+        setMessages(msgs);
+        if (msgs.length > 0) setSelected(msgs[0]);
+      } else {
+        const msgs = INDUSTRY_MESSAGES.ecommerce || DEFAULT_MESSAGES;
+        setMessages(msgs);
+        if (msgs.length > 0) setSelected(msgs[0]);
+      }
+    }).catch(() => {
+      const msgs = INDUSTRY_MESSAGES.ecommerce || DEFAULT_MESSAGES;
+      setMessages(msgs);
+      if (msgs.length > 0) setSelected(msgs[0]);
+    });
   }, []);
 
   const filtered = messages.filter(m => {
@@ -131,6 +153,10 @@ export default function MessagesPage() {
 
   const markRead = (id: string) => {
     setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+    fetch(`/api/messages?id=${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "read" }),
+    }).catch(() => {});
   };
 
   const toggleStar = (id: string) => {

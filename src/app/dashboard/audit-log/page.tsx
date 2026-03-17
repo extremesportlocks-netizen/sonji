@@ -51,6 +51,20 @@ export default function AuditLogPage() {
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("all");
 
+  useEffect(() => {
+    fetch("/api/audit-log?limit=50").then(r => r.json()).then(data => {
+      if (data?.data?.length) {
+        setLog(data.data.map((e: any) => ({
+          id: e.id, user: e.userId?.substring(0, 8) || "System",
+          action: e.action?.includes("created") ? "created" : e.action?.includes("updated") ? "updated" : e.action?.includes("deleted") ? "deleted" : e.action?.includes("import") ? "imported" : "logged_in",
+          resource: e.action?.split(".")[0] || "System",
+          detail: JSON.stringify(e.metadata || {}).substring(0, 100),
+          time: new Date(e.createdAt).toLocaleDateString(),
+        })));
+      }
+    }).catch(() => {});
+  }, []);
+
   const filtered = log.filter(e => {
     if (search) { const q = search.toLowerCase(); if (!e.user.toLowerCase().includes(q) && !e.detail.toLowerCase().includes(q) && !e.resource.toLowerCase().includes(q)) return false; }
     if (filterAction !== "all" && e.action !== filterAction) return false;

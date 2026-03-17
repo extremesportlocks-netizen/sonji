@@ -103,8 +103,22 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
-    setInvoices(INDUSTRY_INVOICES[key] || INDUSTRY_INVOICES.ecommerce);
+    if (demoIndustry && INDUSTRY_INVOICES[demoIndustry]) {
+      setInvoices(INDUSTRY_INVOICES[demoIndustry]);
+      return;
+    }
+    fetch("/api/invoices").then(r => r.json()).then(data => {
+      if (data?.data?.length) {
+        setInvoices(data.data.map((inv: any) => ({
+          id: inv.id, number: inv.id.substring(0, 8).toUpperCase(),
+          client: inv.contactId || "Client", amount: parseFloat(inv.total) || 0,
+          status: inv.status, issueDate: new Date(inv.createdAt).toLocaleDateString(),
+          dueDate: inv.dueDate || "", items: (inv.items as any[]) || [],
+        })));
+      } else {
+        setInvoices(INDUSTRY_INVOICES.ecommerce);
+      }
+    }).catch(() => setInvoices(INDUSTRY_INVOICES.ecommerce));
   }, []);
 
   const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);

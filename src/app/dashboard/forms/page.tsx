@@ -112,8 +112,22 @@ export default function FormsPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
-    setForms(INDUSTRY_FORMS[key] || INDUSTRY_FORMS.ecommerce);
+    if (demoIndustry && INDUSTRY_FORMS[demoIndustry]) {
+      setForms(INDUSTRY_FORMS[demoIndustry]);
+      return;
+    }
+    fetch("/api/forms").then(r => r.json()).then(data => {
+      if (data?.data?.length) {
+        setForms(data.data.map((f: any) => ({
+          id: f.id, name: f.name, status: f.status || "active",
+          submissions: f.submissionCount || 0, conversionRate: 0,
+          fields: ((f.fields as any[]) || []).length,
+          lastSubmission: f.createdAt ? new Date(f.createdAt).toLocaleDateString() : "Never",
+        })));
+      } else {
+        setForms(INDUSTRY_FORMS.ecommerce);
+      }
+    }).catch(() => setForms(INDUSTRY_FORMS.ecommerce));
   }, []);
 
   const totalSubmissions = forms.reduce((s, f) => s + f.submissions, 0);

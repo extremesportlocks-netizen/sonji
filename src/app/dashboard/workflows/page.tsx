@@ -138,12 +138,36 @@ export default function WorkflowsPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
-    setAutomations(INDUSTRY_AUTOMATIONS[key] || DEFAULT_AUTOMATIONS);
+    if (demoIndustry && INDUSTRY_AUTOMATIONS[demoIndustry]) {
+      setAutomations(INDUSTRY_AUTOMATIONS[demoIndustry]);
+      return;
+    }
+    // Try real API first
+    fetch("/api/automations").then(r => r.json()).then(data => {
+      if (data?.data?.length) {
+        setAutomations(data.data.map((a: any) => ({
+          id: a.id, name: a.name, description: (a.trigger as any)?.type || "",
+          trigger: (a.trigger as any)?.type || "manual",
+          actions: ((a.actions as any[]) || []).map((act: any) => act.type).join(", "),
+          status: a.status, category: "custom", lastRun: a.lastRun || "Never", runsTotal: 0,
+        })));
+      } else {
+        setAutomations(INDUSTRY_AUTOMATIONS.ecommerce || DEFAULT_AUTOMATIONS);
+      }
+    }).catch(() => setAutomations(INDUSTRY_AUTOMATIONS.ecommerce || DEFAULT_AUTOMATIONS));
   }, []);
 
   const toggleStatus = (id: string) => {
-    setAutomations(prev => prev.map(a => a.id === id ? { ...a, status: a.status === "active" ? "paused" : "active" } : a));
+    setAutomations(prev => prev.map(a => {
+      if (a.id !== id) return a;
+      const newStatus = a.status === "active" ? "paused" : "active";
+      // Persist to API (fire and forget)
+      fetch(`/api/automations?id=${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      }).catch(() => {});
+      return { ...a, status: newStatus };
+    }));
   };
 
   const filtered = automations.filter(a => {
