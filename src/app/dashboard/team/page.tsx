@@ -44,6 +44,60 @@ const INDUSTRY_TEAMS: Record<string, TeamMember[]> = {
   ecommerce: [
     { id: "u1", name: "Orlando", email: "orlando@eslsports.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "O" },
   ],
+  fitness_gym: [
+    { id: "u1", name: "Jake", email: "jake@ironrepublic.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "J" },
+    { id: "u2", name: "Coach Sarah", email: "sarah@ironrepublic.com", role: "manager", status: "active", joinDate: "Mar 1, 2026", lastActive: "2 hours ago", avatar: "S" },
+    { id: "u3", name: "Coach Mike", email: "mike@ironrepublic.com", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "45 min ago", avatar: "M" },
+    { id: "u4", name: "Front Desk", email: "desk@ironrepublic.com", role: "member", status: "active", joinDate: "Mar 3, 2026", lastActive: "10 min ago", avatar: "F" },
+  ],
+  beauty_salon: [
+    { id: "u1", name: "Emma", email: "emma@luxebeauty.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "E" },
+    { id: "u2", name: "Alex", email: "alex@luxebeauty.com", role: "manager", status: "active", joinDate: "Mar 1, 2026", lastActive: "1 hour ago", avatar: "A" },
+    { id: "u3", name: "Nina", email: "nina@luxebeauty.com", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "30 min ago", avatar: "N" },
+    { id: "u4", name: "Receptionist", email: "front@luxebeauty.com", role: "member", status: "active", joinDate: "Mar 3, 2026", lastActive: "15 min ago", avatar: "R" },
+    { id: "u5", name: "New Stylist", email: "new@luxebeauty.com", role: "member", status: "invited", joinDate: "Mar 15, 2026", lastActive: "Invite pending", avatar: "N" },
+  ],
+  real_estate: [
+    { id: "u1", name: "Sarah", email: "sarah@summitrealty.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "S" },
+    { id: "u2", name: "Agent Mike", email: "mike@summitrealty.com", role: "manager", status: "active", joinDate: "Mar 1, 2026", lastActive: "3 hours ago", avatar: "M" },
+    { id: "u3", name: "Admin Lisa", email: "lisa@summitrealty.com", role: "member", status: "active", joinDate: "Mar 3, 2026", lastActive: "1 hour ago", avatar: "L" },
+  ],
+  home_services: [
+    { id: "u1", name: "Mike", email: "mike@apexroofing.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "M" },
+    { id: "u2", name: "Steve", email: "steve@apexroofing.com", role: "manager", status: "active", joinDate: "Mar 1, 2026", lastActive: "2 hours ago", avatar: "S" },
+    { id: "u3", name: "Crew Lead A", email: "crewa@apexroofing.com", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "4 hours ago", avatar: "A" },
+    { id: "u4", name: "Crew Lead B", email: "crewb@apexroofing.com", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "3 hours ago", avatar: "B" },
+    { id: "u5", name: "Office Admin", email: "office@apexroofing.com", role: "member", status: "active", joinDate: "Mar 2, 2026", lastActive: "30 min ago", avatar: "O" },
+  ],
+  legal: [
+    { id: "u1", name: "Atty. Sterling", email: "sterling@sterlinglaw.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "S" },
+    { id: "u2", name: "Atty. Hayes", email: "hayes@sterlinglaw.com", role: "admin", status: "active", joinDate: "Mar 1, 2026", lastActive: "1 hour ago", avatar: "H" },
+    { id: "u3", name: "Paralegal Kim", email: "kim@sterlinglaw.com", role: "member", status: "active", joinDate: "Mar 3, 2026", lastActive: "45 min ago", avatar: "K" },
+    { id: "u4", name: "Legal Assistant", email: "assist@sterlinglaw.com", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "2 hours ago", avatar: "L" },
+  ],
+  coaching_education: [
+    { id: "u1", name: "Coach", email: "coach@elevatecoaching.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "C" },
+    { id: "u2", name: "VA — Jordan", email: "jordan@elevatecoaching.com", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "3 hours ago", avatar: "J" },
+  ],
+  restaurant_food: [
+    { id: "u1", name: "Chef Marco", email: "marco@coppertable.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "M" },
+    { id: "u2", name: "Manager Sophia", email: "sophia@coppertable.com", role: "admin", status: "active", joinDate: "Mar 1, 2026", lastActive: "30 min ago", avatar: "S" },
+    { id: "u3", name: "Host David", email: "david@coppertable.com", role: "member", status: "active", joinDate: "Mar 3, 2026", lastActive: "1 hour ago", avatar: "D" },
+    { id: "u4", name: "Events Coord.", email: "events@coppertable.com", role: "manager", status: "active", joinDate: "Mar 5, 2026", lastActive: "4 hours ago", avatar: "E" },
+  ],
+  automotive: [
+    { id: "u1", name: "Owner Tom", email: "tom@precisionauto.com", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "T" },
+    { id: "u2", name: "Service Mgr", email: "service@precisionauto.com", role: "manager", status: "active", joinDate: "Mar 1, 2026", lastActive: "1 hour ago", avatar: "S" },
+    { id: "u3", name: "Tech A", email: "tech.a@precisionauto.com", role: "member", status: "active", joinDate: "Mar 3, 2026", lastActive: "2 hours ago", avatar: "A" },
+    { id: "u4", name: "Parts Dept", email: "parts@precisionauto.com", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "3 hours ago", avatar: "P" },
+  ],
+  nonprofit: [
+    { id: "u1", name: "Director Amy", email: "amy@harborfoundation.org", role: "owner", status: "active", joinDate: "Mar 1, 2026", lastActive: "Just now", avatar: "A" },
+    { id: "u2", name: "Events Lead", email: "events@harborfoundation.org", role: "manager", status: "active", joinDate: "Mar 1, 2026", lastActive: "2 hours ago", avatar: "E" },
+    { id: "u3", name: "Outreach Coord.", email: "outreach@harborfoundation.org", role: "member", status: "active", joinDate: "Mar 3, 2026", lastActive: "1 hour ago", avatar: "O" },
+    { id: "u4", name: "Volunteer Mgr", email: "volunteer@harborfoundation.org", role: "member", status: "active", joinDate: "Mar 5, 2026", lastActive: "4 hours ago", avatar: "V" },
+    { id: "u5", name: "New Intern", email: "intern@harborfoundation.org", role: "member", status: "invited", joinDate: "Mar 15, 2026", lastActive: "Invite pending", avatar: "I" },
+  ],
 };
 
 const DEFAULT_TEAM: TeamMember[] = [
