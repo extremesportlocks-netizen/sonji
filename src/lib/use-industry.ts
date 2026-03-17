@@ -16,7 +16,7 @@ export function useIndustry(): IndustryConfig | null {
 
   useEffect(() => {
     const key = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    if (key && key !== "ecommerce") {
+    if (key) {
       setIc(getIndustryConfig(key));
     }
   }, []);

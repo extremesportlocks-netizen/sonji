@@ -44,13 +44,22 @@ export function useDemoMode() {
 export default function DemoBar() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
+  const [isRealTenant, setIsRealTenant] = useState(false);
 
   useEffect(() => {
     setActive(getDemoIndustry());
     const handler = () => setActive(getDemoIndustry());
     window.addEventListener("sonji-demo-change", handler);
+
+    // Check if this is a real authenticated tenant
+    const verified = sessionStorage.getItem("sonji-tenant-verified");
+    if (verified === "true") setIsRealTenant(true);
+
     return () => window.removeEventListener("sonji-demo-change", handler);
   }, []);
+
+  // Hide demo bar for real authenticated tenants
+  if (isRealTenant) return null;
 
   const current = INDUSTRIES.find(i => i.key === active);
 

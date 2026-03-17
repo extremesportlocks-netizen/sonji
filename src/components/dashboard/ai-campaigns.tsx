@@ -34,9 +34,10 @@ export default function AICampaigns() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
-    if (isDemo) {
-      // In demo mode, show placeholder — AI campaigns analyze real data only
+    const isRealTenant = typeof window !== "undefined" && sessionStorage.getItem("sonji-tenant-verified") === "true";
+
+    if (!isRealTenant) {
+      // Demo mode — show placeholder (AI campaigns analyze real data only)
       setCampaigns([]);
       setSummary({ totalCampaigns: 0, totalReachable: 0, totalAnalyzed: 0 });
       setLoading(false);

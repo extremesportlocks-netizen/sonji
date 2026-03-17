@@ -127,13 +127,14 @@ export default function Sidebar() {
   const [demoCompany, setDemoCompany] = useState<{ name: string; initial: string } | null>(null);
   const [demoKey, setDemoKey] = useState<string | null>(null);
   const [tenantName, setTenantName] = useState<string | null>(null);
+  const [isRealTenant, setIsRealTenant] = useState(false);
 
   // Listen for demo mode changes
   useEffect(() => {
     const update = () => {
       const key = localStorage.getItem("sonji-demo-industry");
       setDemoCompany(key && DEMO_NAMES[key] ? DEMO_NAMES[key] : null);
-      setDemoKey(key && key !== "ecommerce" ? key : null);
+      setDemoKey(key || null);
     };
     update();
     window.addEventListener("sonji-demo-change", update);
@@ -141,16 +142,20 @@ export default function Sidebar() {
     // Load real tenant name from session
     try {
       const t = sessionStorage.getItem("sonji-tenant");
-      if (t) { const parsed = JSON.parse(t); setTenantName(parsed.name || null); }
+      if (t) {
+        const parsed = JSON.parse(t);
+        setTenantName(parsed.name || null);
+        setIsRealTenant(true);
+      }
     } catch {}
 
     return () => window.removeEventListener("sonji-demo-change", update);
   }, []);
 
-  // Workspace display
-  const workspaceName = demoCompany?.name || tenantName || "Sonji";
-  const workspaceInitial = demoCompany?.initial || (tenantName ? tenantName[0].toUpperCase() : "S");
-  const workspaceLabel = demoCompany ? "Demo Workspace" : tenantName ? "My Workspace" : "My Workspace";
+  // Workspace display — real tenant takes priority over demo names
+  const workspaceName = isRealTenant ? (tenantName || "Sonji") : (demoCompany?.name || "Sonji");
+  const workspaceInitial = isRealTenant ? (tenantName ? tenantName[0].toUpperCase() : "S") : (demoCompany?.initial || "S");
+  const workspaceLabel = isRealTenant ? "Live Workspace" : demoCompany ? "Demo Workspace" : "My Workspace";
 
   // Get label for a nav item, with industry override
   const getLabel = (item: NavItem) => {

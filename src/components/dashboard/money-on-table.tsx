@@ -33,11 +33,12 @@ export default function MoneyOnTable() {
     async function load() {
       try {
         const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-        const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+        const isRealTenant = typeof window !== "undefined" && sessionStorage.getItem("sonji-tenant-verified") === "true";
+        const industry = demoIndustry || "ecommerce";
 
-        if (isDemo) {
-          // Generate demo lapsed customers — fetch more to ensure we get canceled ones
-          const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&pageSize=100`);
+        if (!isRealTenant) {
+          // Demo mode — generate lapsed customers from demo contacts
+          const res = await fetch(`/api/demo/contacts?industry=${industry}&pageSize=100`);
           const data = await res.json();
           const contacts = (data.data || [])
             .filter((c: any) => (c.customFields?.subscriptionStatus === "canceled" || c.status === "inactive") && parseFloat(c.customFields?.ltv || "0") > 0)
@@ -80,11 +81,10 @@ export default function MoneyOnTable() {
 
   const handleWinBack = async (customer: LapsedCustomer) => {
     if (!customer.email) return;
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+    const isRealTenant = typeof window !== "undefined" && sessionStorage.getItem("sonji-tenant-verified") === "true";
     setSendingId(customer.id);
     try {
-      if (isDemo) {
+      if (!isRealTenant) {
         // Simulate send in demo mode — don't send real emails
         await new Promise(r => setTimeout(r, 800));
       } else {
