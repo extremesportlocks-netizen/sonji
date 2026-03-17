@@ -140,15 +140,15 @@ export default function SonjiBox({ stats }: { stats: any }) {
 
   useEffect(() => {
     const key = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    setDemoIndustry(key && key !== "ecommerce" ? key : null);
+    setDemoIndustry(key || null);
   }, []);
 
-  // In demo mode, use industry presets
-  const effectiveConfig = demoIndustry && INDUSTRY_PRESETS[demoIndustry]
-    ? { slots: INDUSTRY_PRESETS[demoIndustry].slots, gradientFrom: INDUSTRY_PRESETS[demoIndustry].from, gradientTo: INDUSTRY_PRESETS[demoIndustry].to }
+  // Use industry presets as defaults, but allow customization
+  const industryPreset = demoIndustry && INDUSTRY_PRESETS[demoIndustry] ? INDUSTRY_PRESETS[demoIndustry] : null;
+  const effectiveConfig = industryPreset && config.slots.join(",") === defaultSlots.join(",")
+    ? { slots: industryPreset.slots, gradientFrom: industryPreset.from, gradientTo: industryPreset.to }
     : config;
 
-  // Industry-specific label overrides
   const labelOverrides = demoIndustry ? (INDUSTRY_LABELS[demoIndustry] || {}) : {};
 
   const updateConfig = (next: Partial<SonjiBoxConfig>) => {
@@ -184,14 +184,12 @@ export default function SonjiBox({ stats }: { stats: any }) {
             </div>
             <span className="text-xs font-semibold text-white/40 uppercase tracking-widest">sonji</span>
           </div>
-          {!demoIndustry && (
-            <button onClick={() => { setEditing(!editing); setEditingSlot(null); setShowColorPicker(false); }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium rounded-lg transition ${
-                editing ? "bg-white/20 text-white" : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/60"
-              }`}>
-              <Settings2 className="w-3 h-3" /> {editing ? "Done" : "Edit"}
-            </button>
-          )}
+          <button onClick={() => { setEditing(!editing); setEditingSlot(null); setShowColorPicker(false); }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium rounded-lg transition ${
+              editing ? "bg-white/20 text-white" : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white/60"
+            }`}>
+            <Settings2 className="w-3 h-3" /> {editing ? "Done" : "Edit"}
+          </button>
         </div>
 
         {/* Metrics Grid */}
