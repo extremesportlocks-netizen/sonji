@@ -34,6 +34,11 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
     // Check if we already verified this session
     const cached = sessionStorage.getItem("sonji-tenant-verified");
     if (cached === "true") {
+      // Ensure industry is set for widgets
+      try {
+        const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+        if (tenant.industry) localStorage.setItem("sonji-demo-industry", tenant.industry);
+      } catch {}
       setHasAccess(true);
       setChecked(true);
       return;
@@ -47,6 +52,10 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
           sessionStorage.setItem("sonji-tenant-verified", "true");
           sessionStorage.setItem("sonji-tenant", JSON.stringify(data.data.tenant));
           sessionStorage.setItem("sonji-user", JSON.stringify(data.data.user));
+          // Set industry for dashboard widgets — bridges tenant → widget data
+          if (data.data.tenant?.industry) {
+            localStorage.setItem("sonji-demo-industry", data.data.tenant.industry);
+          }
           setHasAccess(true);
         } else {
           // No tenant — send to onboarding

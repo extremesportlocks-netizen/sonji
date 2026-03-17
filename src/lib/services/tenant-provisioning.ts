@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 // ════════════════════════════════════════
 
 const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string; order: number; color: string }[] }> = {
-  health: {
+  health_wellness: {
     name: "Patient Pipeline",
     stages: [
       { name: "Inquiry", order: 0, color: "#6366f1" },
@@ -18,7 +18,7 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
       { name: "Follow-up", order: 5, color: "#8b5cf6" },
     ],
   },
-  fitness: {
+  fitness_gym: {
     name: "Member Pipeline",
     stages: [
       { name: "Lead", order: 0, color: "#6366f1" },
@@ -29,7 +29,7 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
       { name: "At Risk", order: 5, color: "#dc2626" },
     ],
   },
-  beauty: {
+  beauty_salon: {
     name: "Client Pipeline",
     stages: [
       { name: "New Client", order: 0, color: "#6366f1" },
@@ -40,7 +40,7 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
       { name: "Lapsed", order: 5, color: "#dc2626" },
     ],
   },
-  agency: {
+  agency_consulting: {
     name: "Sales Pipeline",
     stages: [
       { name: "Discovery", order: 0, color: "#6366f1" },
@@ -52,7 +52,7 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
       { name: "Renewal", order: 6, color: "#f97316" },
     ],
   },
-  realestate: {
+  real_estate: {
     name: "Transaction Pipeline",
     stages: [
       { name: "Lead", order: 0, color: "#6366f1" },
@@ -63,7 +63,7 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
       { name: "Closed", order: 5, color: "#8b5cf6" },
     ],
   },
-  contractors: {
+  home_services: {
     name: "Job Pipeline",
     stages: [
       { name: "Estimate Requested", order: 0, color: "#6366f1" },
@@ -85,7 +85,7 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
       { name: "Case Closed", order: 5, color: "#8b5cf6" },
     ],
   },
-  coaching: {
+  coaching_education: {
     name: "Enrollment Pipeline",
     stages: [
       { name: "Lead", order: 0, color: "#6366f1" },
@@ -96,7 +96,7 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
       { name: "Alumni", order: 5, color: "#8b5cf6" },
     ],
   },
-  restaurant: {
+  restaurant_food: {
     name: "Customer Pipeline",
     stages: [
       { name: "New Customer", order: 0, color: "#6366f1" },

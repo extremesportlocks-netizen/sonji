@@ -36,15 +36,15 @@ const plans = [
 ];
 
 const industries = [
-  { id: "health", name: "Health & Wellness", icon: Heart, desc: "Med spas, clinics, telehealth", color: "bg-rose-50 text-rose-600 border-rose-200" },
-  { id: "fitness", name: "Fitness & Gym", icon: Dumbbell, desc: "Gyms, trainers, studios", color: "bg-orange-50 text-orange-600 border-orange-200" },
-  { id: "beauty", name: "Beauty & Salon", icon: Scissors, desc: "Salons, barbers, spas", color: "bg-pink-50 text-pink-600 border-pink-200" },
-  { id: "agency", name: "Agency & Consulting", icon: Briefcase, desc: "Marketing, consulting, services", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
-  { id: "realestate", name: "Real Estate", icon: Home, desc: "Agents, brokers, property mgmt", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-  { id: "contractors", name: "Home Services", icon: Hammer, desc: "Roofing, HVAC, plumbing, electrical", color: "bg-amber-50 text-amber-600 border-amber-200" },
+  { id: "health_wellness", name: "Health & Wellness", icon: Heart, desc: "Med spas, clinics, telehealth", color: "bg-rose-50 text-rose-600 border-rose-200" },
+  { id: "fitness_gym", name: "Fitness & Gym", icon: Dumbbell, desc: "Gyms, trainers, studios", color: "bg-orange-50 text-orange-600 border-orange-200" },
+  { id: "beauty_salon", name: "Beauty & Salon", icon: Scissors, desc: "Salons, barbers, spas", color: "bg-pink-50 text-pink-600 border-pink-200" },
+  { id: "agency_consulting", name: "Agency & Consulting", icon: Briefcase, desc: "Marketing, consulting, services", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+  { id: "real_estate", name: "Real Estate", icon: Home, desc: "Agents, brokers, property mgmt", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+  { id: "home_services", name: "Home Services", icon: Hammer, desc: "Roofing, HVAC, plumbing, electrical", color: "bg-amber-50 text-amber-600 border-amber-200" },
   { id: "legal", name: "Legal & Law Firms", icon: Scale, desc: "Attorneys, paralegals, firms", color: "bg-slate-50 text-slate-600 border-slate-200" },
-  { id: "coaching", name: "Coaching & Education", icon: Target, desc: "Coaches, tutors, course creators", color: "bg-violet-50 text-violet-600 border-violet-200" },
-  { id: "restaurant", name: "Restaurant & Food", icon: UtensilsCrossed, desc: "Restaurants, catering, cafes", color: "bg-red-50 text-red-600 border-red-200" },
+  { id: "coaching_education", name: "Coaching & Education", icon: Target, desc: "Coaches, tutors, course creators", color: "bg-violet-50 text-violet-600 border-violet-200" },
+  { id: "restaurant_food", name: "Restaurant & Food", icon: UtensilsCrossed, desc: "Restaurants, catering, cafes", color: "bg-red-50 text-red-600 border-red-200" },
   { id: "automotive", name: "Automotive", icon: Car, desc: "Dealerships, repair, detailing", color: "bg-blue-50 text-blue-600 border-blue-200" },
   { id: "nonprofit", name: "Nonprofit", icon: HandHeart, desc: "Charities, foundations, churches", color: "bg-teal-50 text-teal-600 border-teal-200" },
   { id: "ecommerce", name: "E-Commerce", icon: ShoppingCart, desc: "Online stores, DTC, subscriptions", color: "bg-purple-50 text-purple-600 border-purple-200" },
@@ -132,6 +132,9 @@ export default function OnboardingPage() {
         plan: formData.plan,
         industry: formData.industry,
       }));
+
+      // Set industry so dashboard widgets show correct industry data
+      localStorage.setItem("sonji-demo-industry", formData.industry);
 
       setStep(4); // Move to "Ready" step
     } catch (err) {
