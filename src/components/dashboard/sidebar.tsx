@@ -84,6 +84,7 @@ const allNavItems: NavItem[] = [
   { id: "notifications", label: "Notifications", href: "/dashboard/notifications", icon: Bell, group: "system" },
   { id: "help", label: "Help Center", href: "/dashboard/help", icon: BookOpen, group: "system" },
   { id: "audit-log", label: "Audit Log", href: "/dashboard/audit-log", icon: Shield, group: "system" },
+  { id: "api-docs", label: "API Docs", href: "/dashboard/api-docs", icon: Settings, group: "system" },
 ];
 
 const defaultOrder = allNavItems.map((i) => i.id);
