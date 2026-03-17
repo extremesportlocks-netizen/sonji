@@ -7,6 +7,7 @@ import { createContactSchema, updateContactSchema, parseBody, paginationSchema, 
 import { requireAuth, requirePermission } from "@/lib/api/auth-context";
 import { logActivity } from "@/lib/services/activity-logger";
 import { sendNotification } from "@/lib/services/notifications";
+import { inngest } from "@/lib/inngest/client";
 import { setTenantContext } from "@/lib/db";
 
 /**
@@ -130,6 +131,19 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     body: `${contact.firstName} ${contact.lastName || ""} was added to your CRM.`,
     actionUrl: `/dashboard/contacts/${contact.id}`,
   });
+
+  // Emit Inngest event → triggers automations
+  inngest.send({
+    name: "crm/contact.created",
+    data: {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      contactId: contact.id,
+      contactName: `${contact.firstName} ${contact.lastName || ""}`.trim(),
+      contactEmail: contact.email,
+      contactPhone: contact.phone,
+    },
+  }).catch(() => {});
 
   return created(contact);
 });

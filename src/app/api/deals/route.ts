@@ -7,6 +7,7 @@ import { createDealSchema, updateDealSchema, moveDealSchema, parseBody, paginati
 import { requireAuth, requirePermission } from "@/lib/api/auth-context";
 import { logActivity } from "@/lib/services/activity-logger";
 import { sendNotification } from "@/lib/services/notifications";
+import { inngest } from "@/lib/inngest/client";
 import { setTenantContext } from "@/lib/db";
 
 /**
@@ -125,6 +126,21 @@ export const PATCH = withErrorHandler(async (req: NextRequest) => {
       actionUrl: `/dashboard/deals?highlight=${dealId}`,
     });
   }
+
+  // Emit Inngest event → triggers automations
+  inngest.send({
+    name: action === "deal.won" ? "crm/deal.won" : action === "deal.lost" ? "crm/deal.lost" : "crm/deal.stage_changed",
+    data: {
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      dealId,
+      dealTitle: updated.title,
+      dealValue: updated.value,
+      previousStage,
+      newStage,
+      contactId: updated.contactId,
+    },
+  }).catch(() => {}); // Fire and forget
 
   return ok(updated);
 });
