@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Building2, Users, Handshake, CheckSquare, Calendar,
   BarChart3, Workflow, Activity, FileText, Settings, ChevronDown, Search,
   Plus, Star, MessageSquare, ChevronsLeft, ChevronsRight, ClipboardList,
-  DollarSign, Send, Puzzle, GripVertical, X, FolderKanban, CreditCard, Bell, BookOpen, Shield, Palette,
+  DollarSign, Send, Puzzle, GripVertical, X, FolderKanban, CreditCard, Bell, BookOpen, Shield, Palette, Megaphone,
 } from "lucide-react";
 
 const DEMO_NAMES: Record<string,{ name: string; initial: string }> = {
@@ -65,6 +65,7 @@ const allNavItems: NavItem[] = [
   { id: "scheduling", label: "Scheduling", href: "/dashboard/scheduling", icon: Calendar, group: "core" },
   { id: "messages", label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3, group: "core" },
   { id: "campaigns", label: "Campaigns", href: "/dashboard/campaigns", icon: Send, group: "core" },
+  { id: "advertising", label: "Ad Intelligence", href: "/dashboard/advertising", icon: Megaphone, group: "core" },
   { id: "social", label: "Social Media", href: "/dashboard/social", icon: Activity, group: "core" },
   { id: "email-templates", label: "Email Templates", href: "/dashboard/email-templates", icon: FileText, group: "core" },
   { id: "forms", label: "Forms", href: "/dashboard/forms", icon: ClipboardList, group: "core" },
