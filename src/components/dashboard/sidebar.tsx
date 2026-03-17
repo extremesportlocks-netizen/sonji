@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Building2, Users, Handshake, CheckSquare, Calendar,
   BarChart3, Workflow, Activity, FileText, Settings, ChevronDown, Search,
   Plus, Star, MessageSquare, ChevronsLeft, ChevronsRight, ClipboardList,
-  DollarSign, Send, Puzzle, GripVertical, X, FolderKanban, CreditCard, Bell, BookOpen, Shield,
+  DollarSign, Send, Puzzle, GripVertical, X, FolderKanban, CreditCard, Bell, BookOpen, Shield, Palette,
 } from "lucide-react";
 
 const DEMO_NAMES: Record<string,{ name: string; initial: string }> = {
@@ -85,6 +85,7 @@ const allNavItems: NavItem[] = [
   { id: "help", label: "Help Center", href: "/dashboard/help", icon: BookOpen, group: "system" },
   { id: "audit-log", label: "Audit Log", href: "/dashboard/audit-log", icon: Shield, group: "system" },
   { id: "api-docs", label: "API Docs", href: "/dashboard/api-docs", icon: Settings, group: "system" },
+  { id: "white-label", label: "White-Label", href: "/dashboard/white-label", icon: Palette, group: "system" },
 ];
 
 const defaultOrder = allNavItems.map((i) => i.id);
