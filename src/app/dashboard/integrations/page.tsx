@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import {
   Search, Check, ExternalLink, Zap, Plus, Settings,
@@ -19,12 +19,14 @@ interface Integration {
 }
 
 const integrations: Integration[] = [
-  // Connected
-  { id: "stripe", name: "Stripe", desc: "Payment processing, subscriptions, invoicing, and customer sync", category: "Payments", icon: "💳", status: "connected" },
-  { id: "resend", name: "Resend", desc: "Transactional and marketing email delivery", category: "Email", icon: "📧", status: "connected" },
-  { id: "twilio", name: "Twilio", desc: "SMS messaging, voice calls, and 10DLC compliance", category: "SMS", icon: "📱", status: "connected" },
+  // Platform-level (always connected for every tenant)
   { id: "clerk", name: "Clerk", desc: "User authentication, SSO, and team management", category: "Auth", icon: "🔐", status: "connected" },
   { id: "inngest", name: "Inngest", desc: "Background jobs, event-driven workflows, and retries", category: "Infrastructure", icon: "⚡", status: "connected" },
+
+  // Tenant-configured (default to available, dynamically updated on mount)
+  { id: "stripe", name: "Stripe", desc: "Payment processing, subscriptions, invoicing, and customer sync", category: "Payments", icon: "💳", status: "available" },
+  { id: "resend", name: "Resend", desc: "Transactional and marketing email delivery", category: "Email", icon: "📧", status: "available" },
+  { id: "twilio", name: "Twilio", desc: "SMS messaging, voice calls, and 10DLC compliance", category: "SMS", icon: "📱", status: "available" },
 
   // Available
   { id: "google-calendar", name: "Google Calendar", desc: "Sync meetings, booking pages, and availability", category: "Calendar", icon: "📅", status: "available", popular: true },
@@ -59,16 +61,33 @@ const statusConfig = {
 export default function IntegrationsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "connected" | "available" | "coming_soon">("all");
+  const [items, setItems] = useState(integrations);
 
-  const filtered = integrations.filter(i => {
+  // Check which integrations the tenant actually has connected
+  useEffect(() => {
+    fetch("/api/tenant-settings")
+      .then(r => r.json())
+      .then(data => {
+        const s = data.settings || {};
+        setItems(prev => prev.map(item => {
+          if (item.id === "stripe" && s.stripeSecretKey) return { ...item, status: "connected" as const };
+          if (item.id === "resend" && s.resendApiKey) return { ...item, status: "connected" as const };
+          if (item.id === "twilio" && (s.sms?.subAccountSid || s.twilioAccountSid)) return { ...item, status: "connected" as const };
+          return item;
+        }));
+      })
+      .catch(() => {});
+  }, []);
+
+  const filtered = items.filter(i => {
     if (search) { const q = search.toLowerCase(); if (!i.name.toLowerCase().includes(q) && !i.desc.toLowerCase().includes(q) && !i.category.toLowerCase().includes(q)) return false; }
     if (filter !== "all" && i.status !== filter) return false;
     return true;
   });
 
-  const connected = integrations.filter(i => i.status === "connected").length;
-  const available = integrations.filter(i => i.status === "available").length;
-  const coming = integrations.filter(i => i.status === "coming_soon").length;
+  const connected = items.filter(i => i.status === "connected").length;
+  const available = items.filter(i => i.status === "available").length;
+  const coming = items.filter(i => i.status === "coming_soon").length;
 
   return (
     <>
