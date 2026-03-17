@@ -52,14 +52,15 @@ export default function DemoBar() {
     const handler = () => setActive(getDemoIndustry());
     window.addEventListener("sonji-demo-change", handler);
 
-    // Check if this is a real authenticated tenant
+  // Check if this is a real authenticated tenant
     const verified = sessionStorage.getItem("sonji-tenant-verified");
     if (verified === "true") {
       setIsRealTenant(true);
-      // Check if user is owner — owners get the demo bar as their "brain mode"
+      // Only show demo bar for platform admin (Orlando) — not all tenant owners
       try {
         const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
-        if (user.role === "owner") setIsOwner(true);
+        const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
+        if (adminEmails.includes(user.email)) setIsOwner(true);
       } catch {}
     }
 
