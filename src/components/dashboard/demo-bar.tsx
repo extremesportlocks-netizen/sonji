@@ -44,31 +44,45 @@ export function useDemoMode() {
 export default function DemoBar() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
-  const [isRealTenant, setIsRealTenant] = useState(false);
-  const [isOwner, setIsOwner] = useState(false);
+  const [showBar, setShowBar] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     setActive(getDemoIndustry());
     const handler = () => setActive(getDemoIndustry());
     window.addEventListener("sonji-demo-change", handler);
 
-  // Check if this is a real authenticated tenant
+    // Determine if demo bar should show
     const verified = sessionStorage.getItem("sonji-tenant-verified");
+
     if (verified === "true") {
-      setIsRealTenant(true);
-      // Only show demo bar for platform admin (Orlando) — not all tenant owners
+      // Real tenant — only show for platform admin (Orlando's brain mode)
       try {
         const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
         const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
-        if (adminEmails.includes(user.email)) setIsOwner(true);
+        if (adminEmails.includes(user.email)) setShowBar(true);
       } catch {}
+    } else {
+      // Not verified yet — check if Clerk is loaded
+      // If no Clerk user after a moment, it's a demo visitor — show bar
+      // If Clerk user exists, wait for TenantGate to set sessionStorage
+      const checkClerk = () => {
+        const clerkUser = (window as any).Clerk?.user;
+        if (!clerkUser) {
+          // No auth at all — demo visitor, show bar
+          setShowBar(true);
+        }
+        // If Clerk user exists but no sessionStorage, TenantGate hasn't run yet — stay hidden
+      };
+      setTimeout(checkClerk, 1500);
     }
 
+    setReady(true);
     return () => window.removeEventListener("sonji-demo-change", handler);
   }, []);
 
-  // Hide demo bar for real tenants UNLESS they're an owner (brain mode)
-  if (isRealTenant && !isOwner) return null;
+  // Don't render until we've checked
+  if (!ready || !showBar) return null;
 
   const current = INDUSTRIES.find(i => i.key === active);
 

@@ -54,7 +54,20 @@ export default function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Check if user should see AI chat (admin only for now)
+  useEffect(() => {
+    const verified = sessionStorage.getItem("sonji-tenant-verified");
+    if (verified === "true") {
+      try {
+        const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
+        const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
+        if (adminEmails.includes(user.email)) setShowChat(true);
+      } catch {}
+    }
+  }, []);
 
   // Keyboard shortcut: Cmd+J or Ctrl+J
   useEffect(() => {
@@ -86,6 +99,9 @@ export default function AIChat() {
       setTyping(false);
     }, 800 + Math.random() * 600);
   };
+
+  // Only show for platform admin
+  if (!showChat) return null;
 
   return (
     <>
