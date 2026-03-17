@@ -73,12 +73,41 @@ export default function AnalyticsPage() {
     <><Header title="Analytics" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>
   );
 
-  if (!data) return (
+  // Normalize data — demo API returns flat format, real API returns { overview, subscriptionBreakdown, ... }
+  const normalizedData = (() => {
+    if (!data) return null;
+    if (data.overview) return data;
+    const d = data as any;
+    const rev = d.revenue || {};
+    return {
+      overview: {
+        totalContacts: d.totalContacts || 0,
+        totalRevenue: rev.total || 0,
+        totalPurchases: rev.totalPurchases || 0,
+        avgLTV: rev.avgLTV || 0,
+        avgOrderValue: rev.avgOrder || 0,
+        contactsWithPurchases: rev.contactsWithPurchases || 0,
+        activeSubscribers: d.subscriptionBreakdown?.active || 0,
+        canceledSubscribers: d.subscriptionBreakdown?.canceled || 0,
+        oneTimeBuyers: d.subscriptionBreakdown?.["one-time"] || 0,
+        neverPurchased: d.subscriptionBreakdown?.never || 0,
+      },
+      ltvBuckets: d.ltvBuckets || {},
+      subscriptionBreakdown: d.subscriptionBreakdown || {},
+      statusBreakdown: Array.isArray(d.statusBreakdown)
+        ? d.statusBreakdown.reduce((acc: any, s: any) => { acc[s.status] = s.count; return acc; }, {})
+        : d.statusBreakdown || {},
+      tagBreakdown: d.tagBreakdown || [],
+      topCustomers: d.topCustomers || [],
+    } as AnalyticsData;
+  })();
+
+  if (!normalizedData) return (
     <><Header title="Analytics" /><div className="p-6 text-center py-32"><p className="text-gray-500">Connect Stripe to see analytics</p><Link href="/dashboard/settings" className="text-indigo-600 text-sm font-medium mt-2 inline-block">Go to Settings →</Link></div></>
   );
 
-  const o = data.overview;
-  const totalWithSubs = Object.values(data.subscriptionBreakdown).reduce((s, v) => s + v, 0);
+  const o = normalizedData.overview;
+  const totalWithSubs = Object.values(normalizedData.subscriptionBreakdown).reduce((s, v) => s + (v as number), 0);
 
   return (
     <>
@@ -117,10 +146,10 @@ export default function AnalyticsPage() {
               <h2 className="text-sm font-semibold text-gray-900 mb-4">Customer Value Tiers</h2>
               <div className="h-4 rounded-full bg-gray-100 overflow-hidden flex mb-4">
                 {[
-                  { key: "whale", color: "bg-violet-500", count: data.ltvBuckets.whale },
-                  { key: "mid", color: "bg-blue-500", count: data.ltvBuckets.mid },
-                  { key: "low", color: "bg-amber-400", count: data.ltvBuckets.low },
-                  { key: "zero", color: "bg-gray-300", count: data.ltvBuckets.zero },
+                  { key: "whale", color: "bg-violet-500", count: normalizedData.ltvBuckets.whale },
+                  { key: "mid", color: "bg-blue-500", count: normalizedData.ltvBuckets.mid },
+                  { key: "low", color: "bg-amber-400", count: normalizedData.ltvBuckets.low },
+                  { key: "zero", color: "bg-gray-300", count: normalizedData.ltvBuckets.zero },
                 ].filter((b) => b.count > 0).map((b) => (
                   <div key={b.key} className={`h-full ${b.color}`}
                     style={{ width: `${(b.count / o.totalContacts) * 100}%` }}
@@ -129,10 +158,10 @@ export default function AnalyticsPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: `${hvLabel} ($500+)`, count: data.ltvBuckets.whale, color: "bg-violet-500", icon: Crown },
-                  { label: "Mid ($200-499)", count: data.ltvBuckets.mid, color: "bg-blue-500", icon: TrendingUp },
-                  { label: "Low (<$200)", count: data.ltvBuckets.low, color: "bg-amber-400", icon: Users },
-                  { label: "No Purchase", count: data.ltvBuckets.zero, color: "bg-gray-300", icon: AlertTriangle },
+                  { label: `${hvLabel} ($500+)`, count: normalizedData.ltvBuckets.whale, color: "bg-violet-500", icon: Crown },
+                  { label: "Mid ($200-499)", count: normalizedData.ltvBuckets.mid, color: "bg-blue-500", icon: TrendingUp },
+                  { label: "Low (<$200)", count: normalizedData.ltvBuckets.low, color: "bg-amber-400", icon: Users },
+                  { label: "No Purchase", count: normalizedData.ltvBuckets.zero, color: "bg-gray-300", icon: AlertTriangle },
                 ].map((t) => (
                   <div key={t.label} className="text-center p-3 rounded-lg bg-gray-50">
                     <div className={`w-8 h-8 rounded-lg ${t.color} flex items-center justify-center mx-auto mb-2`}>
@@ -150,13 +179,13 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <h2 className="text-sm font-semibold text-gray-900 mb-4">Subscription Status</h2>
               <div className="h-3 rounded-full bg-gray-100 overflow-hidden flex mb-4">
-                {Object.entries(data.subscriptionBreakdown).sort((a, b) => b[1] - a[1]).map(([status, ct]) => (
+                {Object.entries(normalizedData.subscriptionBreakdown).sort((a: any, b: any) => b[1] - a[1]).map(([status, ct]: [string, any]) => (
                   <div key={status} className={`h-full ${subColors[status] || "bg-gray-400"}`}
                     style={{ width: `${totalWithSubs > 0 ? (ct / totalWithSubs) * 100 : 0}%` }} />
                 ))}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {Object.entries(data.subscriptionBreakdown).sort((a, b) => b[1] - a[1]).map(([status, ct]) => (
+                {Object.entries(normalizedData.subscriptionBreakdown).sort((a: any, b: any) => b[1] - a[1]).map(([status, ct]: [string, any]) => (
                   <div key={status} className="flex items-center gap-2">
                     <div className={`w-2.5 h-2.5 rounded-full ${subColors[status] || "bg-gray-400"}`} />
                     <div>
@@ -189,7 +218,7 @@ export default function AnalyticsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {data.topCustomers.slice(0, 15).map((c, i) => (
+                    {normalizedData.topCustomers.slice(0, 15).map((c: any, i: number) => (
                       <tr key={c.id} className="hover:bg-gray-50/70 transition">
                         <td className="py-2.5 text-xs text-gray-400 w-8">{i + 1}</td>
                         <td className="py-2.5">
@@ -249,11 +278,11 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Customer Tags */}
-            {data.tagBreakdown.length > 0 && (
+            {normalizedData.tagBreakdown.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-100 p-5">
                 <h2 className="text-sm font-semibold text-gray-900 mb-3">Customer Segments</h2>
                 <div className="space-y-2">
-                  {data.tagBreakdown.map((t) => (
+                  {normalizedData.tagBreakdown.map((t: any) => (
                     <div key={t.tag} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${

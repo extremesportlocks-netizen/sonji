@@ -72,8 +72,36 @@ export default function ReportsPage() {
   if (loading) return (<><Header title="Reports" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);
   if (!data) return (<><Header title="Reports" /><div className="p-6 text-center py-32"><p className="text-gray-500">Connect Stripe to generate reports</p><Link href="/dashboard/settings" className="text-indigo-600 text-sm font-medium mt-2 inline-block">Go to Settings →</Link></div></>);
 
-  const o = data.overview;
-  const totalSubs = Object.values(data.subscriptionBreakdown).reduce((a, b) => a + b, 0);
+  // Normalize data — demo API returns flat format, real API returns { overview, ... }
+  const nd: any = (() => {
+    if (data.overview) return data;
+    const d = data as any;
+    const rev = d.revenue || {};
+    return {
+      overview: {
+        totalContacts: d.totalContacts || 0,
+        totalRevenue: rev.total || 0,
+        totalPurchases: rev.totalPurchases || 0,
+        avgLTV: rev.avgLTV || 0,
+        avgOrderValue: rev.avgOrder || 0,
+        contactsWithPurchases: rev.contactsWithPurchases || 0,
+        activeSubscribers: d.subscriptionBreakdown?.active || 0,
+        canceledSubscribers: d.subscriptionBreakdown?.canceled || 0,
+        oneTimeBuyers: d.subscriptionBreakdown?.["one-time"] || 0,
+        neverPurchased: d.subscriptionBreakdown?.never || 0,
+      },
+      ltvBuckets: d.ltvBuckets || {},
+      subscriptionBreakdown: d.subscriptionBreakdown || {},
+      statusBreakdown: Array.isArray(d.statusBreakdown)
+        ? d.statusBreakdown.reduce((acc: any, s: any) => { acc[s.status] = s.count; return acc; }, {})
+        : d.statusBreakdown || {},
+      tagBreakdown: d.tagBreakdown || [],
+      topCustomers: d.topCustomers || [],
+    };
+  })();
+
+  const o = nd.overview;
+  const totalSubs = Object.values(nd.subscriptionBreakdown).reduce((a: number, b) => a + Number(b), 0);
   const churnRate = (o.activeSubscribers + o.canceledSubscribers) > 0
     ? ((o.canceledSubscribers / (o.activeSubscribers + o.canceledSubscribers)) * 100).toFixed(1) : "0";
 
@@ -134,10 +162,10 @@ export default function ReportsPage() {
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Tiers</h3>
                     <div className="space-y-3">
                       {[
-                        { label: `${hvLabel} ($500+)`, n: data.ltvBuckets.whale, color: "bg-violet-500" },
-                        { label: "Mid ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500" },
-                        { label: "Low (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400" },
-                        { label: "No purchase", n: data.ltvBuckets.zero, color: "bg-gray-300" },
+                        { label: `${hvLabel} ($500+)`, n: nd.ltvBuckets.whale, color: "bg-violet-500" },
+                        { label: "Mid ($200-499)", n: nd.ltvBuckets.mid, color: "bg-blue-500" },
+                        { label: "Low (<$200)", n: nd.ltvBuckets.low, color: "bg-amber-400" },
+                        { label: "No purchase", n: nd.ltvBuckets.zero, color: "bg-gray-300" },
                       ].map((t) => (
                         <div key={t.label} className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full ${t.color}`} />
@@ -178,9 +206,9 @@ export default function ReportsPage() {
                   <h3 className="text-sm font-semibold text-gray-900 mb-4">Revenue by Customer Tier</h3>
                   <div className="space-y-4">
                     {[
-                      { label: `${hvLabel} ($500+)`, n: data.ltvBuckets.whale, color: "bg-violet-500", est: data.ltvBuckets.whale * 750 },
-                      { label: "Mid-Tier ($200-499)", n: data.ltvBuckets.mid, color: "bg-blue-500", est: data.ltvBuckets.mid * 320 },
-                      { label: "Low-Tier (<$200)", n: data.ltvBuckets.low, color: "bg-amber-400", est: data.ltvBuckets.low * 80 },
+                      { label: `${hvLabel} ($500+)`, n: nd.ltvBuckets.whale, color: "bg-violet-500", est: nd.ltvBuckets.whale * 750 },
+                      { label: "Mid-Tier ($200-499)", n: nd.ltvBuckets.mid, color: "bg-blue-500", est: nd.ltvBuckets.mid * 320 },
+                      { label: "Low-Tier (<$200)", n: nd.ltvBuckets.low, color: "bg-amber-400", est: nd.ltvBuckets.low * 80 },
                     ].map((t) => (
                       <div key={t.label}>
                         <div className="flex items-center justify-between mb-1.5">
@@ -221,7 +249,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {data.topCustomers.map((c, i) => (
+                    {nd.topCustomers.map((c: any, i: number) => (
                       <tr key={c.id} className="hover:bg-gray-50/70 transition">
                         <td className="py-3 text-sm text-gray-400">{i + 1}</td>
                         <td className="py-3">
@@ -257,12 +285,12 @@ export default function ReportsPage() {
                 <div className="bg-white rounded-xl border border-gray-100 p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription Breakdown</h2>
                   <div className="h-4 rounded-full bg-gray-100 overflow-hidden flex mb-6">
-                    {Object.entries(data.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
+                    {Object.entries(nd.subscriptionBreakdown).sort((a: any,b: any) => b[1]-a[1]).map(([k,v]: [string, any]) => (
                       <div key={k} className={`h-full ${subColors[k] || "bg-gray-400"}`} style={{ width: `${totalSubs > 0 ? (v/totalSubs)*100 : 0}%` }} />
                     ))}
                   </div>
                   <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                    {Object.entries(data.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
+                    {Object.entries(nd.subscriptionBreakdown).sort((a: any,b: any) => b[1]-a[1]).map(([k,v]: [string, any]) => (
                       <div key={k} className="bg-gray-50 rounded-xl p-4 text-center">
                         <div className={`w-3 h-3 rounded-full ${subColors[k] || "bg-gray-400"} mx-auto mb-2`} />
                         <p className="text-2xl font-bold text-gray-900">{num(v)}</p>
@@ -300,7 +328,7 @@ export default function ReportsPage() {
                   <h2 className="text-lg font-semibold text-gray-900 mb-1">Customer Segments</h2>
                   <p className="text-sm text-gray-500 mb-6">Auto-generated segments based on Stripe purchase data</p>
                   <div className="space-y-3">
-                    {data.tagBreakdown.map((t, i) => (
+                    {nd.tagBreakdown.map((t: any, i: number) => (
                       <div key={t.tag} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
                           t.tag === "Whale" ? "bg-violet-500" :
@@ -324,7 +352,7 @@ export default function ReportsPage() {
                 <div className="bg-white rounded-xl border border-gray-100 p-5">
                   <h3 className="text-sm font-semibold text-gray-900 mb-3">Contact Status Distribution</h3>
                   <div className="space-y-3">
-                    {Object.entries(data.statusBreakdown).sort((a,b) => b[1]-a[1]).map(([status, ct]) => (
+                    {Object.entries(nd.statusBreakdown).sort((a: any,b: any) => b[1]-a[1]).map(([status, ct]: [string, any]) => (
                       <div key={status}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm text-gray-600 capitalize">{status}</span>
