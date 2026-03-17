@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
+import { db, getClient_raw } from "@/lib/db";
 import { users, tenants } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { ok, unauthorized } from "@/lib/api/responses";
@@ -10,6 +10,9 @@ import { ok, unauthorized } from "@/lib/api/responses";
  * 
  * Used by the dashboard to know which tenant to load,
  * and by the router to decide: dashboard vs onboarding.
+ * 
+ * Uses raw SQL to bypass RLS — we don't know the tenant yet,
+ * that's the whole point of this route.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -17,46 +20,35 @@ export async function GET(req: NextRequest) {
     if (!clerkUserId) return unauthorized("Not signed in");
 
     const clerkUser = await currentUser();
+    const sql = getClient_raw();
 
-    // Look up Sonji user by Clerk ID
-    const userRows = await db
-      .select({
-        id: users.id,
-        tenantId: users.tenantId,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        clerkId: users.clerkId,
-      })
-      .from(users)
-      .where(eq(users.clerkId, clerkUserId))
-      .limit(1);
+    // Look up Sonji user by Clerk ID (bypasses RLS)
+    let userRows = await sql`
+      SELECT id, tenant_id, email, name, role, clerk_id 
+      FROM users 
+      WHERE clerk_id = ${clerkUserId} 
+      LIMIT 1
+    `;
+
+    let user = userRows[0] || null;
 
     // If no match by Clerk ID, try matching by email
     // This handles production Clerk switch — same email, new Clerk user ID
-    let user = userRows[0] || null;
-
     if (!user && clerkUser?.emailAddresses?.[0]?.emailAddress) {
       const email = clerkUser.emailAddresses[0].emailAddress;
-      const emailRows = await db
-        .select({
-          id: users.id,
-          tenantId: users.tenantId,
-          email: users.email,
-          name: users.name,
-          role: users.role,
-          clerkId: users.clerkId,
-        })
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
+      const emailRows = await sql`
+        SELECT id, tenant_id, email, name, role, clerk_id 
+        FROM users 
+        WHERE email = ${email} 
+        LIMIT 1
+      `;
 
       if (emailRows.length > 0) {
         user = emailRows[0];
         // Auto-link: update the user's Clerk ID to the new production one
-        await db.update(users)
-          .set({ clerkId: clerkUserId })
-          .where(eq(users.id, user.id));
+        await sql`
+          UPDATE users SET clerk_id = ${clerkUserId} WHERE id = ${user.id}
+        `;
       }
     }
 
@@ -72,18 +64,13 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const tenantRows = await db
-      .select({
-        id: tenants.id,
-        slug: tenants.slug,
-        name: tenants.name,
-        plan: tenants.plan,
-        industry: tenants.industry,
-        status: tenants.status,
-      })
-      .from(tenants)
-      .where(eq(tenants.id, user.tenantId))
-      .limit(1);
+    // Look up tenant (also bypass RLS)
+    const tenantRows = await sql`
+      SELECT id, slug, name, plan, industry, status 
+      FROM tenants 
+      WHERE id = ${user.tenant_id} 
+      LIMIT 1
+    `;
 
     if (tenantRows.length === 0) {
       return ok({ hasTenant: false });
