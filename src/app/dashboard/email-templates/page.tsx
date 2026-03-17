@@ -57,6 +57,59 @@ const INDUSTRY_TEMPLATES: Record<string, Template[]> = {
     { id: "t4", name: "Subscription Renewal", category: "billing", subject: "Your {{planName}} subscription renews on {{date}}", preview: "Hey {{firstName}}, your {{planName}} subscription renews on {{date}} for {{amount}}. No action needed — unless you want to upgrade...", uses: 94, openRate: 55, clickRate: 8, starred: false },
     { id: "t5", name: "Cancellation Save", category: "win_back", subject: "Before you go — can we make it right?", preview: "Hey {{firstName}}, I saw you're thinking about canceling. I wanted to personally reach out to see if there's anything...", uses: 12, openRate: 42, clickRate: 18, starred: true },
   ],
+  fitness_gym: [
+    { id: "t1", name: "Free Trial Welcome", category: "welcome", subject: "Welcome to {{gymName}} — your trial starts now!", preview: "Hey {{firstName}}! Your 7-day free trial is active. Here's what to expect and how to make the most of it...", uses: 78, openRate: 72, clickRate: 38, starred: true },
+    { id: "t2", name: "Trial Expiring (Day 5)", category: "nurture", subject: "Your trial ends in 2 days — ready to join?", preview: "Hey {{firstName}}, your free trial ends on {{expiryDate}}. We've loved having you! Here's a special offer to keep going...", uses: 45, openRate: 58, clickRate: 32, starred: true },
+    { id: "t3", name: "At-Risk Member", category: "win_back", subject: "We miss you at {{gymName}}!", preview: "Hey {{firstName}}, we noticed you haven't checked in for a while. Everything okay? We'd love to help you get back on track...", uses: 22, openRate: 38, clickRate: 12, starred: false },
+    { id: "t4", name: "Class Reminder", category: "reminder", subject: "Your {{className}} class is tomorrow at {{time}}", preview: "Hey {{firstName}}, just a reminder about your {{className}} class tomorrow at {{time}}. See you there!", uses: 234, openRate: 75, clickRate: 5, starred: false },
+  ],
+  beauty_salon: [
+    { id: "t1", name: "Appointment Confirmation", category: "reminder", subject: "Confirmed: {{service}} on {{date}} at {{time}}", preview: "Hi {{firstName}}, your {{service}} appointment is confirmed for {{date}} at {{time}} with {{stylist}}...", uses: 312, openRate: 82, clickRate: 8, starred: true },
+    { id: "t2", name: "Rebooking Reminder (6 Weeks)", category: "reminder", subject: "Time for your next visit!", preview: "Hi {{firstName}}, it's been 6 weeks since your last visit. Ready to rebook? We have openings this week...", uses: 89, openRate: 48, clickRate: 35, starred: true },
+    { id: "t3", name: "Post-Visit Thank You", category: "follow_up", subject: "Thanks for visiting {{salonName}}!", preview: "Hi {{firstName}}, thanks for coming in today! We hope you love your new look. Here are some aftercare tips...", uses: 156, openRate: 55, clickRate: 22, starred: false },
+    { id: "t4", name: "Bridal Package Inquiry", category: "welcome", subject: "Congratulations! Let's plan your bridal look", preview: "Hi {{firstName}}, congrats on your upcoming wedding! We'd love to help you look your best on your special day...", uses: 8, openRate: 88, clickRate: 56, starred: true },
+  ],
+  real_estate: [
+    { id: "t1", name: "New Listing Alert", category: "nurture", subject: "New listing matching your criteria: {{address}}", preview: "Hi {{firstName}}, a new property just hit the market that matches your search. {{bedrooms}} bed, {{bathrooms}} bath...", uses: 124, openRate: 62, clickRate: 45, starred: true },
+    { id: "t2", name: "Open House Invitation", category: "reminder", subject: "You're invited: Open House at {{address}}", preview: "Hi {{firstName}}, join us this {{day}} from {{startTime}} to {{endTime}} for an open house at {{address}}...", uses: 67, openRate: 48, clickRate: 28, starred: false },
+    { id: "t3", name: "Anniversary CMA", category: "nurture", subject: "Happy home anniversary! Here's what your home is worth", preview: "Hi {{firstName}}, it's been 1 year since you purchased {{address}}. I've prepared a complimentary market analysis...", uses: 34, openRate: 72, clickRate: 38, starred: true },
+    { id: "t4", name: "Closing Congratulations", category: "follow_up", subject: "Congratulations on your new home! 🏠🎉", preview: "Hi {{firstName}}, congratulations on closing on {{address}}! It was a pleasure working with you...", uses: 28, openRate: 92, clickRate: 15, starred: false },
+  ],
+  home_services: [
+    { id: "t1", name: "Estimate Follow-Up", category: "follow_up", subject: "Your {{service}} estimate from {{companyName}}", preview: "Hi {{firstName}}, thanks for requesting an estimate for {{service}}. Attached is your detailed quote for ${{amount}}...", uses: 89, openRate: 65, clickRate: 32, starred: true },
+    { id: "t2", name: "Job Complete + Review", category: "review", subject: "Your {{service}} is complete — how did we do?", preview: "Hi {{firstName}}, we've completed your {{service}}. We hope you're happy with the results! Would you mind leaving us a review?...", uses: 45, openRate: 52, clickRate: 28, starred: true },
+    { id: "t3", name: "Seasonal HVAC Reminder", category: "reminder", subject: "Time for your {{season}} HVAC tune-up", preview: "Hi {{firstName}}, {{season}} is coming! Schedule your HVAC tune-up now to avoid breakdowns when you need it most...", uses: 120, openRate: 42, clickRate: 22, starred: false },
+    { id: "t4", name: "Storm Alert Follow-Up", category: "nurture", subject: "Storm damage? We're here to help", preview: "Hi {{firstName}}, after the recent storms in {{area}}, we wanted to check in. If you notice any roof or exterior damage...", uses: 15, openRate: 68, clickRate: 35, starred: false },
+  ],
+  legal: [
+    { id: "t1", name: "Consultation Confirmation", category: "reminder", subject: "Your consultation is confirmed for {{date}}", preview: "Dear {{firstName}}, this confirms your consultation with {{attorneyName}} on {{date}} at {{time}}. Please bring...", uses: 45, openRate: 78, clickRate: 12, starred: true },
+    { id: "t2", name: "Document Request Reminder", category: "reminder", subject: "Reminder: Outstanding documents needed for your case", preview: "Dear {{firstName}}, we still need the following documents to proceed with your case: {{documentList}}...", uses: 28, openRate: 62, clickRate: 45, starred: true },
+    { id: "t3", name: "Case Milestone Update", category: "follow_up", subject: "Update on your {{caseType}} case", preview: "Dear {{firstName}}, I wanted to update you on the progress of your {{caseType}} case. This week we...", uses: 34, openRate: 85, clickRate: 18, starred: false },
+    { id: "t4", name: "Review Request", category: "review", subject: "A quick favor — share your experience", preview: "Dear {{firstName}}, now that your case is resolved, would you be willing to share your experience working with us?...", uses: 12, openRate: 42, clickRate: 28, starred: false },
+  ],
+  coaching_education: [
+    { id: "t1", name: "Discovery Call Confirmation", category: "reminder", subject: "Your discovery call is booked!", preview: "Hi {{firstName}}! Your discovery call is confirmed for {{date}} at {{time}}. Here's how to prepare...", uses: 56, openRate: 82, clickRate: 22, starred: true },
+    { id: "t2", name: "Session Reminder", category: "reminder", subject: "Coaching session tomorrow — agenda inside", preview: "Hi {{firstName}}, your coaching session is tomorrow at {{time}}. Here's what we'll cover and your pre-work...", uses: 89, openRate: 78, clickRate: 15, starred: false },
+    { id: "t3", name: "Stuck Intervention", category: "nurture", subject: "Checking in — how are you progressing?", preview: "Hi {{firstName}}, I noticed you haven't submitted your assignments recently. I want you to know it's totally normal to hit a wall...", uses: 18, openRate: 55, clickRate: 32, starred: true },
+    { id: "t4", name: "Program Completion", category: "follow_up", subject: "Congratulations on completing {{programName}}! 🎓", preview: "Hi {{firstName}}, WOW. You did it! You've completed {{programName}} and I couldn't be prouder of your growth...", uses: 12, openRate: 92, clickRate: 48, starred: true },
+  ],
+  restaurant_food: [
+    { id: "t1", name: "Reservation Confirmation", category: "reminder", subject: "Your reservation at {{restaurantName}} is confirmed", preview: "Hi {{firstName}}, your table for {{partySize}} is confirmed for {{date}} at {{time}}. We look forward to welcoming you!", uses: 234, openRate: 78, clickRate: 5, starred: true },
+    { id: "t2", name: "Post-Dining Feedback", category: "review", subject: "How was your experience at {{restaurantName}}?", preview: "Hi {{firstName}}, thank you for dining with us! We'd love to hear about your experience...", uses: 89, openRate: 42, clickRate: 22, starred: false },
+    { id: "t3", name: "Catering Proposal", category: "follow_up", subject: "Your custom catering menu for {{eventDate}}", preview: "Hi {{firstName}}, attached is your custom catering menu for {{partySize}} guests on {{eventDate}}...", uses: 18, openRate: 72, clickRate: 45, starred: true },
+  ],
+  automotive: [
+    { id: "t1", name: "Service Appointment Confirmation", category: "reminder", subject: "Your service appointment is confirmed", preview: "Hi {{firstName}}, your appointment for {{service}} on your {{vehicle}} is confirmed for {{date}} at {{time}}...", uses: 156, openRate: 75, clickRate: 8, starred: true },
+    { id: "t2", name: "Vehicle Ready for Pickup", category: "follow_up", subject: "Your {{vehicle}} is ready!", preview: "Hi {{firstName}}, great news! Your {{vehicle}} is ready for pickup. Here's a summary of the work completed...", uses: 134, openRate: 82, clickRate: 12, starred: true },
+    { id: "t3", name: "Maintenance Due Reminder", category: "reminder", subject: "Your {{vehicle}} is due for {{service}}", preview: "Hi {{firstName}}, based on your mileage, your {{vehicle}} is due for {{service}}. Schedule now to avoid issues...", uses: 89, openRate: 48, clickRate: 28, starred: false },
+    { id: "t4", name: "Declined Service Follow-Up", category: "win_back", subject: "About the {{service}} we discussed", preview: "Hi {{firstName}}, during your last visit we recommended {{service}} for your {{vehicle}}. Here's a 10% discount...", uses: 28, openRate: 35, clickRate: 22, starred: false },
+  ],
+  nonprofit: [
+    { id: "t1", name: "Donation Thank You + Receipt", category: "follow_up", subject: "Thank you for your generous donation!", preview: "Dear {{firstName}}, thank you so much for your {{amount}} donation to {{orgName}}. Your contribution helps us...", uses: 234, openRate: 72, clickRate: 15, starred: true },
+    { id: "t2", name: "Monthly Donor Welcome", category: "welcome", subject: "Welcome to the {{orgName}} family!", preview: "Dear {{firstName}}, thank you for becoming a monthly donor! Your recurring gift of {{amount}} makes a huge impact...", uses: 34, openRate: 85, clickRate: 28, starred: true },
+    { id: "t3", name: "Event Invitation", category: "reminder", subject: "You're invited: {{eventName}} on {{date}}", preview: "Dear {{firstName}}, we'd love for you to join us at {{eventName}} on {{date}}. It's going to be a wonderful evening...", uses: 112, openRate: 55, clickRate: 38, starred: false },
+    { id: "t4", name: "Lapsed Donor Re-engagement", category: "win_back", subject: "We miss your support, {{firstName}}", preview: "Dear {{firstName}}, it's been a while since your last contribution and we wanted to share what we've accomplished recently...", uses: 45, openRate: 32, clickRate: 12, starred: false },
+  ],
 };
 
 const DEFAULT_TEMPLATES: Template[] = [

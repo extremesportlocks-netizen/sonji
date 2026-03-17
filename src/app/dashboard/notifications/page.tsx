@@ -62,6 +62,63 @@ const INDUSTRY_NOTIFS: Record<string, Notification[]> = {
     { id: "n5", type: "lead", title: "New subscriber: Wayne Barry", detail: "Signed up for Monthly plan at $99/mo.", time: "2 days ago", read: true, icon: "🆕" },
     { id: "n6", type: "system", title: "Weekly newsletter sent", detail: "Picks preview delivered to 94 active subscribers.", time: "2 days ago", read: true, icon: "📧" },
   ],
+  home_services: [
+    { id: "n1", type: "lead", title: "EMERGENCY: Susan Taylor — roof leak", detail: "Active leak in master bedroom. Needs same-day response.", time: "45 min ago", read: false, icon: "🚨" },
+    { id: "n2", type: "payment", title: "Linda Garcia — $18,500 deposit", detail: "Full roof replacement 50% deposit processed via Stripe.", time: "4 hours ago", read: false, icon: "💳" },
+    { id: "n3", type: "ghosting", title: "Richard Wilson — no response 14 days", detail: "Gutter estimate sent, no reply. $4,200 at risk.", time: "5 hours ago", read: true, icon: "👻" },
+    { id: "n4", type: "automation", title: "12 maintenance reminders sent", detail: "Annual plan renewal notices delivered.", time: "Yesterday", read: true, icon: "⚡" },
+    { id: "n5", type: "review", title: "5-star Google review from Barbara Martinez", detail: "'Professional crew, fair pricing. Highly recommend!'", time: "2 days ago", read: true, icon: "⭐" },
+  ],
+  fitness_gym: [
+    { id: "n1", type: "ghosting", title: "Daniel Wright — 14 days inactive", detail: "No gym check-in for 14 days. At-risk member.", time: "3 hours ago", read: false, icon: "👻" },
+    { id: "n2", type: "payment", title: "Stephanie Clark — PT package $960", detail: "12-pack personal training sessions purchased.", time: "Yesterday", read: false, icon: "💳" },
+    { id: "n3", type: "lead", title: "New trial signup: Brandon Lewis", detail: "7-day free trial activated from website.", time: "Yesterday", read: true, icon: "🆕" },
+    { id: "n4", type: "automation", title: "Birthday reward sent to Alex Rivera", detail: "Happy birthday email + free smoothie code.", time: "Yesterday", read: true, icon: "🎂" },
+  ],
+  beauty_salon: [
+    { id: "n1", type: "lead", title: "New online booking: Harper Garcia", detail: "Blowout + Style, Thursday 3 PM with Stylist Alex.", time: "1 hour ago", read: false, icon: "📅" },
+    { id: "n2", type: "payment", title: "Charlotte Davis — bridal deposit $600", detail: "Bridal package 50% deposit processed.", time: "Yesterday", read: false, icon: "💳" },
+    { id: "n3", type: "automation", title: "Rebooking reminder sent to Nina Patel", detail: "6 weeks since last visit. Rebooking link included.", time: "3 hours ago", read: true, icon: "⚡" },
+    { id: "n4", type: "review", title: "5-star review from Amelia Wilson", detail: "'Best keratin treatment I've ever had!'", time: "Yesterday", read: true, icon: "⭐" },
+  ],
+  real_estate: [
+    { id: "n1", type: "deal", title: "Offer submitted: 4521 Bayshore Dr", detail: "Amanda Hill offering $425K. Pre-approval attached.", time: "30 min ago", read: false, icon: "🏠" },
+    { id: "n2", type: "payment", title: "Williams Estate — closing complete", detail: "$890K sale closed. Commission: $26,700.", time: "3 hours ago", read: false, icon: "💳" },
+    { id: "n3", type: "automation", title: "Anniversary CMA sent to Karen Wu", detail: "1-year purchase anniversary market analysis.", time: "Yesterday", read: true, icon: "⚡" },
+    { id: "n4", type: "lead", title: "New inquiry: Home valuation request", detail: "James Rivera — 789 Sunset Dr.", time: "Yesterday", read: true, icon: "📋" },
+  ],
+  coaching_education: [
+    { id: "n1", type: "lead", title: "VIP Day application: Nathan Harris", detail: "Referred by Jason Wright. March 25 preferred.", time: "4 hours ago", read: false, icon: "📋" },
+    { id: "n2", type: "ghosting", title: "Lindsey K. — 3 weeks no submissions", detail: "No assignments in 21 days. Stuck intervention triggered.", time: "Yesterday", read: false, icon: "👻" },
+    { id: "n3", type: "payment", title: "Mastermind cohort — $48,000", detail: "Spring 2026 cohort fully enrolled. 6 participants.", time: "2 days ago", read: true, icon: "💳" },
+    { id: "n4", type: "automation", title: "Session reminders sent to 4 clients", detail: "24-hour Zoom link reminders.", time: "Yesterday", read: true, icon: "⚡" },
+  ],
+  restaurant_food: [
+    { id: "n1", type: "lead", title: "New reservation: Michael Rivera party of 6", detail: "Friday 7:30 PM. Birthday celebration. Corner booth requested.", time: "2 hours ago", read: false, icon: "📅" },
+    { id: "n2", type: "deal", title: "Catering inquiry: Apex Financial", detail: "Corporate lunch for 35 on April 12. Budget: $3,500.", time: "Today", read: false, icon: "🍽️" },
+    { id: "n3", type: "automation", title: "Post-dining feedback sent", detail: "Review request to 8 diners from last night.", time: "Yesterday", read: true, icon: "⚡" },
+    { id: "n4", type: "payment", title: "Wedding deposit: Emily & David $4,250", detail: "Reception 50% deposit processed.", time: "2 days ago", read: true, icon: "💳" },
+  ],
+  automotive: [
+    { id: "n1", type: "task", title: "Thomas Brown — post-service noise", detail: "Cold-start squealing after timing belt. May need tension adjustment.", time: "8 hours ago", read: false, icon: "🔧" },
+    { id: "n2", type: "lead", title: "Enterprise Fleet — 5 vehicles need service", detail: "30K mile service block requested for next week.", time: "Today", read: false, icon: "🚗" },
+    { id: "n3", type: "review", title: "5-star review from Nancy Davis", detail: "'Great service! In and out in under 2 hours.'", time: "Yesterday", read: true, icon: "⭐" },
+    { id: "n4", type: "automation", title: "Declined service follow-up sent", detail: "James Peterson — brake inspection with 10% discount.", time: "2 days ago", read: true, icon: "⚡" },
+  ],
+  legal: [
+    { id: "n1", type: "task", title: "Marcus Johnson docs uploaded", detail: "Medical records received for PI case.", time: "1 hour ago", read: false, icon: "📎" },
+    { id: "n2", type: "lead", title: "New consultation: Patricia Williams", detail: "Estate planning — husband recently passed.", time: "2 hours ago", read: false, icon: "📋" },
+    { id: "n3", type: "system", title: "Deposition scheduled: Mitchell v. Mitchell", detail: "Thursday at 2 PM, Conference Room A.", time: "3 hours ago", read: true, icon: "📅" },
+    { id: "n4", type: "payment", title: "Harbor Construction — $3,750 retainer", detail: "Contract review retainer payment received.", time: "Yesterday", read: true, icon: "💳" },
+    { id: "n5", type: "automation", title: "Document reminder sent to Sarah Mitchell", detail: "Outstanding docs needed for divorce case.", time: "Yesterday", read: true, icon: "⚡" },
+  ],
+  nonprofit: [
+    { id: "n1", type: "payment", title: "Robert Chen — monthly donation $500", detail: "Recurring monthly contribution processed.", time: "1 hour ago", read: false, icon: "💚" },
+    { id: "n2", type: "lead", title: "Volunteer application: Sarah Lopez", detail: "Event planning experience. Heard from Amanda Hill.", time: "Today", read: false, icon: "📋" },
+    { id: "n3", type: "deal", title: "Sponsorship inquiry: Community Bank", detail: "Interested in Gold/Platinum gala sponsorship.", time: "Yesterday", read: true, icon: "🤝" },
+    { id: "n4", type: "automation", title: "Donation receipts auto-sent", detail: "Tax-deductible receipts for 8 March donations.", time: "Yesterday", read: true, icon: "⚡" },
+    { id: "n5", type: "system", title: "Gala RSVP count: 45/100 seats", detail: "Spring Gala at 45% capacity. 55 seats remaining.", time: "2 days ago", read: true, icon: "🎉" },
+  ],
 };
 
 export default function NotificationsPage() {

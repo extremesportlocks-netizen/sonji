@@ -51,6 +51,43 @@ const INDUSTRY_LINKS: Record<string, BookingLink[]> = {
     { id: "b2", name: "Case Review", type: "one_on_one", duration: 60, location: "in_person", url: "sonji.io/book/sterling-law/review", bookings: 18, active: true, color: "bg-violet-500" },
     { id: "b3", name: "Document Signing", type: "one_on_one", duration: 15, location: "in_person", url: "sonji.io/book/sterling-law/signing", bookings: 28, active: true, color: "bg-emerald-500" },
   ],
+  fitness_gym: [
+    { id: "b1", name: "Free Trial Session", type: "one_on_one", duration: 60, location: "in_person", url: "sonji.io/book/iron-republic/trial", bookings: 78, active: true, color: "bg-orange-500" },
+    { id: "b2", name: "Personal Training", type: "one_on_one", duration: 60, location: "in_person", url: "sonji.io/book/iron-republic/pt", bookings: 156, active: true, color: "bg-emerald-500" },
+    { id: "b3", name: "Body Composition Scan", type: "one_on_one", duration: 15, location: "in_person", url: "sonji.io/book/iron-republic/scan", bookings: 34, active: true, color: "bg-blue-500" },
+  ],
+  beauty_salon: [
+    { id: "b1", name: "Haircut & Style", type: "one_on_one", duration: 45, location: "in_person", url: "sonji.io/book/luxe-beauty/haircut", bookings: 234, active: true, color: "bg-pink-500" },
+    { id: "b2", name: "Color Service", type: "one_on_one", duration: 120, location: "in_person", url: "sonji.io/book/luxe-beauty/color", bookings: 89, active: true, color: "bg-violet-500" },
+    { id: "b3", name: "Bridal Consultation", type: "one_on_one", duration: 30, location: "in_person", url: "sonji.io/book/luxe-beauty/bridal", bookings: 12, active: true, color: "bg-rose-500" },
+    { id: "b4", name: "Keratin Treatment", type: "one_on_one", duration: 150, location: "in_person", url: "sonji.io/book/luxe-beauty/keratin", bookings: 22, active: true, color: "bg-amber-500" },
+  ],
+  real_estate: [
+    { id: "b1", name: "Property Showing", type: "round_robin", duration: 30, location: "in_person", url: "sonji.io/book/summit-realty/showing", bookings: 124, active: true, color: "bg-emerald-500" },
+    { id: "b2", name: "Home Valuation", type: "one_on_one", duration: 45, location: "in_person", url: "sonji.io/book/summit-realty/valuation", bookings: 45, active: true, color: "bg-blue-500" },
+    { id: "b3", name: "Buyer Consultation", type: "one_on_one", duration: 60, location: "video", url: "sonji.io/book/summit-realty/buyer", bookings: 67, active: true, color: "bg-indigo-500" },
+  ],
+  coaching_education: [
+    { id: "b1", name: "Discovery Call", type: "one_on_one", duration: 30, location: "video", url: "sonji.io/book/elevate/discovery", bookings: 56, active: true, color: "bg-violet-500" },
+    { id: "b2", name: "1:1 Coaching Session", type: "one_on_one", duration: 60, location: "video", url: "sonji.io/book/elevate/coaching", bookings: 89, active: true, color: "bg-indigo-500" },
+    { id: "b3", name: "VIP Day Booking", type: "one_on_one", duration: 480, location: "in_person", url: "sonji.io/book/elevate/vip-day", bookings: 4, active: true, color: "bg-amber-500" },
+    { id: "b4", name: "Group Mastermind", type: "group", duration: 90, location: "video", url: "sonji.io/book/elevate/mastermind", bookings: 24, active: true, color: "bg-purple-500" },
+  ],
+  restaurant_food: [
+    { id: "b1", name: "Table Reservation", type: "one_on_one", duration: 120, location: "in_person", url: "sonji.io/book/copper-table/reservation", bookings: 456, active: true, color: "bg-amber-500" },
+    { id: "b2", name: "Private Dining", type: "one_on_one", duration: 180, location: "in_person", url: "sonji.io/book/copper-table/private", bookings: 18, active: true, color: "bg-rose-500" },
+    { id: "b3", name: "Catering Tasting", type: "one_on_one", duration: 60, location: "in_person", url: "sonji.io/book/copper-table/tasting", bookings: 8, active: true, color: "bg-violet-500" },
+  ],
+  automotive: [
+    { id: "b1", name: "Service Appointment", type: "round_robin", duration: 15, location: "in_person", url: "sonji.io/book/precision-auto/service", bookings: 234, active: true, color: "bg-blue-500" },
+    { id: "b2", name: "Diagnostic Check", type: "one_on_one", duration: 30, location: "in_person", url: "sonji.io/book/precision-auto/diagnostic", bookings: 67, active: true, color: "bg-amber-500" },
+    { id: "b3", name: "Fleet Service Block", type: "group", duration: 480, location: "in_person", url: "sonji.io/book/precision-auto/fleet", bookings: 12, active: true, color: "bg-emerald-500" },
+  ],
+  nonprofit: [
+    { id: "b1", name: "Donor Meeting", type: "one_on_one", duration: 45, location: "in_person", url: "sonji.io/book/harbor-foundation/donor", bookings: 34, active: true, color: "bg-violet-500" },
+    { id: "b2", name: "Volunteer Orientation", type: "group", duration: 60, location: "in_person", url: "sonji.io/book/harbor-foundation/volunteer", bookings: 28, active: true, color: "bg-emerald-500" },
+    { id: "b3", name: "Sponsorship Call", type: "one_on_one", duration: 30, location: "video", url: "sonji.io/book/harbor-foundation/sponsorship", bookings: 15, active: true, color: "bg-blue-500" },
+  ],
 };
 
 const typeLabels: Record<string, string> = { one_on_one: "1:1", group: "Group", round_robin: "Round Robin" };
