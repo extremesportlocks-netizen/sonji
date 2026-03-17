@@ -51,6 +51,7 @@ interface NavItem {
   icon: React.ElementType;
   badge?: number;
   group: string;
+  industries?: string[]; // If set, only show for these industries
 }
 
 const allNavItems: NavItem[] = [
@@ -65,7 +66,7 @@ const allNavItems: NavItem[] = [
   { id: "scheduling", label: "Scheduling", href: "/dashboard/scheduling", icon: Calendar, group: "core" },
   { id: "messages", label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3, group: "core" },
   { id: "campaigns", label: "Campaigns", href: "/dashboard/campaigns", icon: Send, group: "core" },
-  { id: "advertising", label: "Ad Intelligence", href: "/dashboard/advertising", icon: Megaphone, group: "core" },
+  { id: "advertising", label: "Ad Intelligence", href: "/dashboard/advertising", icon: Megaphone, group: "core", industries: ["agency_consulting"] },
   { id: "social", label: "Social Media", href: "/dashboard/social", icon: Activity, group: "core" },
   { id: "email-templates", label: "Email Templates", href: "/dashboard/email-templates", icon: FileText, group: "core" },
   { id: "forms", label: "Forms", href: "/dashboard/forms", icon: ClipboardList, group: "core" },
@@ -210,11 +211,14 @@ export default function Sidebar() {
 
   const handleDragEnd = () => setDragId(null);
 
-  // Get ordered items for a group
+  // Get ordered items for a group, filtered by industry
+  const currentIndustry = demoKey || (typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null);
+
   const getGroupItems = (group: string) => {
     return order
       .map((id) => allNavItems.find((i) => i.id === id))
-      .filter((i): i is NavItem => !!i && i.group === group);
+      .filter((i): i is NavItem => !!i && i.group === group)
+      .filter((i) => !i.industries || i.industries.includes(currentIndustry || ""));
   };
 
   const favoriteItems = favorites
