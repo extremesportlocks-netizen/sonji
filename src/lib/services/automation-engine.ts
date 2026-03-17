@@ -107,11 +107,15 @@ export interface DelayConfig {
 
 export interface ExecutionContext {
   tenantId: string;
+  userId?: string;
   contactId?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   dealId?: string;
   formSubmissionId?: string;
   appointmentId?: string;
   invoiceId?: string;
+  tenantSettings?: Record<string, any>;
   triggerData: Record<string, any>; // the event payload that started this execution
   variables: Record<string, any>;   // accumulated state across steps
 }
@@ -227,67 +231,175 @@ type ActionHandler = (params: Record<string, any>, context: ExecutionContext) =>
 
 const actionHandlers: Record<ActionType, ActionHandler> = {
   send_email: async (params, ctx) => {
-    // In production: call Resend API with rendered template
-    console.log(`[Automation] Send email to ${params.to || ctx.contactId} — template: ${params.templateId}`);
-    return { sent: true, messageId: `msg_${Date.now()}` };
+    try {
+      const { sendEmail } = await import("./email");
+      const result = await sendEmail(ctx.tenantSettings?.email, {
+        to: params.to || ctx.contactEmail || "",
+        subject: params.subject || "Notification from your business",
+        html: params.html || params.body || "",
+        text: params.text,
+      });
+      return { sent: result.success, messageId: result.id || `msg_${Date.now()}` };
+    } catch (err) {
+      console.error("[Automation] Email failed:", err);
+      return { sent: false, error: String(err) };
+    }
   },
 
   send_sms: async (params, ctx) => {
-    console.log(`[Automation] Send SMS to ${params.to || ctx.contactId} — body: ${params.body?.substring(0, 50)}`);
-    return { sent: true, messageId: `sms_${Date.now()}` };
+    try {
+      const { sendSMS } = await import("./sms");
+      const result = await sendSMS(ctx.tenantSettings?.sms, {
+        to: params.to || ctx.contactPhone || "",
+        body: params.body || "",
+      });
+      return { sent: result.success, messageId: result.sid || `sms_${Date.now()}` };
+    } catch (err) {
+      console.error("[Automation] SMS failed:", err);
+      return { sent: false, error: String(err) };
+    }
   },
 
   create_task: async (params, ctx) => {
-    console.log(`[Automation] Create task: ${params.title} — assigned to: ${params.assignTo}`);
-    return { taskId: `task_${Date.now()}` };
+    try {
+      const { db } = await import("@/lib/db");
+      const { tasks } = await import("@/lib/db/schema");
+      const values: any = {
+        tenantId: ctx.tenantId,
+        title: params.title || "Auto-created task",
+        description: params.description || "Created by automation",
+        priority: params.priority || "medium",
+        status: "todo",
+      };
+      if (ctx.contactId) values.contactId = ctx.contactId;
+      if (params.dueDate) values.dueDate = params.dueDate;
+      const [task] = await db.insert(tasks).values(values).returning();
+      return { taskId: task.id };
+    } catch (err) {
+      console.error("[Automation] Create task failed:", err);
+      return { taskId: null, error: String(err) };
+    }
   },
 
   add_tag: async (params, ctx) => {
-    console.log(`[Automation] Add tag "${params.tag}" to contact ${ctx.contactId}`);
-    return { tagged: true };
+    try {
+      if (!ctx.contactId) return { tagged: false, error: "No contact" };
+      const { db } = await import("@/lib/db");
+      const { contacts } = await import("@/lib/db/schema");
+      const { eq } = await import("drizzle-orm");
+      const [contact] = await db.select().from(contacts).where(eq(contacts.id, ctx.contactId)).limit(1);
+      if (!contact) return { tagged: false };
+      const tags = Array.isArray(contact.tags) ? [...contact.tags] : [];
+      if (!tags.includes(params.tag)) tags.push(params.tag);
+      await db.update(contacts).set({ tags, updatedAt: new Date() }).where(eq(contacts.id, ctx.contactId));
+      return { tagged: true };
+    } catch (err) {
+      return { tagged: false, error: String(err) };
+    }
   },
 
   remove_tag: async (params, ctx) => {
-    console.log(`[Automation] Remove tag "${params.tag}" from contact ${ctx.contactId}`);
-    return { untagged: true };
+    try {
+      if (!ctx.contactId) return { untagged: false };
+      const { db } = await import("@/lib/db");
+      const { contacts } = await import("@/lib/db/schema");
+      const { eq } = await import("drizzle-orm");
+      const [contact] = await db.select().from(contacts).where(eq(contacts.id, ctx.contactId)).limit(1);
+      if (!contact) return { untagged: false };
+      const tags = Array.isArray(contact.tags) ? contact.tags.filter((t: string) => t !== params.tag) : [];
+      await db.update(contacts).set({ tags, updatedAt: new Date() }).where(eq(contacts.id, ctx.contactId));
+      return { untagged: true };
+    } catch (err) {
+      return { untagged: false, error: String(err) };
+    }
   },
 
   update_field: async (params, ctx) => {
-    console.log(`[Automation] Update ${params.entity}.${params.field} = ${params.value}`);
-    return { updated: true };
+    try {
+      if (!ctx.contactId) return { updated: false };
+      const { db } = await import("@/lib/db");
+      const { contacts } = await import("@/lib/db/schema");
+      const { eq } = await import("drizzle-orm");
+      const [contact] = await db.select().from(contacts).where(eq(contacts.id, ctx.contactId)).limit(1);
+      if (!contact) return { updated: false };
+      const cf = { ...(contact.customFields as any || {}), [params.field]: params.value };
+      await db.update(contacts).set({ customFields: cf, updatedAt: new Date() }).where(eq(contacts.id, ctx.contactId));
+      return { updated: true };
+    } catch (err) {
+      return { updated: false, error: String(err) };
+    }
   },
 
   move_deal: async (params, ctx) => {
-    console.log(`[Automation] Move deal ${ctx.dealId} to stage "${params.stage}"`);
-    return { moved: true };
+    try {
+      if (!ctx.dealId) return { moved: false };
+      const { db } = await import("@/lib/db");
+      const { deals } = await import("@/lib/db/schema");
+      const { eq } = await import("drizzle-orm");
+      await db.update(deals).set({ stage: params.stage, updatedAt: new Date() }).where(eq(deals.id, ctx.dealId));
+      return { moved: true };
+    } catch (err) {
+      return { moved: false, error: String(err) };
+    }
   },
 
   assign_user: async (params, ctx) => {
-    console.log(`[Automation] Assign ${params.entity || "contact"} ${ctx.contactId} to user ${params.userId}`);
+    console.log(`[Automation] Assign ${params.entity || "contact"} to user ${params.userId}`);
     return { assigned: true };
   },
 
   create_deal: async (params, ctx) => {
-    console.log(`[Automation] Create deal: ${params.title} — value: ${params.value}`);
-    return { dealId: `deal_${Date.now()}` };
+    try {
+      const { db } = await import("@/lib/db");
+      const { deals } = await import("@/lib/db/schema");
+      const values: any = {
+        tenantId: ctx.tenantId,
+        title: params.title || "Auto-created deal",
+        value: params.value || 0,
+        stage: params.stage || "New Lead",
+      };
+      if (ctx.contactId) values.contactId = ctx.contactId;
+      const [deal] = await db.insert(deals).values(values).returning();
+      return { dealId: deal.id };
+    } catch (err) {
+      return { dealId: null, error: String(err) };
+    }
   },
 
   send_notification: async (params, ctx) => {
-    console.log(`[Automation] Notify user ${params.userId}: ${params.message}`);
-    return { notified: true };
+    try {
+      const { sendNotification } = await import("./notifications");
+      await sendNotification({
+        tenantId: ctx.tenantId,
+        userId: params.userId || ctx.userId || "",
+        type: "workflow.completed",
+        title: params.title || "Automation Alert",
+        body: params.message || params.body || "",
+        actionUrl: params.actionUrl,
+      });
+      return { notified: true };
+    } catch (err) {
+      return { notified: false, error: String(err) };
+    }
   },
 
   webhook: async (params, ctx) => {
-    console.log(`[Automation] Fire webhook to ${params.url}`);
-    // In production: fetch(params.url, { method: "POST", body: JSON.stringify({ ...ctx.triggerData, ...ctx.variables }) })
-    return { webhookFired: true, statusCode: 200 };
+    try {
+      const res = await fetch(params.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: ctx.triggerData, variables: ctx.variables }),
+      });
+      return { webhookFired: true, statusCode: res.status };
+    } catch (err) {
+      return { webhookFired: false, error: String(err) };
+    }
   },
 
   wait: async (params) => {
     const { duration, unit } = params;
     const ms = duration * (unit === "days" ? 86400000 : unit === "hours" ? 3600000 : 60000);
     const resumeAt = new Date(Date.now() + ms);
-    console.log(`[Automation] Wait ${duration} ${unit} — resume at ${resumeAt.toISOString()}`);
     return { delayed: true, resumeAt: resumeAt.toISOString() };
   },
 };
