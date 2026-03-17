@@ -124,6 +124,8 @@ export default function EmailTemplatesPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [preview, setPreview] = useState<Template | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTpl, setNewTpl] = useState({ name: "", category: "welcome", subject: "", preview: "" });
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
@@ -180,10 +182,58 @@ export default function EmailTemplatesPage() {
               })}
             </div>
           </div>
-          <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+          <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
             <Plus className="w-4 h-4" /> New Template
           </button>
         </div>
+
+        {/* Create Template Form */}
+        {showCreate && (
+          <div className="bg-white rounded-xl border-2 border-indigo-200 p-6 shadow-lg">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Create New Template</h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1">Template Name *</label>
+                <input value={newTpl.name} onChange={e => setNewTpl(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Welcome Email"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1">Category</label>
+                <select value={newTpl.category} onChange={e => setNewTpl(p => ({ ...p, category: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
+                  {Object.entries(categoryConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-500 block mb-1">Subject Line *</label>
+              <input value={newTpl.subject} onChange={e => setNewTpl(p => ({ ...p, subject: e.target.value }))} placeholder="e.g. Welcome to {{companyName}}!"
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+            </div>
+            <div className="mb-4">
+              <label className="text-xs font-medium text-gray-500 block mb-1">Preview Text</label>
+              <textarea value={newTpl.preview} onChange={e => setNewTpl(p => ({ ...p, preview: e.target.value }))} rows={3}
+                placeholder="Hi {{firstName}}, welcome to our platform..."
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none" />
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => { setShowCreate(false); setNewTpl({ name: "", category: "welcome", subject: "", preview: "" }); }}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancel</button>
+              <button disabled={!newTpl.name || !newTpl.subject} onClick={() => {
+                const tpl: Template = {
+                  id: `t-${Date.now()}`, name: newTpl.name, category: newTpl.category as any,
+                  subject: newTpl.subject, preview: newTpl.preview || newTpl.subject,
+                  uses: 0, openRate: 0, clickRate: 0, starred: false,
+                };
+                setTemplates(prev => [tpl, ...prev]);
+                setShowCreate(false);
+                setNewTpl({ name: "", category: "welcome", subject: "", preview: "" });
+              }} className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition disabled:opacity-50">
+                Create Template
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

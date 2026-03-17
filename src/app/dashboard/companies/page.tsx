@@ -107,23 +107,20 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
+    const key = demoIndustry || "ecommerce";
 
-    if (isDemo) {
-      const key = demoIndustry || "agency_consulting";
-      setCompanies(INDUSTRY_COMPANIES[key] || []);
+    // Always show demo data first (works without auth)
+    if (INDUSTRY_COMPANIES[key]?.length) {
+      setCompanies(INDUSTRY_COMPANIES[key]);
       setLoading(false);
-    } else {
-      // Real data
-      fetch("/api/companies?pageSize=50")
-        .then(r => r.json())
-        .then(json => { if (json.ok) setCompanies(json.data || []); })
-        .catch(() => {
-          // Fallback to ecommerce demo data
-          setCompanies(INDUSTRY_COMPANIES.ecommerce || []);
-        })
-        .finally(() => setLoading(false));
     }
+
+    // Then try real data overlay
+    fetch("/api/companies?pageSize=50")
+      .then(r => r.json())
+      .then(json => { if (json.ok && json.data?.length) setCompanies(json.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = search

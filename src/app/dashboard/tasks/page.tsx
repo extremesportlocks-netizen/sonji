@@ -15,6 +15,7 @@ import {
   User,
   Calendar,
   Trash2,
+  Edit3,
   Search,
   X,
   SlidersHorizontal,
@@ -281,12 +282,20 @@ export default function TasksPage() {
                             <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" />
                             <h4 className="text-sm font-semibold text-gray-900 leading-snug">{task.title}</h4>
                           </div>
-                          <button
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                            <button
+                              onClick={() => openModal("task", { editTask: task })}
+                              className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
 
                         {task.description && (

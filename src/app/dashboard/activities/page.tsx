@@ -164,16 +164,16 @@ export default function ActivitiesPage() {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
     const key = demoIndustry || "ecommerce";
 
-    if (demoIndustry && demoIndustry !== "ecommerce") {
-      setActivities(INDUSTRY_ACTIVITIES[key] || []);
+    // Always try demo data first (works without auth)
+    if (INDUSTRY_ACTIVITIES[key]?.length) {
+      setActivities(INDUSTRY_ACTIVITIES[key]);
       setLoading(false);
-    } else {
-      // Try real API first, fallback to demo
+
+      // Then try to overlay real data if available
       fetch("/api/contacts?pageSize=50&sortBy=createdAt&sortOrder=desc")
         .then(r => r.json())
         .then(data => {
           if (data.ok && data.data?.length > 0) {
-            // Convert contacts to activity-style entries
             const acts: Activity[] = data.data.slice(0, 12).map((c: any, i: number) => ({
               id: c.id,
               type: i === 0 ? "new_contact" : i % 3 === 0 ? "payment" : i % 2 === 0 ? "email_sent" : "automation",
@@ -184,12 +184,12 @@ export default function ActivitiesPage() {
               value: c.customFields?.ltv || undefined,
             }));
             setActivities(acts);
-          } else {
-            setActivities(INDUSTRY_ACTIVITIES.ecommerce || []);
           }
         })
-        .catch(() => setActivities(INDUSTRY_ACTIVITIES.ecommerce || []))
-        .finally(() => setLoading(false));
+        .catch(() => {});
+    } else {
+      setActivities(INDUSTRY_ACTIVITIES.ecommerce || []);
+      setLoading(false);
     }
   }, []);
 

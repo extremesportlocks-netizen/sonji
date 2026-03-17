@@ -6,7 +6,7 @@ import Header from "@/components/dashboard/header";
 import {
   ArrowLeft, Mail, Phone, Building2, Crown, Tag, Send, MessageSquare,
   Calendar, DollarSign, ShoppingCart, Clock, CreditCard, ChevronRight,
-  Loader2, ExternalLink, TrendingUp, User,
+  Loader2, ExternalLink, TrendingUp, User, Edit3, Save, X,
 } from "lucide-react";
 import AIInsights from "@/components/dashboard/ai-insights";
 import ContactJourney from "@/components/dashboard/contact-journey";
@@ -24,6 +24,11 @@ export default function ContactDetailPage() {
   const [quickSubject, setQuickSubject] = useState("");
   const [quickResult, setQuickResult] = useState<string | null>(null);
 
+  // Profile editing
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ firstName: "", lastName: "", email: "", phone: "", company: "", status: "" });
+
   // Subscription editing
   const [editingSub, setEditingSub] = useState(false);
   const [savingSub, setSavingSub] = useState(false);
@@ -35,10 +40,10 @@ export default function ContactDetailPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const isDemo = demoIndustry && demoIndustry !== "ecommerce" && String(id).startsWith("demo-");
+    const isDemoId = String(id).startsWith("demo-");
 
-    if (isDemo) {
-      // Fetch from demo contacts API and find the matching one
+    if (demoIndustry && isDemoId) {
+      // Demo contact — fetch from demo API
       fetch(`/api/demo/contacts?industry=${demoIndustry}&pageSize=200`)
         .then((r) => r.json())
         .then((data) => {
@@ -55,6 +60,7 @@ export default function ContactDetailPage() {
         .catch(() => {})
         .finally(() => setLoading(false));
     } else {
+      // Real contact
       fetch(`/api/contacts/${id}`)
         .then((r) => r.json())
         .then((data) => {
@@ -70,6 +76,34 @@ export default function ContactDetailPage() {
         .finally(() => setLoading(false));
     }
   }, [id]);
+
+  const startEditProfile = () => {
+    setProfileForm({
+      firstName: contact?.firstName || "",
+      lastName: contact?.lastName || "",
+      email: contact?.email || "",
+      phone: contact?.phone || "",
+      company: contact?.company || "",
+      status: contact?.status || "active",
+    });
+    setEditingProfile(true);
+  };
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const res = await fetch(`/api/contacts/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileForm),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setContact((prev: any) => ({ ...prev, ...profileForm }));
+        setEditingProfile(false);
+      }
+    } catch {} finally { setSavingProfile(false); }
+  };
 
   const handleSaveSub = async () => {
     setSavingSub(true); setSubSaveMsg("");
@@ -168,57 +202,90 @@ export default function ContactDetailPage() {
           <div className="space-y-4">
             {/* Profile Card */}
             <div className="bg-white rounded-xl border border-gray-100 p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
-                  {(contact.firstName?.[0] || contact.email?.[0] || "?").toUpperCase()}
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-gray-900">{contact.firstName} {contact.lastName}</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${tierColors[tier]}`}>
-                      {tier === "whale" && <Crown className="w-3 h-3" />} {tierLabels[tier]}
-                    </p>
-                    {/* Health Score */}
-                    {(() => {
-                      const cf = contact.customFields || {};
-                      const ltv = cf.ltv || 0;
-                      const subStatus = cf.subscriptionStatus || "never";
-                      const daysSince = cf.daysSinceLastPurchase || 999;
-                      let score = 50; // baseline
-                      if (subStatus === "active") score += 25;
-                      if (subStatus === "canceled") score -= 20;
-                      if (ltv > 500) score += 15;
-                      if (ltv > 1000) score += 10;
-                      if (daysSince < 30) score += 10;
-                      if (daysSince > 90) score -= 15;
-                      if (daysSince > 180) score -= 15;
-                      score = Math.max(0, Math.min(100, score));
-                      const color = score >= 80 ? "text-emerald-600 bg-emerald-50" : score >= 50 ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50";
-                      return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${color}`}>Health: {score}</span>;
-                    })()}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xl font-bold flex-shrink-0">
+                    {(contact.firstName?.[0] || contact.email?.[0] || "?").toUpperCase()}
+                  </div>
+                  <div>
+                    {editingProfile ? (
+                      <div className="flex gap-2">
+                        <input value={profileForm.firstName} onChange={e => setProfileForm(p => ({ ...p, firstName: e.target.value }))}
+                          className="w-24 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="First" />
+                        <input value={profileForm.lastName} onChange={e => setProfileForm(p => ({ ...p, lastName: e.target.value }))}
+                          className="w-24 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Last" />
+                      </div>
+                    ) : (
+                      <h1 className="text-lg font-bold text-gray-900">{contact.firstName} {contact.lastName}</h1>
+                    )}
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${tierColors[tier]}`}>
+                        {tier === "whale" && <Crown className="w-3 h-3" />} {tierLabels[tier]}
+                      </p>
+                      {(() => {
+                        const cf = contact.customFields || {};
+                        const ltv = cf.ltv || 0;
+                        const subStatus = cf.subscriptionStatus || "never";
+                        const daysSince = cf.daysSinceLastPurchase || 999;
+                        let score = 50;
+                        if (subStatus === "active") score += 25;
+                        if (subStatus === "canceled") score -= 20;
+                        if (ltv > 500) score += 15;
+                        if (ltv > 1000) score += 10;
+                        if (daysSince < 30) score += 10;
+                        if (daysSince > 90) score -= 15;
+                        if (daysSince > 180) score -= 15;
+                        score = Math.max(0, Math.min(100, score));
+                        const color = score >= 80 ? "text-emerald-600 bg-emerald-50" : score >= 50 ? "text-amber-600 bg-amber-50" : "text-red-600 bg-red-50";
+                        return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${color}`}>Health: {score}</span>;
+                      })()}
+                    </div>
                   </div>
                 </div>
+                {!editingProfile ? (
+                  <button onClick={startEditProfile} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit profile">
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <div className="flex gap-1">
+                    <button onClick={handleSaveProfile} disabled={savingProfile} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
+                      <Save className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setEditingProfile(false)} className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3">
-                {contact.email && (
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {editingProfile ? (
+                    <input value={profileForm.email} onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))}
+                      className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Email" />
+                  ) : contact.email ? (
                     <a href={`mailto:${contact.email}`} className="text-sm text-indigo-600 hover:underline truncate">{contact.email}</a>
-                  </div>
-                )}
-                {contact.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  ) : <span className="text-xs text-gray-400">No email</span>}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {editingProfile ? (
+                    <input value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
+                      className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Phone" />
+                  ) : contact.phone ? (
                     <span className="text-sm text-gray-700">{contact.phone}</span>
-                  </div>
-                )}
-                {contact.company && (
-                  <div className="flex items-center gap-3">
-                    <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  ) : <span className="text-xs text-gray-400">No phone</span>}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  {editingProfile ? (
+                    <input value={profileForm.company} onChange={e => setProfileForm(p => ({ ...p, company: e.target.value }))}
+                      className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Company" />
+                  ) : contact.company ? (
                     <span className="text-sm text-gray-700">{contact.company}</span>
-                  </div>
-                )}
+                  ) : <span className="text-xs text-gray-400">No company</span>}
+                </div>
                 <div className="flex items-center gap-3">
                   <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <div className="flex flex-wrap gap-1">

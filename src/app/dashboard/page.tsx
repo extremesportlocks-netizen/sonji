@@ -444,15 +444,28 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
-    const url = isDemo
-      ? `/api/demo?industry=${demoIndustry}`
-      : "/api/dashboard";
-    fetch(url).then(r => r.json()).then(d => { if (d.ok || d.data) setS(d.data); }).catch(() => {}).finally(() => setLoading(false));
+    const industry = demoIndustry || "ecommerce";
+
+    // Always try demo data first (works without auth)
+    fetch(`/api/demo?industry=${industry}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.data) { setS(d.data); return; }
+        return fetch("/api/dashboard").then(r2 => r2.json()).then(d2 => {
+          if (d2.ok || d2.data) setS(d2.data);
+        });
+      })
+      .catch(() => {
+        fetch("/api/dashboard").then(r => r.json()).then(d => {
+          if (d.ok || d.data) setS(d.data);
+        }).catch(() => {});
+      })
+      .finally(() => setLoading(false));
+
     setLayout(loadLayout());
 
-    // Set industry config for demo mode
-    if (isDemo && demoIndustry) {
+    // Set industry config
+    if (demoIndustry) {
       setIc(getIndustryConfig(demoIndustry));
     }
   }, []);

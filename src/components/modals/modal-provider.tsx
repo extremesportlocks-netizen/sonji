@@ -39,7 +39,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
 
       <CreateContactModal open={activeModal === "contact"} onClose={closeModal} />
       <CreateDealModal open={activeModal === "deal"} onClose={closeModal} />
-      <CreateTaskModal open={activeModal === "task"} onClose={closeModal} />
+      <CreateTaskModal open={activeModal === "task"} onClose={closeModal} editTask={modalProps.editTask || null} />
       <ScheduleMeetingModal open={activeModal === "meeting"} onClose={closeModal} />
       <ComposeEmailModal open={activeModal === "email"} onClose={closeModal} {...modalProps} />
       <ImportContactsModal open={activeModal === "import"} onClose={closeModal} />

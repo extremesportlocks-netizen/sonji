@@ -275,17 +275,34 @@ export default function ContactsPage() {
 
       // Check demo mode
       const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-      const isDemo = demoIndustry && demoIndustry !== "ecommerce";
 
-      if (isDemo) {
-        const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&page=${page}&pageSize=${per}`);
+      if (demoIndustry) {
+        // Try demo contacts first
+        try {
+          const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&page=${page}&pageSize=${per}`);
+          const json = await res.json();
+          if (json.ok && json.data?.length) {
+            setContactsList(json.data);
+            setTotal(json.meta?.total || json.data.length);
+            return;
+          }
+        } catch {}
+      }
+
+      // Fall back to real API
+      try {
+        const res = await fetch(`/api/contacts?${params.toString()}`);
         const json = await res.json();
         if (json.ok) {
           setContactsList(json.data || []);
           setTotal(json.meta?.total || 0);
+          return;
         }
-      } else {
-        const res = await fetch(`/api/contacts?${params.toString()}`);
+      } catch {}
+
+      // Last resort: demo ecommerce
+      if (demoIndustry) {
+        const res = await fetch(`/api/demo/contacts?industry=${demoIndustry}&page=${page}&pageSize=${per}`);
         const json = await res.json();
         if (json.ok) {
           setContactsList(json.data || []);

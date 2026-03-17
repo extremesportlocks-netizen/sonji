@@ -48,12 +48,24 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const isDemo = demoIndustry && demoIndustry !== "ecommerce";
-    const url = isDemo ? `/api/demo?industry=${demoIndustry}` : "/api/analytics";
-    fetch(url)
+    const industry = demoIndustry || "ecommerce";
+
+    // Try demo data first (works without auth)
+    fetch(`/api/demo?industry=${industry}`)
       .then((r) => r.json())
-      .then((res) => { if (res.ok) setData(isDemo ? res.data : res.data); })
-      .catch(() => {})
+      .then((res) => {
+        if (res.ok && res.data) { setData(res.data); setLoading(false); return; }
+        // Demo didn't work, try real API
+        return fetch("/api/analytics").then(r2 => r2.json()).then(res2 => {
+          if (res2.ok && res2.data) setData(res2.data);
+        });
+      })
+      .catch(() => {
+        // Last resort: try real API
+        fetch("/api/analytics").then(r => r.json()).then(res => {
+          if (res.ok && res.data) setData(res.data);
+        }).catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, []);
 
