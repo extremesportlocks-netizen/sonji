@@ -208,10 +208,11 @@ export function CRMProvider({ children }: { children: ReactNode }) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [contactsRes, dealsRes, tasksRes] = await Promise.allSettled([
+      const [contactsRes, dealsRes, tasksRes, meetingsRes] = await Promise.allSettled([
         apiFetch<any>("/api/contacts?pageSize=500"),
         apiFetch<any>("/api/deals?pageSize=500"),
         apiFetch<any>("/api/tasks?pageSize=500"),
+        apiFetch<any>("/api/meetings"),
       ]);
 
       if (contactsRes.status === "fulfilled" && contactsRes.value.data) {
@@ -228,6 +229,22 @@ export function CRMProvider({ children }: { children: ReactNode }) {
       if (tasksRes.status === "fulfilled" && tasksRes.value.data) {
         const rows = Array.isArray(tasksRes.value.data) ? tasksRes.value.data : tasksRes.value.data.data || [];
         setTasks(rows.map(mapTaskFromAPI));
+      }
+
+      if (meetingsRes.status === "fulfilled" && meetingsRes.value.data) {
+        const rows = Array.isArray(meetingsRes.value.data) ? meetingsRes.value.data : meetingsRes.value.data.data || [];
+        setMeetings(rows.map((m: any) => ({
+          id: m.id,
+          title: m.title || "Meeting",
+          contactName: m.contactName || "",
+          date: m.startsAt ? new Date(m.startsAt).toISOString().split("T")[0] : "",
+          startTime: m.startsAt ? new Date(m.startsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "",
+          endTime: m.endsAt ? new Date(m.endsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "",
+          type: m.type || "call",
+          location: m.location || "",
+          notes: m.notes || "",
+          createdAt: m.createdAt || "",
+        })));
       }
     } catch (err) {
       console.error("[CRM] Failed to fetch data:", err);
