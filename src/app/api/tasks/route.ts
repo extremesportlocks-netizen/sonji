@@ -107,3 +107,12 @@ export const PATCH = withErrorHandler(async (req: NextRequest) => {
 
   return ok(updated);
 });
+
+export const DELETE = withErrorHandler(async (req: NextRequest) => {
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return validationError({ id: ["Missing task id"] });
+  const ctx = await requireAuth(req);
+
+  await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.tenantId, ctx.tenantId)));
+  return ok({ deleted: true });
+});

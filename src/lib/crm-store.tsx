@@ -304,6 +304,12 @@ export function CRMProvider({ children }: { children: ReactNode }) {
 
   const updateDeal = useCallback((id: string, data: Partial<Deal>) => {
     setDeals((prev) => prev.map((d) => d.id === id ? { ...d, ...data } : d));
+    // Persist to API
+    apiFetch(`/api/deals?id=${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).catch(() => {});
   }, []);
 
   const moveDeal = useCallback((id: string, newStage: string) => {
@@ -313,10 +319,17 @@ export function CRMProvider({ children }: { children: ReactNode }) {
       if (newStage === "Closed Won") logActivity("deal_won", `${d.title} — $${d.value.toLocaleString()} closed!`, d.contactName);
       return { ...d, stage: newStage };
     }));
+    // Persist stage change to API
+    apiFetch(`/api/deals?id=${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stage: newStage }),
+    }).catch(() => {});
   }, [logActivity]);
 
   const deleteDeal = useCallback((id: string) => {
     setDeals((prev) => prev.filter((d) => d.id !== id));
+    apiFetch(`/api/deals?id=${id}`, { method: "DELETE" }).catch(() => {});
   }, []);
 
   // ── Tasks ──
@@ -343,10 +356,16 @@ export function CRMProvider({ children }: { children: ReactNode }) {
 
   const updateTask = useCallback((id: string, data: Partial<Task>) => {
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, ...data } : t));
+    apiFetch(`/api/tasks?id=${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).catch(() => {});
   }, []);
 
   const deleteTask = useCallback((id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
+    apiFetch(`/api/tasks?id=${id}`, { method: "DELETE" }).catch(() => {});
   }, []);
 
   // ── Meetings ──
@@ -354,11 +373,26 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     const meeting: Meeting = { ...data, id: genId(), createdAt: today() };
     setMeetings((prev) => [meeting, ...prev]);
     logActivity("meeting_scheduled", `${data.title} — ${data.date} at ${data.startTime}`, data.contactName);
+
+    apiFetch("/api/meetings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: data.title,
+        contactName: data.contactName,
+        startTime: `${data.date}T${data.startTime}`,
+        endTime: data.endTime ? `${data.date}T${data.endTime}` : undefined,
+        type: data.type || "call",
+        location: data.location || "",
+      }),
+    }).catch(() => {});
+
     return meeting;
   }, [logActivity]);
 
   const deleteMeeting = useCallback((id: string) => {
     setMeetings((prev) => prev.filter((m) => m.id !== id));
+    apiFetch(`/api/meetings?id=${id}`, { method: "DELETE" }).catch(() => {});
   }, []);
 
   // ── Computed Stats ──

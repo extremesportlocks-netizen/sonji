@@ -128,3 +128,12 @@ export const PATCH = withErrorHandler(async (req: NextRequest) => {
 
   return ok(updated);
 });
+
+export const DELETE = withErrorHandler(async (req: NextRequest) => {
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return validationError({ id: ["Missing deal id"] });
+  const ctx = await requireAuth(req);
+
+  await db.delete(deals).where(and(eq(deals.id, id), eq(deals.tenantId, ctx.tenantId)));
+  return ok({ deleted: true });
+});
