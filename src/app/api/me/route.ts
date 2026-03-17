@@ -26,12 +26,41 @@ export async function GET(req: NextRequest) {
         email: users.email,
         name: users.name,
         role: users.role,
+        clerkId: users.clerkId,
       })
       .from(users)
       .where(eq(users.clerkId, clerkUserId))
       .limit(1);
 
-    if (userRows.length === 0) {
+    // If no match by Clerk ID, try matching by email
+    // This handles production Clerk switch — same email, new Clerk user ID
+    let user = userRows[0] || null;
+
+    if (!user && clerkUser?.emailAddresses?.[0]?.emailAddress) {
+      const email = clerkUser.emailAddresses[0].emailAddress;
+      const emailRows = await db
+        .select({
+          id: users.id,
+          tenantId: users.tenantId,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          clerkId: users.clerkId,
+        })
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (emailRows.length > 0) {
+        user = emailRows[0];
+        // Auto-link: update the user's Clerk ID to the new production one
+        await db.update(users)
+          .set({ clerkId: clerkUserId })
+          .where(eq(users.id, user.id));
+      }
+    }
+
+    if (!user) {
       return ok({
         hasTenant: false,
         clerkUser: {
@@ -42,8 +71,6 @@ export async function GET(req: NextRequest) {
         },
       });
     }
-
-    const user = userRows[0];
 
     const tenantRows = await db
       .select({
