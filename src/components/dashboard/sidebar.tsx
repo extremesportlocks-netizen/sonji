@@ -65,6 +65,7 @@ const allNavItems: NavItem[] = [
   { id: "scheduling", label: "Scheduling", href: "/dashboard/scheduling", icon: Calendar, group: "core" },
   { id: "messages", label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3, group: "core" },
   { id: "campaigns", label: "Campaigns", href: "/dashboard/campaigns", icon: Send, group: "core" },
+  { id: "social", label: "Social Media", href: "/dashboard/social", icon: Activity, group: "core" },
   { id: "email-templates", label: "Email Templates", href: "/dashboard/email-templates", icon: FileText, group: "core" },
   { id: "forms", label: "Forms", href: "/dashboard/forms", icon: ClipboardList, group: "core" },
   { id: "invoices", label: "Invoices", href: "/dashboard/invoices", icon: DollarSign, group: "core" },
