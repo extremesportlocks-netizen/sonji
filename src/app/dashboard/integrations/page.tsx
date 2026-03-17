@@ -19,11 +19,7 @@ interface Integration {
 }
 
 const integrations: Integration[] = [
-  // Platform-level (always connected for every tenant)
-  { id: "clerk", name: "Clerk", desc: "User authentication, SSO, and team management", category: "Auth", icon: "🔐", status: "connected" },
-  { id: "inngest", name: "Inngest", desc: "Background jobs, event-driven workflows, and retries", category: "Infrastructure", icon: "⚡", status: "connected" },
-
-  // Tenant-configured (default to available, dynamically updated on mount)
+  // Tenant-configured (dynamically updated on mount based on real settings)
   { id: "stripe", name: "Stripe", desc: "Payment processing, subscriptions, invoicing, and customer sync", category: "Payments", icon: "💳", status: "available" },
   { id: "resend", name: "Resend", desc: "Transactional and marketing email delivery", category: "Email", icon: "📧", status: "available" },
   { id: "twilio", name: "Twilio", desc: "SMS messaging, voice calls, and 10DLC compliance", category: "SMS", icon: "📱", status: "available" },
