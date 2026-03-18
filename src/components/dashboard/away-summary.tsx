@@ -138,8 +138,9 @@ export default function AwaySummary() {
     // Only show once per session
     if (sessionStorage.getItem("sonji-away-dismissed")) return;
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
-    const summary = INDUSTRY_SUMMARIES[key] || INDUSTRY_SUMMARIES.ecommerce;
+    // Only show for demo visitors (when demo key exists) — real tenants get real data
+    if (!di) return;
+    const summary = INDUSTRY_SUMMARIES[di] || INDUSTRY_SUMMARIES.ecommerce;
     setData(summary);
     setVisible(true);
   }, []);

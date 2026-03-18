@@ -146,7 +146,7 @@ export default function RevenueForecast() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
+    const key = demoIndustry; if (!key) return;
     setData(INDUSTRY_FORECASTS[key] || DEFAULT_FORECAST);
   }, []);
 

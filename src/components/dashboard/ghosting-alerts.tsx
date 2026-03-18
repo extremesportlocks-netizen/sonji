@@ -89,7 +89,7 @@ export default function GhostingAlerts() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
+    const key = demoIndustry; if (!key) return;
     setAlerts(INDUSTRY_ALERTS[key] || []);
   }, []);
 

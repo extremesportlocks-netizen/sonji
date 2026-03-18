@@ -89,7 +89,7 @@ export default function TeamPerformance() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
+    const key = demoIndustry; if (!key) return;
     setTeam(INDUSTRY_TEAMS[key] || INDUSTRY_TEAMS.ecommerce);
   }, []);
 

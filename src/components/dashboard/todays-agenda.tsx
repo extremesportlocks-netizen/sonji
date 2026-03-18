@@ -118,7 +118,7 @@ export default function TodaysAgenda() {
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
+    const key = di; if (!key) return;
     setItems(INDUSTRY_AGENDAS[key] || INDUSTRY_AGENDAS.ecommerce);
   }, []);
 

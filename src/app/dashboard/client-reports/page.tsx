@@ -95,7 +95,7 @@ export default function ClientReportsPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
+    const key = demoIndustry; if (!key) return;
     const data = DEMO_REPORTS[key] || DEMO_REPORTS.ecommerce;
     setReports(data);
   }, []);

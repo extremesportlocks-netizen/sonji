@@ -265,6 +265,14 @@ export default function Header({ title, subtitle }: Props) {
                   <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
                     {(() => {
                       const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+                      if (!di) {
+                        // Real tenant — no demo notifications
+                        return (
+                          <div className="px-4 py-8 text-center">
+                            <p className="text-sm text-gray-400">No new notifications</p>
+                          </div>
+                        );
+                      }
                       const n: { icon: string; text: string; time: string; unread: boolean }[] = {
                         agency_consulting: [
                           { icon: "🤝", text: "Deal won — Sterling Partners $10K/mo retainer", time: "1 hr ago", unread: true },
@@ -294,13 +302,7 @@ export default function Header({ title, subtitle }: Props) {
                           { icon: "⚡", text: "Automation: Document reminder sent to Sarah Mitchell", time: "Yesterday", unread: false },
                           { icon: "💳", text: "Payment received: Harbor Construction $3,750 retainer", time: "Yesterday", unread: false },
                         ],
-                      }[di || "ecommerce"] || [
-                        { icon: "💳", text: "Subscription payment: Andrew Krieman $165 VIP Monthly", time: "1 hr ago", unread: true },
-                        { icon: "⚡", text: "Automation: Win-back email sent to Raquel Munoz", time: "2 hr ago", unread: true },
-                        { icon: "🔥", text: "Chris Persaud hit VIP milestone — 4th purchase!", time: "4 hr ago", unread: false },
-                        { icon: "⭐", text: "Wayne Barry upgrading to VIP Yearly ($1,485)", time: "6 hr ago", unread: false },
-                        { icon: "⚠️", text: "Payment failed: Andrew Krieman — card declined", time: "8 hr ago", unread: false },
-                      ];
+                      }[di] || [];
                       return n.map((n, i) => (
                       <div key={i} className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition cursor-pointer ${n.unread ? "bg-indigo-50/30" : ""}`}>
                         <span className="text-lg flex-shrink-0 mt-0.5">{n.icon}</span>

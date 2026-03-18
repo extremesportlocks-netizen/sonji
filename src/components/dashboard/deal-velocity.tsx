@@ -119,7 +119,7 @@ export default function DealVelocity() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
+    const key = demoIndustry; if (!key) return;
     setDeals(DEMO_DEALS[key] || DEMO_DEALS.ecommerce);
   }, []);
 

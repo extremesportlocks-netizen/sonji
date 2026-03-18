@@ -137,8 +137,8 @@ export default function RecoveredRevenue() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
-    setData(INDUSTRY_RECOVERY[key] || INDUSTRY_RECOVERY.ecommerce);
+    if (!demoIndustry) return; // Real tenant — no fake recovery data
+    setData(INDUSTRY_RECOVERY[demoIndustry] || INDUSTRY_RECOVERY.ecommerce);
   }, []);
 
   if (!data) return null;
