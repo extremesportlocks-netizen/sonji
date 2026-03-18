@@ -27,7 +27,7 @@ const DEMO_NAMES: Record<string,{ name: string; initial: string }> = {
 
 // Industry-specific sidebar label overrides
 const INDUSTRY_NAV_LABELS: Record<string, Record<string, string>> = {
-  health_wellness: { contacts: "Patients", deals: "Treatments", companies: "Providers", invoices: "Billing", projects: "Operations" },
+  health_wellness: { contacts: "Patients", deals: "Treatments", companies: "Providers", invoices: "Billing", projects: "Operations", meetings: "Consultations", tasks: "Follow-ups", messages: "Patient Messages", campaigns: "Outreach", workflows: "Care Automations", activities: "Patient Activity", referrals: "Referrals" },
   fitness_gym: { contacts: "Members", deals: "Memberships", companies: "Locations", projects: "Programs" },
   beauty_salon: { contacts: "Clients", deals: "Appointments", invoices: "Billing", projects: "Services" },
   agency_consulting: { contacts: "Clients", deals: "Pipeline", companies: "Accounts", invoices: "Billing", projects: "Projects" },

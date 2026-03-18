@@ -462,8 +462,12 @@ export default function ContactsPage() {
                   <tr>
                     <td colSpan={columns.length + 2} className="px-5 py-16 text-center">
                       <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-gray-500">No contacts found</p>
-                      <p className="text-xs text-gray-400 mt-1">Try adjusting your search or filters</p>
+                      <p className="text-sm font-medium text-gray-500">
+                        {(() => { try { const t = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}"); return t.industry === "health_wellness" ? "No patients yet" : t.industry === "agency_consulting" ? "No clients yet" : "No contacts found"; } catch { return "No contacts found"; } })()}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {(() => { try { const t = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}"); return t.industry === "health_wellness" ? "Your first checkout on clyr.health will sync here automatically" : "Connect Stripe to sync your customers, or import a CSV"; } catch { return "Try adjusting your search or filters"; } })()}
+                      </p>
                     </td>
                   </tr>
                 ) : (

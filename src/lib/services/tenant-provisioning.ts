@@ -10,12 +10,14 @@ const INDUSTRY_PIPELINES: Record<string, { name: string; stages: { name: string;
   health_wellness: {
     name: "Patient Pipeline",
     stages: [
-      { name: "Inquiry", order: 0, color: "#6366f1" },
-      { name: "Consultation Booked", order: 1, color: "#2563eb" },
-      { name: "Treatment Plan", order: 2, color: "#f59e0b" },
-      { name: "Payment Collected", order: 3, color: "#059669" },
-      { name: "In Treatment", order: 4, color: "#06b6d4" },
-      { name: "Follow-up", order: 5, color: "#8b5cf6" },
+      { name: "Intake", order: 0, color: "#6366f1" },
+      { name: "Payment Collected", order: 1, color: "#2563eb" },
+      { name: "Under Review", order: 2, color: "#f59e0b" },
+      { name: "Approved", order: 3, color: "#059669" },
+      { name: "Prescribed", order: 4, color: "#06b6d4" },
+      { name: "Shipped", order: 5, color: "#8b5cf6" },
+      { name: "Delivered", order: 6, color: "#10b981" },
+      { name: "Active", order: 7, color: "#22c55e" },
     ],
   },
   fitness_gym: {
