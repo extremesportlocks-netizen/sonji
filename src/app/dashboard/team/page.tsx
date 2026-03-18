@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -112,8 +112,8 @@ export default function TeamPage() {
   const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
-    const di = getDemoIndustry();
-    const key = di; if (!key) return;
+    const di = getActiveIndustry();
+    const key = di || "ecommerce";
     setTeam(INDUSTRY_TEAMS[key] || DEFAULT_TEAM);
   }, []);
 

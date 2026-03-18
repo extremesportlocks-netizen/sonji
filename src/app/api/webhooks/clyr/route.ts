@@ -79,6 +79,20 @@ export async function POST(req: NextRequest) {
       lastEventAt: new Date().toISOString(),
     };
 
+    // Map event to pipeline stage
+    const EVENT_TO_STAGE: Record<string, string> = {
+      checkout: "Payment Collected",
+      waiting: "Under Review",
+      mdi_approved: "Approved",
+      mdi_prescribed: "Prescribed",
+      shipped: "Shipped",
+      delivered: "Delivered",
+      abandoned: "Intake",
+      cancelled: "Intake",
+    };
+
+    const stage = EVENT_TO_STAGE[event || "checkout"] || "Payment Collected";
+
     if (existing.length > 0) {
       // Update existing contact
       const prevCf = (existing[0].custom_fields as any) || {};
@@ -95,6 +109,15 @@ export async function POST(req: NextRequest) {
             status = 'active',
             phone = COALESCE(${phone || null}, phone)
         WHERE id = ${existing[0].id}
+      `;
+
+      // Update existing deal stage if deal exists
+      await sql`
+        UPDATE deals
+        SET stage = ${stage},
+            updated_at = NOW()
+        WHERE tenant_id = ${tenantId}
+          AND contact_id = ${existing[0].id}
       `;
 
       return NextResponse.json({ ok: true, action: "updated", contactId: existing[0].id });
@@ -116,7 +139,37 @@ export async function POST(req: NextRequest) {
         RETURNING id
       `;
 
-      return NextResponse.json({ ok: true, action: "created", contactId: result[0].id });
+      const contactId = result[0].id;
+
+      // Find the CLYR pipeline
+      const pipelineRows = await sql`
+        SELECT id FROM pipelines WHERE tenant_id = ${tenantId} LIMIT 1
+      `;
+
+      // Create a deal in the treatment pipeline
+      const dealTitle = treatment === "tirzepatide"
+        ? `Tirzepatide ${plan === "3-month" ? "3-Month" : plan === "6-month" ? "6-Month" : "Monthly"}`
+        : `Semaglutide ${plan === "3-month" ? "3-Month" : plan === "6-month" ? "6-Month" : "Monthly"}`;
+
+      if (pipelineRows.length > 0) {
+        await sql`
+          INSERT INTO deals (
+            tenant_id, contact_id, pipeline_id, title, value, stage,
+            notes, status
+          ) VALUES (
+            ${tenantId},
+            ${contactId},
+            ${pipelineRows[0].id},
+            ${dealTitle},
+            ${amount || 0},
+            ${stage},
+            ${`Patient: ${`${firstName || ""} ${lastName || ""}`.trim()} | Plan: ${plan || "monthly"} | Stripe: ${stripeCustomerId || "n/a"}`},
+            'open'
+          )
+        `;
+      }
+
+      return NextResponse.json({ ok: true, action: "created", contactId });
     }
   } catch (err: any) {
     console.error("CLYR webhook error:", err);
