@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Heart, ChevronRight, TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
@@ -111,7 +111,7 @@ export default function ClientHealth() {
   const [clients, setClients] = useState<ClientHealth[]>([]);
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry; if (!key) return;
     setClients(INDUSTRY_HEALTH[key] || []);
   }, []);

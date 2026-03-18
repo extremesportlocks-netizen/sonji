@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Header from "@/components/dashboard/header";
@@ -40,7 +40,7 @@ export default function ContactDetailPage() {
   const [subEditActiveUntil, setSubEditActiveUntil] = useState("");
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
     const isDemoId = String(id).startsWith("demo-");
 
     if (demoIndustry && isDemoId) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronRight, Clock, AlertTriangle, TrendingDown } from "lucide-react";
@@ -119,7 +119,7 @@ export default function DealVelocity() {
   const [deals, setDeals] = useState<VelocityDeal[]>([]);
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry; if (!key) return;
     setDeals(DEMO_DEALS[key] || DEMO_DEALS.ecommerce);
   }, []);

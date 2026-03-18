@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { Loader2, Users, DollarSign, ShoppingCart, TrendingUp, Crown, AlertTriangle, UserCheck, UserX, ChevronRight } from "lucide-react";
@@ -48,7 +48,7 @@ export default function AnalyticsPage() {
   const hvLabel = ic?.highValueLabel || "High Value";
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
 
     if (demoIndustry) {
       fetch(`/api/demo?industry=${demoIndustry}`)

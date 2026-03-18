@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { X, TrendingUp, DollarSign, Users, Zap, AlertTriangle, Star, Mail, FileText } from "lucide-react";
 
@@ -138,7 +138,7 @@ export default function AwaySummary() {
   useEffect(() => {
     // Only show once per session
     if (sessionStorage.getItem("sonji-away-dismissed")) return;
-    const di = getActiveIndustry();
+    const di = getDemoIndustry();
     // Only show for demo visitors (when demo key exists) — real tenants get real data
     if (!di) return;
     const summary = INDUSTRY_SUMMARIES[di] || INDUSTRY_SUMMARIES.ecommerce;

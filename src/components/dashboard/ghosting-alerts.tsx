@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, TrendingDown, Clock, ChevronRight, Mail, Ghost, Thermometer } from "lucide-react";
@@ -89,7 +89,7 @@ export default function GhostingAlerts() {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry; if (!key) return;
     setAlerts(INDUSTRY_ALERTS[key] || []);
   }, []);

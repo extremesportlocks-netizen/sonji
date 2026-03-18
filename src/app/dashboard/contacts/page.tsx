@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/dashboard/header";
 import { useModal } from "@/components/modals/modal-provider";
@@ -275,7 +275,7 @@ export default function ContactsPage() {
       }
 
       // Check demo mode
-      const demoIndustry = getActiveIndustry();
+      const demoIndustry = getDemoIndustry();
 
       if (demoIndustry) {
         // Try demo contacts first

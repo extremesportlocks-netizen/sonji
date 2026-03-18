@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { DollarSign, Send, Crown, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
@@ -33,7 +33,7 @@ export default function MoneyOnTable() {
   useEffect(() => {
     async function load() {
       try {
-        const demoIndustry = getActiveIndustry();
+        const demoIndustry = getDemoIndustry();
         const isRealTenant = typeof window !== "undefined" && sessionStorage.getItem("sonji-tenant-verified") === "true";
         const industry = demoIndustry || "ecommerce";
 

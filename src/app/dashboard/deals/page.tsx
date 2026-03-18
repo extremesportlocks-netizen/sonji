@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useCRM } from "@/lib/crm-store";
@@ -494,23 +494,20 @@ export default function DealsPage() {
   const [tenantIndustry, setTenantIndustry] = useState<string | null>(null);
 
   useEffect(() => {
-    const key = getActiveIndustry();
-    setDemoIndustry(key || null);
-    if (key && INDUSTRY_DEALS[key]) setDemoDeals([...INDUSTRY_DEALS[key]]);
+    // Demo data records: only for demo visitors (null for real tenants like CLYR)
+    const demoKey = getDemoIndustry();
+    setDemoIndustry(demoKey || null);
+    if (demoKey && INDUSTRY_DEALS[demoKey]) setDemoDeals([...INDUSTRY_DEALS[demoKey]]);
 
-    // For real tenants, get industry from sessionStorage
-    if (!key) {
-      try {
-        const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
-        if (tenant.industry) setTenantIndustry(tenant.industry);
-      } catch {}
-    }
+    // Pipeline stages: use tenant's real industry (health_wellness for CLYR)
+    const industry = getActiveIndustry();
+    if (industry) setTenantIndustry(industry);
   }, []);
 
-  // Use industry stages: demo key → demo stages, real tenant → tenant industry stages, fallback → default
-  const activeIndustry = demoIndustry || tenantIndustry;
+  // Stages always use the active industry (demo or real tenant)
+  const activeIndustry = getActiveIndustry();
   const stages = activeIndustry && INDUSTRY_STAGES[activeIndustry] ? INDUSTRY_STAGES[activeIndustry] : defaultStages;
-  const isDemo = demoIndustry && INDUSTRY_DEALS[demoIndustry];
+  const isDemo = !!demoIndustry && !!INDUSTRY_DEALS[demoIndustry];
   const ic = activeIndustry ? getIndustryConfig(activeIndustry) : null;
   const deals = isDemo ? demoDeals : crmDeals;
 

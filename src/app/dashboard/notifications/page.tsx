@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import {
@@ -127,7 +127,7 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   useEffect(() => {
-    const di = getActiveIndustry();
+    const di = getDemoIndustry();
     if (di && INDUSTRY_NOTIFS[di]) {
       setNotifs(INDUSTRY_NOTIFS[di]);
       return;

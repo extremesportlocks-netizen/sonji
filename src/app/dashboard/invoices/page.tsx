@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useModal } from "@/components/modals/modal-provider";
@@ -103,7 +103,7 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
     if (demoIndustry && INDUSTRY_INVOICES[demoIndustry]) {
       setInvoices(INDUSTRY_INVOICES[demoIndustry]);
       return;

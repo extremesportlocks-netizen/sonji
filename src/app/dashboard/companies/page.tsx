@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -107,7 +107,7 @@ export default function CompaniesPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
 
     if (demoIndustry) {
       const key = demoIndustry;

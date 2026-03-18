@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { TrendingUp, DollarSign, Calendar, ChevronRight } from "lucide-react";
 
@@ -146,7 +146,7 @@ export default function RevenueForecast() {
   const [data, setData] = useState<ForecastData | null>(null);
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry; if (!key) return;
     setData(INDUSTRY_FORECASTS[key] || DEFAULT_FORECAST);
   }, []);
