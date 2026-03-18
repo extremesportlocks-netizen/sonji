@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
@@ -33,7 +34,7 @@ export default function AICampaigns() {
   const [sendResult, setSendResult] = useState<{ id: string; sent: number; failed: number } | null>(null);
 
   useEffect(() => {
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
     const isRealTenant = typeof window !== "undefined" && sessionStorage.getItem("sonji-tenant-verified") === "true";
 
     if (!isRealTenant) {

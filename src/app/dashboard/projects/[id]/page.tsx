@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Header from "@/components/dashboard/header";
@@ -205,7 +206,7 @@ export default function ProjectDetailPage() {
 
     // For any other project ID, generate detail from the projects page data
     // Import the project list and build a detail view
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
     const generated = generateProjectDetail(id as string, demoIndustry || "agency_consulting");
     if (generated) setProject(generated);
     setLoading(false);

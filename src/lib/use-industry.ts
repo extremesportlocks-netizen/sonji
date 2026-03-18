@@ -2,33 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 
 /**
  * Hook to get current industry config.
- * 
- * Priority:
- * 1. Demo key in localStorage (brain mode / demo visitors)
- * 2. Tenant industry from sessionStorage (real tenants like CLYR)
- * 3. null (no industry context)
+ * Uses centralized tenant-utils for bulletproof demo/real detection.
  */
 export function useIndustry(): IndustryConfig | null {
   const [ic, setIc] = useState<IndustryConfig | null>(null);
 
   useEffect(() => {
-    // Check demo mode first (brain mode / demo visitors)
-    const demoKey = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    if (demoKey) {
-      setIc(getIndustryConfig(demoKey));
-      return;
+    const industry = getActiveIndustry();
+    if (industry) {
+      setIc(getIndustryConfig(industry));
     }
-
-    // Check real tenant industry from sessionStorage
-    try {
-      const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
-      if (tenant.industry) {
-        setIc(getIndustryConfig(tenant.industry));
-      }
-    } catch {}
   }, []);
 
   return ic;

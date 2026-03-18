@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -111,7 +112,7 @@ export default function TeamPage() {
   const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
-    const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const di = getDemoIndustry();
     const key = di; if (!key) return;
     setTeam(INDUSTRY_TEAMS[key] || DEFAULT_TEAM);
   }, []);

@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { TrendingUp, Zap, ArrowUpRight } from "lucide-react";
 
@@ -136,7 +137,7 @@ export default function RecoveredRevenue() {
   const [data, setData] = useState<{ total: number; metrics: RecoveryMetric[] } | null>(null);
 
   useEffect(() => {
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
     if (!demoIndustry) return; // Real tenant — no fake recovery data
     setData(INDUSTRY_RECOVERY[demoIndustry] || INDUSTRY_RECOVERY.ecommerce);
   }, []);

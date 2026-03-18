@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { TrendingUp, DollarSign, Calendar, ChevronRight } from "lucide-react";
 
@@ -145,7 +146,7 @@ export default function RevenueForecast() {
   const [data, setData] = useState<ForecastData | null>(null);
 
   useEffect(() => {
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry; if (!key) return;
     setData(INDUSTRY_FORECASTS[key] || DEFAULT_FORECAST);
   }, []);

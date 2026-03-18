@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -130,7 +131,7 @@ export default function EmailTemplatesPage() {
   const [newTpl, setNewTpl] = useState({ name: "", category: "welcome", subject: "", preview: "" });
 
   useEffect(() => {
-    const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const di = getDemoIndustry();
     const key = di; if (!key) return;
     setTemplates(INDUSTRY_TEMPLATES[key] || DEFAULT_TEMPLATES);
   }, []);

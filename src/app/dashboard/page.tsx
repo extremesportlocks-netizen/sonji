@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Header from "@/components/dashboard/header";
@@ -451,7 +452,7 @@ function renderWidget(type: string, s: Stats, ic?: IndustryConfig | null) {
     case "pipeline": return <Pipeline s={s} />;
     case "open_tasks": return <OpenTasks s={s} />;
     case "activity_feed": {
-      const demoKey = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+      const demoKey = getDemoIndustry();
       return demoKey ? <IndustryActivityFeed industry={demoKey} /> : <ActivityFeed s={s} />;
     }
     case "upcoming_meetings": return <UpcomingMeetings />;
@@ -483,7 +484,7 @@ export default function DashboardPage() {
   const [ic, setIc] = useState<IndustryConfig | null>(null);
 
   useEffect(() => {
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
 
     if (demoIndustry) {
       // Demo mode (visitor or admin brain mode) — load demo data

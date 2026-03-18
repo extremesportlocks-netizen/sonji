@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -161,7 +162,7 @@ export default function ActivitiesPage() {
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry || "ecommerce";
 
     if (demoIndustry) {

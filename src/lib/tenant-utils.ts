@@ -1,14 +1,11 @@
 /**
- * Check if the current user is a real authenticated tenant.
+ * SONJI TENANT UTILITIES
  * 
- * Real tenants should see their REAL data (even if empty).
- * Demo visitors should see industry demo data.
- * Orlando's brain mode (admin) can toggle between real + demo.
+ * Single source of truth for determining what data to show.
+ * Every dashboard page and widget MUST use these functions.
  * 
- * Usage in any dashboard page:
- *   const isReal = isRealTenant();
- *   if (isReal) { fetch("/api/contacts"); }
- *   else { fetch("/api/demo?industry=..."); }
+ * RULE: If isRealTenant() returns true, NEVER show demo data.
+ * Period. No fallbacks, no "ecommerce" defaults, nothing.
  */
 
 const ADMIN_EMAILS = [
@@ -17,11 +14,18 @@ const ADMIN_EMAILS = [
   "orlandoenterprises54@gmail.com",
 ];
 
+/**
+ * Is the current user a real authenticated tenant?
+ * Checks sessionStorage which is set by TenantGate on auth.
+ */
 export function isRealTenant(): boolean {
   if (typeof window === "undefined") return false;
   return sessionStorage.getItem("sonji-tenant-verified") === "true";
 }
 
+/**
+ * Is the current user a platform admin (Orlando)?
+ */
 export function isAdminUser(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -31,37 +35,43 @@ export function isAdminUser(): boolean {
 }
 
 /**
- * Should this page show demo data?
+ * Get the demo industry key — ONLY if demo data should be shown.
  * 
- * TRUE when:
- * - Not a real tenant (demo visitor)
- * - Admin user who has switched to a DIFFERENT industry via demo bar
- *   (brain mode — previewing other industry layouts)
+ * Returns the industry key for:
+ * - Demo visitors (not authenticated)
+ * - Admin users in brain mode (switching industries)
  * 
- * FALSE when:
- * - Real tenant (show real data, even if empty)
- * - Admin user viewing their OWN industry
+ * Returns NULL for:
+ * - ALL real tenants (CLYR, Power, future customers)
+ * - Even if localStorage still has a stale key from before
+ * 
+ * THIS IS THE FUNCTION EVERY PAGE SHOULD USE.
  */
-export function shouldShowDemoData(): boolean {
-  if (typeof window === "undefined") return false;
-
-  const isReal = isRealTenant();
-
-  if (!isReal) return true; // Demo visitor — always show demo
-
-  // Real tenant — check if admin is in brain mode (different industry)
-  if (isAdminUser()) {
-    const demoIndustry = localStorage.getItem("sonji-demo-industry");
-    const tenantIndustry = getTenantIndustry();
-    // If admin switched to a different industry, show that industry's demo data
-    if (demoIndustry && tenantIndustry && demoIndustry !== tenantIndustry) {
-      return true;
+export function getDemoIndustry(): string | null {
+  if (typeof window === "undefined") return null;
+  
+  // Real tenant = NEVER show demo data
+  if (isRealTenant()) {
+    // Exception: admin in brain mode with demo bar active
+    if (isAdminUser()) {
+      const demoKey = localStorage.getItem("sonji-demo-industry");
+      // Only return demo key if admin has explicitly switched to a DIFFERENT industry
+      const tenantIndustry = getTenantIndustry();
+      if (demoKey && tenantIndustry && demoKey !== tenantIndustry) {
+        return demoKey;
+      }
     }
+    return null;
   }
-
-  return false; // Real tenant — show real data
+  
+  // Not a real tenant — demo visitor, show demo data
+  return localStorage.getItem("sonji-demo-industry") || "ecommerce";
 }
 
+/**
+ * Get the tenant's industry from sessionStorage.
+ * Works for both real tenants and returns null for demo visitors.
+ */
 export function getTenantIndustry(): string | null {
   if (typeof window === "undefined") return null;
   try {
@@ -70,7 +80,18 @@ export function getTenantIndustry(): string | null {
   } catch { return null; }
 }
 
-export function getDemoIndustryKey(): string {
-  if (typeof window === "undefined") return "ecommerce";
-  return localStorage.getItem("sonji-demo-industry") || "ecommerce";
+/**
+ * Get the active industry for label overrides.
+ * Returns the industry that should drive labels like "Patients" vs "Contacts".
+ * 
+ * For real tenants: their actual industry
+ * For demo visitors: the demo industry
+ * For admin brain mode: the demo bar industry
+ */
+export function getActiveIndustry(): string | null {
+  if (typeof window === "undefined") return null;
+  const demo = getDemoIndustry();
+  if (demo) return demo;
+  return getTenantIndustry();
 }
+

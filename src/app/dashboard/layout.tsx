@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/dashboard/sidebar";
 import CommandPalette from "@/components/dashboard/command-palette";
@@ -16,7 +17,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [healthStats, setHealthStats] = useState<any>(null);
 
   useEffect(() => {
-    const demoIndustry = localStorage.getItem("sonji-demo-industry");
+    const demoIndustry = getDemoIndustry();
 
     if (demoIndustry) {
       // Demo mode — load demo stats

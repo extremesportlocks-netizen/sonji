@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -94,7 +95,7 @@ export default function ClientReportsPage() {
   const [selectedReport, setSelectedReport] = useState<ClientReport | null>(null);
 
   useEffect(() => {
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry; if (!key) return;
     const data = DEMO_REPORTS[key] || DEMO_REPORTS.ecommerce;
     setReports(data);

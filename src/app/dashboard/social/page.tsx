@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -107,7 +108,7 @@ export default function SocialPage() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
 
   useEffect(() => {
-    const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const di = getDemoIndustry();
     const key = di; if (!key) return;
     setPosts(INDUSTRY_POSTS[key] || INDUSTRY_POSTS.ecommerce);
   }, []);

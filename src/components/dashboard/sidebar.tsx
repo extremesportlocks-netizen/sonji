@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/lib/sidebar-context";
 import {
@@ -134,7 +135,7 @@ export default function Sidebar() {
   // Listen for demo mode changes
   useEffect(() => {
     const update = () => {
-      const key = localStorage.getItem("sonji-demo-industry");
+      const key = getActiveIndustry();
       setDemoCompany(key && DEMO_NAMES[key] ? DEMO_NAMES[key] : null);
       setDemoKey(key || null);
     };
@@ -212,7 +213,7 @@ export default function Sidebar() {
   const handleDragEnd = () => setDragId(null);
 
   // Get ordered items for a group, filtered by industry
-  const currentIndustry = demoKey || (typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null);
+  const currentIndustry = getActiveIndustry();
 
   const getGroupItems = (group: string) => {
     return order

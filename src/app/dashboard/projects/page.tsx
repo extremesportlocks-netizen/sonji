@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/dashboard/header";
 import Link from "next/link";
@@ -146,7 +147,7 @@ export default function ProjectsPage() {
   // Load projects
   const [projects, setProjects] = useState<Project[]>([]);
   useEffect(() => {
-    const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const demoIndustry = getDemoIndustry();
     const key = demoIndustry; if (!key) return;
     setProjects(DEMO_PROJECTS[key] || DEFAULT_PROJECTS);
 

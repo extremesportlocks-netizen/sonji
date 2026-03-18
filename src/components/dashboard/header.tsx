@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -264,7 +265,7 @@ export default function Header({ title, subtitle }: Props) {
                   </div>
                   <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
                     {(() => {
-                      const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+                      const di = getDemoIndustry();
                       if (!di) {
                         // Real tenant — no demo notifications
                         return (

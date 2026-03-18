@@ -1,5 +1,6 @@
 "use client";
 
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import {
@@ -126,7 +127,7 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   useEffect(() => {
-    const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
+    const di = getDemoIndustry();
     if (di && INDUSTRY_NOTIFS[di]) {
       setNotifs(INDUSTRY_NOTIFS[di]);
       return;
