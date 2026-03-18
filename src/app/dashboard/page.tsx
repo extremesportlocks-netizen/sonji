@@ -500,6 +500,12 @@ export default function DashboardPage() {
         .then(d => { if (d.ok || d.data) setS(d.data); })
         .catch(() => {})
         .finally(() => setLoading(false));
+
+      // Set industry config from tenant data for label overrides
+      try {
+        const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+        if (tenant.industry) setIc(getIndustryConfig(tenant.industry));
+      } catch {}
     }
 
     setLayout(loadLayout());

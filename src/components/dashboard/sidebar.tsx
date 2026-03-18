@@ -64,7 +64,7 @@ const allNavItems: NavItem[] = [
   { id: "projects", label: "Projects", href: "/dashboard/projects", icon: FolderKanban, group: "core" },
   { id: "meetings", label: "Meetings", href: "/dashboard/meetings", icon: Calendar, group: "core" },
   { id: "scheduling", label: "Scheduling", href: "/dashboard/scheduling", icon: Calendar, group: "core" },
-  { id: "messages", label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3, group: "core" },
+  { id: "messages", label: "Messages", href: "/dashboard/messages", icon: MessageSquare, group: "core" },
   { id: "campaigns", label: "Campaigns", href: "/dashboard/campaigns", icon: Send, group: "core" },
   { id: "advertising", label: "Ad Intelligence", href: "/dashboard/advertising", icon: Megaphone, group: "core", industries: ["agency_consulting"] },
   { id: "social", label: "Social Media", href: "/dashboard/social", icon: Activity, group: "core" },
