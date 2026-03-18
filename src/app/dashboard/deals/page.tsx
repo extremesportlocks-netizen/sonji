@@ -490,17 +490,27 @@ export default function DealsPage() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [demoIndustry, setDemoIndustry] = useState<string | null>(null);
   const [demoDeals, setDemoDeals] = useState<DemoDeal[]>([]);
+  const [tenantIndustry, setTenantIndustry] = useState<string | null>(null);
 
   useEffect(() => {
     const key = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
     setDemoIndustry(key || null);
     if (key && INDUSTRY_DEALS[key]) setDemoDeals([...INDUSTRY_DEALS[key]]);
+
+    // For real tenants, get industry from sessionStorage
+    if (!key) {
+      try {
+        const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+        if (tenant.industry) setTenantIndustry(tenant.industry);
+      } catch {}
+    }
   }, []);
 
-  // Use industry stages + deals in demo mode (including ecommerce)
-  const stages = demoIndustry && INDUSTRY_STAGES[demoIndustry] ? INDUSTRY_STAGES[demoIndustry] : defaultStages;
+  // Use industry stages: demo key → demo stages, real tenant → tenant industry stages, fallback → default
+  const activeIndustry = demoIndustry || tenantIndustry;
+  const stages = activeIndustry && INDUSTRY_STAGES[activeIndustry] ? INDUSTRY_STAGES[activeIndustry] : defaultStages;
   const isDemo = demoIndustry && INDUSTRY_DEALS[demoIndustry];
-  const ic = demoIndustry ? getIndustryConfig(demoIndustry) : null;
+  const ic = activeIndustry ? getIndustryConfig(activeIndustry) : null;
   const deals = isDemo ? demoDeals : crmDeals;
 
   const handleUpdateDeal = (id: string, updates: Partial<DemoDeal>) => {
