@@ -112,7 +112,7 @@ export default function TeamPage() {
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
+    const key = di; if (!key) return;
     setTeam(INDUSTRY_TEAMS[key] || DEFAULT_TEAM);
   }, []);
 

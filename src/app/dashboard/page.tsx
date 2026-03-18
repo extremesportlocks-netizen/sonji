@@ -444,30 +444,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const industry = demoIndustry || "ecommerce";
 
-    // Always try demo data first (works without auth)
-    fetch(`/api/demo?industry=${industry}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok && d.data) { setS(d.data); return; }
-        return fetch("/api/dashboard").then(r2 => r2.json()).then(d2 => {
-          if (d2.ok || d2.data) setS(d2.data);
-        });
-      })
-      .catch(() => {
-        fetch("/api/dashboard").then(r => r.json()).then(d => {
-          if (d.ok || d.data) setS(d.data);
-        }).catch(() => {});
-      })
-      .finally(() => setLoading(false));
+    if (demoIndustry) {
+      // Demo mode (visitor or admin brain mode) — load demo data
+      fetch(`/api/demo?industry=${demoIndustry}`)
+        .then(r => r.json())
+        .then(d => { if (d.ok && d.data) setS(d.data); })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+      setIc(getIndustryConfig(demoIndustry));
+    } else {
+      // Real tenant — load real data from API
+      fetch("/api/dashboard")
+        .then(r => r.json())
+        .then(d => { if (d.ok || d.data) setS(d.data); })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
 
     setLayout(loadLayout());
-
-    // Set industry config
-    if (demoIndustry) {
-      setIc(getIndustryConfig(demoIndustry));
-    }
   }, []);
 
   const updateLayout = (next: WidgetConfig[]) => {

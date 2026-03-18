@@ -115,10 +115,8 @@ export default function InvoicesPage() {
           status: inv.status, issueDate: new Date(inv.createdAt).toLocaleDateString(),
           dueDate: inv.dueDate || "", items: (inv.items as any[]) || [],
         })));
-      } else {
-        setInvoices(INDUSTRY_INVOICES.ecommerce);
       }
-    }).catch(() => setInvoices(INDUSTRY_INVOICES.ecommerce));
+    }).catch(() => {});
   }, []);
 
   const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.amount, 0);

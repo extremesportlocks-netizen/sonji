@@ -129,7 +129,7 @@ export default function EmailTemplatesPage() {
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
+    const key = di; if (!key) return;
     setTemplates(INDUSTRY_TEMPLATES[key] || DEFAULT_TEMPLATES);
   }, []);
 

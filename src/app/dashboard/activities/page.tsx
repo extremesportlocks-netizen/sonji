@@ -164,12 +164,12 @@ export default function ActivitiesPage() {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
     const key = demoIndustry || "ecommerce";
 
-    // Always try demo data first (works without auth)
-    if (INDUSTRY_ACTIVITIES[key]?.length) {
-      setActivities(INDUSTRY_ACTIVITIES[key]);
+    if (demoIndustry) {
+      // Demo mode — show industry demo activities
+      setActivities(INDUSTRY_ACTIVITIES[key] || []);
       setLoading(false);
-
-      // Then try to overlay real data if available
+    } else {
+      // Real tenant — try real API, fall back to empty
       fetch("/api/contacts?pageSize=50&sortBy=createdAt&sortOrder=desc")
         .then(r => r.json())
         .then(data => {
@@ -186,10 +186,8 @@ export default function ActivitiesPage() {
             setActivities(acts);
           }
         })
-        .catch(() => {});
-    } else {
-      setActivities(INDUSTRY_ACTIVITIES.ecommerce || []);
-      setLoading(false);
+        .catch(() => {})
+        .finally(() => setLoading(false));
     }
   }, []);
 

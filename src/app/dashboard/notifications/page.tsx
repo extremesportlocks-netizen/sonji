@@ -140,9 +140,9 @@ export default function NotificationsPage() {
           time: new Date(n.createdAt).toLocaleDateString(), read: n.read, icon: "🔔",
         })));
       } else {
-        setNotifs(INDUSTRY_NOTIFS.ecommerce);
+        setNotifs([]);
       }
-    }).catch(() => setNotifs(INDUSTRY_NOTIFS.ecommerce));
+    }).catch(() => {});
   }, []);
 
   const filtered = filter === "unread" ? notifs.filter(n => !n.read) : notifs;

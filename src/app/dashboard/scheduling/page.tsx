@@ -99,7 +99,7 @@ export default function SchedulingPage() {
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
+    const key = di; if (!key) return;
     setLinks(INDUSTRY_LINKS[key] || INDUSTRY_LINKS.ecommerce);
   }, []);
 

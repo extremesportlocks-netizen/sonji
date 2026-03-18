@@ -145,7 +145,7 @@ export default function ReferralsPage() {
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
+    const key = di; if (!key) return;
     setData(INDUSTRY_REFERRALS[key] || INDUSTRY_REFERRALS.ecommerce);
   }, []);
 

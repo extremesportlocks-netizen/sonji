@@ -143,9 +143,9 @@ export default function MeetingsPage() {
           type: m.type || "call", location: m.location || "", color: "bg-indigo-500",
         })));
       } else {
-        setMeetings(INDUSTRY_MEETINGS.ecommerce);
+        setMeetings([]);
       }
-    }).catch(() => setMeetings(INDUSTRY_MEETINGS.ecommerce));
+    }).catch(() => {});
   }, []);
 
   const today = new Date();

@@ -108,7 +108,7 @@ export default function SocialPage() {
 
   useEffect(() => {
     const di = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = di || "ecommerce";
+    const key = di; if (!key) return;
     setPosts(INDUSTRY_POSTS[key] || INDUSTRY_POSTS.ecommerce);
   }, []);
   const [filter, setFilter] = useState<"all" | "draft" | "scheduled" | "published">("all");

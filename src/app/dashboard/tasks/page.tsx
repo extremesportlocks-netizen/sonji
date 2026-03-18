@@ -145,7 +145,7 @@ export default function TasksPage() {
   useEffect(() => {
     if (crmTasks.length > 0) return; // Real data exists, don't seed
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const key = demoIndustry || "ecommerce";
+    const key = demoIndustry; if (!key) return;
     setDemoTasks(INDUSTRY_TASKS[key] || DEFAULT_TASKS);
   }, [crmTasks.length]);
 

@@ -152,9 +152,9 @@ export default function WorkflowsPage() {
           status: a.status, category: "custom", lastRun: a.lastRun || "Never", runsTotal: 0,
         })));
       } else {
-        setAutomations(INDUSTRY_AUTOMATIONS.ecommerce || DEFAULT_AUTOMATIONS);
+        setAutomations([]);
       }
-    }).catch(() => setAutomations(INDUSTRY_AUTOMATIONS.ecommerce || DEFAULT_AUTOMATIONS));
+    }).catch(() => {});
   }, []);
 
   const toggleStatus = (id: string) => {

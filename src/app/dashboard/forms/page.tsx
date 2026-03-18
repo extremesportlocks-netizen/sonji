@@ -124,10 +124,8 @@ export default function FormsPage() {
           fields: ((f.fields as any[]) || []).length,
           lastSubmission: f.createdAt ? new Date(f.createdAt).toLocaleDateString() : "Never",
         })));
-      } else {
-        setForms(INDUSTRY_FORMS.ecommerce);
       }
-    }).catch(() => setForms(INDUSTRY_FORMS.ecommerce));
+    }).catch(() => {});
   }, []);
 
   const totalSubmissions = forms.reduce((s, f) => s + f.submissions, 0);

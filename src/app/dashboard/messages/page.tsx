@@ -131,15 +131,9 @@ export default function MessagesPage() {
         setMessages(msgs);
         if (msgs.length > 0) setSelected(msgs[0]);
       } else {
-        const msgs = INDUSTRY_MESSAGES.ecommerce || DEFAULT_MESSAGES;
-        setMessages(msgs);
-        if (msgs.length > 0) setSelected(msgs[0]);
+        setMessages([]);
       }
-    }).catch(() => {
-      const msgs = INDUSTRY_MESSAGES.ecommerce || DEFAULT_MESSAGES;
-      setMessages(msgs);
-      if (msgs.length > 0) setSelected(msgs[0]);
-    });
+    }).catch(() => {});
   }, []);
 
   const filtered = messages.filter(m => {

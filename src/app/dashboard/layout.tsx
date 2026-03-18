@@ -17,20 +17,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const demoIndustry = localStorage.getItem("sonji-demo-industry");
-    const industry = demoIndustry || "ecommerce";
 
-    // Always try demo data first (works without auth)
-    fetch(`/api/demo?industry=${industry}`).then(r => r.json()).then(d => {
-      if (d.ok && d.data) { setHealthStats(d.data); return; }
-      // Fall back to real dashboard API
-      return fetch("/api/dashboard").then(r2 => r2.json()).then(d2 => {
-        setHealthStats(d2.data || d2);
-      });
-    }).catch(() => {
+    if (demoIndustry) {
+      // Demo mode — load demo stats
+      fetch(`/api/demo?industry=${demoIndustry}`).then(r => r.json()).then(d => {
+        if (d.ok && d.data) setHealthStats(d.data);
+      }).catch(() => {});
+    } else {
+      // Real tenant — load real stats
       fetch("/api/dashboard").then(r => r.json()).then(d => {
         setHealthStats(d.data || d);
       }).catch(() => {});
-    });
+    }
   }, []);
 
   return (

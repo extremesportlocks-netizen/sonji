@@ -37,11 +37,20 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
     const cached = sessionStorage.getItem("sonji-tenant-verified");
     if (cached === "true") {
       try {
-        const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
-        // Only set industry from tenant if demo bar hasn't been manually switched
-        const currentDemo = localStorage.getItem("sonji-demo-industry");
-        if (tenant.industry && (!currentDemo || currentDemo === tenant.industry)) {
-          localStorage.setItem("sonji-demo-industry", tenant.industry);
+        const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
+        const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
+        const isAdmin = adminEmails.includes(user.email);
+
+        if (isAdmin) {
+          // Admin brain mode — keep demo industry for industry switching
+          const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+          const currentDemo = localStorage.getItem("sonji-demo-industry");
+          if (tenant.industry && (!currentDemo || currentDemo === tenant.industry)) {
+            localStorage.setItem("sonji-demo-industry", tenant.industry);
+          }
+        } else {
+          // Real tenant — REMOVE demo industry so pages load real data
+          localStorage.removeItem("sonji-demo-industry");
         }
       } catch {}
       setHasAccess(true);
@@ -61,9 +70,15 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
           sessionStorage.setItem("sonji-tenant", JSON.stringify(tenant));
           sessionStorage.setItem("sonji-user", JSON.stringify(user));
 
-          // Set industry for dashboard widgets
-          if (tenant.industry) {
+          const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
+          const isAdmin = adminEmails.includes(user.email);
+
+          if (isAdmin && tenant.industry) {
+            // Admin brain mode — set demo industry for industry switching
             localStorage.setItem("sonji-demo-industry", tenant.industry);
+          } else {
+            // Real tenant — remove demo industry so pages load real data
+            localStorage.removeItem("sonji-demo-industry");
           }
 
           setHasAccess(true);

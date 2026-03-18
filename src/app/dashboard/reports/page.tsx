@@ -51,22 +51,16 @@ export default function ReportsPage() {
 
   useEffect(() => {
     const demoIndustry = typeof window !== "undefined" ? localStorage.getItem("sonji-demo-industry") : null;
-    const industry = demoIndustry || "ecommerce";
 
-    fetch(`/api/demo?industry=${industry}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok && d.data) { setData(d.data); setLoading(false); return; }
-        return fetch("/api/analytics").then(r2 => r2.json()).then(d2 => {
-          if (d2.ok && d2.data) setData(d2.data);
-        });
-      })
-      .catch(() => {
-        fetch("/api/analytics").then(r => r.json()).then(d => {
-          if (d.ok && d.data) setData(d.data);
-        }).catch(() => {});
-      })
-      .finally(() => setLoading(false));
+    if (demoIndustry) {
+      fetch(`/api/demo?industry=${demoIndustry}`).then(r => r.json()).then(d => {
+        if (d.ok && d.data) setData(d.data);
+      }).catch(() => {}).finally(() => setLoading(false));
+    } else {
+      fetch("/api/analytics").then(r => r.json()).then(d => {
+        if (d.ok && d.data) setData(d.data);
+      }).catch(() => {}).finally(() => setLoading(false));
+    }
   }, []);
 
   if (loading) return (<><Header title="Reports" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);
