@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/dashboard/header";
 import {
   Search, Check, ExternalLink, Zap, Plus, Settings,
@@ -55,9 +56,18 @@ const statusConfig = {
 };
 
 export default function IntegrationsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "connected" | "available" | "coming_soon">("all");
   const [items, setItems] = useState(integrations);
+
+  // Map integration IDs to settings tab anchors
+  const connectableIds = new Set(["stripe", "resend", "twilio"]);
+  const handleConnect = (id: string) => {
+    if (connectableIds.has(id)) {
+      router.push("/dashboard/settings?tab=integrations");
+    }
+  };
 
   // Check which integrations the tenant actually has connected
   useEffect(() => {
@@ -146,13 +156,18 @@ export default function IntegrationsPage() {
                 <p className="text-xs text-gray-500 mb-4 leading-relaxed">{integ.desc}</p>
                 <div className="flex items-center gap-2">
                   {integ.status === "connected" && (
-                    <button className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
+                    <button onClick={() => handleConnect(integ.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition">
                       <Settings className="w-3.5 h-3.5" /> Configure
                     </button>
                   )}
-                  {integ.status === "available" && (
-                    <button className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
+                  {integ.status === "available" && connectableIds.has(integ.id) && (
+                    <button onClick={() => handleConnect(integ.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">
                       <Plus className="w-3.5 h-3.5" /> Connect
+                    </button>
+                  )}
+                  {integ.status === "available" && !connectableIds.has(integ.id) && (
+                    <button className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 bg-gray-50 rounded-lg cursor-not-allowed">
+                      Coming Soon
                     </button>
                   )}
                   {integ.status === "coming_soon" && (
