@@ -39,12 +39,12 @@ const INDUSTRY_MEETINGS: Record<string, Meeting[]> = {
     { id: "m10", title: "Team Standup", contact: "Internal — Colton & Rocco", time: "8:30 AM", endTime: "8:45 AM", type: "video", location: "Slack Huddle", color: "bg-gray-100 border-gray-300 text-gray-700", day: 4 },
   ],
   health_wellness: [
-    { id: "m1", title: "Consultation — Sarah Thompson", contact: "Sarah Thompson", time: "9:00 AM", endTime: "9:30 AM", type: "video", location: "Telehealth", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },
-    { id: "m2", title: "Botox Treatment", contact: "Maria Santos", time: "10:30 AM", endTime: "11:00 AM", type: "in_person", location: "Treatment Room 1", color: "bg-rose-100 border-rose-300 text-rose-800", day: 0 },
-    { id: "m3", title: "IV Therapy", contact: "David Kim", time: "2:00 PM", endTime: "3:00 PM", type: "in_person", location: "Infusion Suite", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 1 },
-    { id: "m4", title: "Follow-up — Weight Loss", contact: "Patricia Lee", time: "11:00 AM", endTime: "11:30 AM", type: "video", location: "Telehealth", color: "bg-violet-100 border-violet-300 text-violet-800", day: 2 },
-    { id: "m5", title: "New Patient Consult", contact: "Emily Rodriguez", time: "3:00 PM", endTime: "3:45 PM", type: "in_person", location: "Consultation Room", color: "bg-amber-100 border-amber-300 text-amber-800", day: 3 },
-    { id: "m6", title: "Provider Team Meeting", contact: "All Staff", time: "8:00 AM", endTime: "8:30 AM", type: "in_person", location: "Conference Room", color: "bg-gray-100 border-gray-300 text-gray-700", day: 1 },
+    { id: "m1", title: "New Patient Review — Sarah Mitchell", contact: "Sarah Mitchell", time: "9:00 AM", endTime: "9:15 AM", type: "video", location: "Telehealth", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },
+    { id: "m2", title: "Dosing Check-In — Jessica Brown", contact: "Jessica Brown", time: "10:30 AM", endTime: "10:45 AM", type: "video", location: "Telehealth", color: "bg-teal-100 border-teal-300 text-teal-800", day: 0 },
+    { id: "m3", title: "Refill Consultation — David Park", contact: "David Park", time: "2:00 PM", endTime: "2:15 PM", type: "video", location: "Telehealth", color: "bg-emerald-100 border-emerald-300 text-emerald-800", day: 1 },
+    { id: "m4", title: "Side Effect Review — Michael Torres", contact: "Michael Torres", time: "11:00 AM", endTime: "11:15 AM", type: "video", location: "Telehealth", color: "bg-violet-100 border-violet-300 text-violet-800", day: 2 },
+    { id: "m5", title: "Treatment Adjustment — Emily Chen", contact: "Emily Chen", time: "3:00 PM", endTime: "3:15 PM", type: "video", location: "Telehealth", color: "bg-amber-100 border-amber-300 text-amber-800", day: 3 },
+    { id: "m6", title: "Team Ops Standup", contact: "CLYR Team", time: "8:30 AM", endTime: "9:00 AM", type: "video", location: "Google Meet", color: "bg-gray-100 border-gray-300 text-gray-700", day: 1 },
   ],
   ecommerce: [
     { id: "m1", title: "Content Planning", contact: "Internal", time: "10:00 AM", endTime: "10:30 AM", type: "video", location: "Google Meet", color: "bg-blue-100 border-blue-300 text-blue-800", day: 0 },

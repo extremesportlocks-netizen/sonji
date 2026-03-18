@@ -32,10 +32,10 @@ const INDUSTRY_LINKS: Record<string, BookingLink[]> = {
     { id: "b5", name: "Team Onboarding", type: "group", duration: 90, location: "video", url: "sonji.io/book/power-marketing/onboarding", bookings: 8, active: true, color: "bg-amber-500" },
   ],
   health_wellness: [
-    { id: "b1", name: "New Patient Consultation", type: "one_on_one", duration: 30, location: "video", url: "sonji.io/book/glow-med-spa/consult", bookings: 34, active: true, color: "bg-rose-500" },
-    { id: "b2", name: "Follow-Up Appointment", type: "one_on_one", duration: 15, location: "video", url: "sonji.io/book/glow-med-spa/followup", bookings: 89, active: true, color: "bg-teal-500" },
-    { id: "b3", name: "Botox Treatment", type: "one_on_one", duration: 45, location: "in_person", url: "sonji.io/book/glow-med-spa/botox", bookings: 22, active: true, color: "bg-violet-500" },
-    { id: "b4", name: "IV Therapy Session", type: "one_on_one", duration: 60, location: "in_person", url: "sonji.io/book/glow-med-spa/iv-therapy", bookings: 12, active: true, color: "bg-blue-500" },
+    { id: "b1", name: "New Patient Consultation", type: "one_on_one", duration: 15, location: "video", url: "sonji.io/book/clyr-health/consult", bookings: 28, active: true, color: "bg-teal-500" },
+    { id: "b2", name: "Dosing Adjustment Review", type: "one_on_one", duration: 10, location: "video", url: "sonji.io/book/clyr-health/dosing", bookings: 14, active: true, color: "bg-violet-500" },
+    { id: "b3", name: "Treatment Check-In (Week 4)", type: "one_on_one", duration: 10, location: "video", url: "sonji.io/book/clyr-health/checkin", bookings: 22, active: true, color: "bg-blue-500" },
+    { id: "b4", name: "Refill Consultation", type: "one_on_one", duration: 10, location: "video", url: "sonji.io/book/clyr-health/refill", bookings: 18, active: true, color: "bg-emerald-500" },
   ],
   ecommerce: [
     { id: "b1", name: "VIP Strategy Call", type: "one_on_one", duration: 15, location: "phone", url: "sonji.io/book/esl-sports/vip", bookings: 8, active: true, color: "bg-amber-500" },

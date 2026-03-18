@@ -51,12 +51,14 @@ const defaultStages: Stage[] = [
 
 const INDUSTRY_STAGES: Record<string, Stage[]> = {
   health_wellness: [
-    { id: "Inquiry", name: "Inquiry", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
-    { id: "Consultation Booked", name: "Consultation", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
-    { id: "Treatment Plan", name: "Treatment Plan", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
-    { id: "Payment Collected", name: "Payment", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
-    { id: "In Treatment", name: "In Treatment", color: "text-cyan-700", borderColor: "border-cyan-400", bgColor: "bg-cyan-50" },
-    { id: "Follow-up", name: "Follow-up", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
+    { id: "Intake", name: "Intake", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
+    { id: "Payment Collected", name: "Payment", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
+    { id: "Under Review", name: "Under Review", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
+    { id: "Approved", name: "Approved", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
+    { id: "Prescribed", name: "Prescribed", color: "text-cyan-700", borderColor: "border-cyan-400", bgColor: "bg-cyan-50" },
+    { id: "Shipped", name: "Shipped", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
+    { id: "Delivered", name: "Delivered", color: "text-teal-700", borderColor: "border-teal-400", bgColor: "bg-teal-50" },
+    { id: "Active", name: "Active", color: "text-green-700", borderColor: "border-green-400", bgColor: "bg-green-50" },
   ],
   agency_consulting: [
     { id: "Discovery", name: "Discovery", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
@@ -153,16 +155,16 @@ type DemoDeal = { id: string; title: string; value: number; stage: string; pipel
 
 const INDUSTRY_DEALS: Record<string, DemoDeal[]> = {
   health_wellness: [
-    { id: "d1", title: "Botox Full Face", contactName: "Maria Santos", value: 850, stage: "Inquiry", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 20", notes: "" },
-    { id: "d2", title: "IV Vitamin Package", contactName: "David Kim", value: 1200, stage: "Inquiry", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 22", notes: "" },
-    { id: "d3", title: "Weight Loss Consult", contactName: "Jennifer Adams", value: 2400, stage: "Consultation Booked", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Mar 18", notes: "" },
-    { id: "d4", title: "Filler Treatment", contactName: "Alex Rivera", value: 1600, stage: "Consultation Booked", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 19", notes: "" },
-    { id: "d5", title: "Wellness Annual Plan", contactName: "Patricia Lee", value: 3600, stage: "Treatment Plan", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Mar 25", notes: "" },
-    { id: "d6", title: "Laser Treatment", contactName: "Robert Chen", value: 900, stage: "Treatment Plan", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 21", notes: "" },
-    { id: "d7", title: "Semaglutide Program", contactName: "Sarah Thompson", value: 4800, stage: "Payment Collected", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Mar 15", notes: "" },
-    { id: "d8", title: "Microneedling Package", contactName: "Lisa Wang", value: 600, stage: "In Treatment", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Apr 5", notes: "" },
-    { id: "d9", title: "HRT Consultation", contactName: "James Wilson", value: 1800, stage: "In Treatment", pipeline: "Med Spa", assignedTo: "Dr. Patel", closeDate: "Apr 10", notes: "" },
-    { id: "d10", title: "Post-Treatment Review", contactName: "Emma Thomas", value: 450, stage: "Follow-up", pipeline: "Med Spa", assignedTo: "Dr. Kim", closeDate: "Mar 16", notes: "" },
+    { id: "d1", title: "Tirzepatide Monthly", contactName: "Sarah Mitchell", value: 320, stage: "Intake", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 20", notes: "" },
+    { id: "d2", title: "Semaglutide 3-Month", contactName: "James Rodriguez", value: 537, stage: "Payment Collected", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 18", notes: "" },
+    { id: "d3", title: "Tirzepatide 6-Month", contactName: "Emily Chen", value: 1350, stage: "Under Review", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 19", notes: "" },
+    { id: "d4", title: "Semaglutide Monthly", contactName: "Michael Torres", value: 225, stage: "Under Review", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 19", notes: "" },
+    { id: "d5", title: "Tirzepatide Monthly", contactName: "Jessica Brown", value: 320, stage: "Approved", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 17", notes: "" },
+    { id: "d6", title: "Tirzepatide 3-Month", contactName: "David Park", value: 777, stage: "Prescribed", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 16", notes: "" },
+    { id: "d7", title: "Semaglutide Monthly", contactName: "Amanda Williams", value: 225, stage: "Shipped", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 14", notes: "" },
+    { id: "d8", title: "Tirzepatide Monthly", contactName: "Robert Garcia", value: 320, stage: "Delivered", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 12", notes: "" },
+    { id: "d9", title: "Semaglutide 6-Month", contactName: "Jennifer Adams", value: 894, stage: "Active", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Feb 28", notes: "Refill #2" },
+    { id: "d10", title: "Tirzepatide Monthly", contactName: "Carlos Rivera", value: 320, stage: "Active", pipeline: "Patient Pipeline", assignedTo: "Provider", closeDate: "Mar 1", notes: "Refill #3" },
   ],
   agency_consulting: [
     { id: "d1", title: "SEO + PPC Retainer", contactName: "Brightview Hotels", value: 8500, stage: "Discovery", pipeline: "New Business", assignedTo: "Power", closeDate: "Mar 25", notes: "" },
