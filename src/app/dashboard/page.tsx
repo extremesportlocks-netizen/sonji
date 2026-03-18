@@ -104,6 +104,37 @@ const defaultLayout: WidgetConfig[] = [
   { id: "w19", type: "client_health", size: "half" },
 ];
 
+// Industry-specific default layouts — prioritize the most relevant widgets
+const INDUSTRY_LAYOUTS: Record<string, WidgetConfig[]> = {
+  health_wellness: [
+    { id: "w1", type: "revenue_overview", size: "full" },
+    { id: "w7", type: "pipeline", size: "half" },
+    { id: "w4", type: "subscription_breakdown", size: "half" },
+    { id: "w2", type: "quick_actions", size: "half" },
+    { id: "w8", type: "open_tasks", size: "half" },
+    { id: "w6", type: "recent_contacts", size: "full" },
+    { id: "w10", type: "revenue_chart", size: "full" },
+    { id: "w9", type: "activity_feed", size: "full" },
+    { id: "w12", type: "campaign_stats", size: "half" },
+    { id: "w11", type: "upcoming_meetings", size: "half" },
+    { id: "w5", type: "top_customers", size: "full" },
+  ],
+  agency_consulting: [
+    { id: "w1", type: "revenue_overview", size: "full" },
+    { id: "w19", type: "client_health", size: "half" },
+    { id: "w18", type: "team_performance", size: "half" },
+    { id: "w7", type: "pipeline", size: "half" },
+    { id: "w17", type: "revenue_forecast", size: "half" },
+    { id: "w15", type: "deal_velocity", size: "full" },
+    { id: "w16", type: "ghosting_alerts", size: "full" },
+    { id: "w5", type: "top_customers", size: "full" },
+    { id: "w9", type: "activity_feed", size: "full" },
+    { id: "w10", type: "revenue_chart", size: "full" },
+    { id: "w20", type: "todays_agenda", size: "half" },
+    { id: "w8", type: "open_tasks", size: "half" },
+  ],
+};
+
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
@@ -114,9 +145,17 @@ function num(n: number) { return n.toLocaleString(); }
 const subColors: Record<string,string> = { active:"bg-emerald-500", canceled:"bg-red-400", expired:"bg-amber-400", "one-time":"bg-blue-400", never:"bg-gray-300" };
 const subLabels: Record<string,string> = { active:"Active", canceled:"Canceled", expired:"Expired", "one-time":"One-Time", never:"No Sub" };
 
+function getDefaultLayout(): WidgetConfig[] {
+  if (typeof window === "undefined") return defaultLayout;
+  try {
+    const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+    return INDUSTRY_LAYOUTS[tenant.industry] || defaultLayout;
+  } catch { return defaultLayout; }
+}
+
 function loadLayout(): WidgetConfig[] {
   if (typeof window === "undefined") return defaultLayout;
-  try { const s = localStorage.getItem("sonji-dashboard-layout"); return s ? JSON.parse(s) : defaultLayout; } catch { return defaultLayout; }
+  try { const s = localStorage.getItem("sonji-dashboard-layout"); return s ? JSON.parse(s) : getDefaultLayout(); } catch { return getDefaultLayout(); }
 }
 function saveLayout(layout: WidgetConfig[]) {
   try { localStorage.setItem("sonji-dashboard-layout", JSON.stringify(layout)); } catch {}
@@ -485,7 +524,7 @@ export default function DashboardPage() {
     updateLayout(layout.map(w => w.id === id ? { ...w, size: w.size === "half" ? "full" : "half" } : w));
   };
 
-  const resetLayout = () => { updateLayout(defaultLayout); setEditMode(false); };
+  const resetLayout = () => { updateLayout(getDefaultLayout()); setEditMode(false); };
 
   // Drag handlers
   const handleDragStart = (idx: number) => setDragIdx(idx);
