@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import {
   DollarSign, Users, Crown, UserCheck, UserX, TrendingUp, ShoppingCart,
@@ -52,7 +52,7 @@ const metrics: MetricDef[] = [
 
   // Revenue Recovery
   { key: "recovered_revenue", label: "Sonji Recovered Revenue", shortLabel: "Recovered", category: "Revenue", icon: TrendingUp, format: "currency", extract: () => {
-    const key = getDemoIndustry();
+    const key = getActiveIndustry();
     if (!key) return 0; // Real tenant — no fake recovery data
     const vals: Record<string,number> = { health_wellness: 47200, fitness_gym: 31500, beauty_salon: 38900, agency_consulting: 84000, real_estate: 62500, home_services: 56000, legal: 73000, coaching_education: 42000, restaurant_food: 18500, automotive: 44800, nonprofit: 28500, ecommerce: 52300 };
     return vals[key] || 0;
@@ -140,7 +140,7 @@ export default function SonjiBox({ stats }: { stats: any }) {
   const [demoIndustry, setDemoIndustry] = useState<string | null>(null);
 
   useEffect(() => {
-    const key = getDemoIndustry();
+    const key = getActiveIndustry();
     setDemoIndustry(key || null);
   }, []);
 

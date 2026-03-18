@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { Users, Clock, TrendingUp, DollarSign, ChevronRight, Star } from "lucide-react";
 import Link from "next/link";
@@ -89,7 +89,7 @@ export default function TeamPerformance() {
   const [team, setTeam] = useState<TeamMember[]>([]);
 
   useEffect(() => {
-    const demoIndustry = getDemoIndustry();
+    const demoIndustry = getActiveIndustry();
     const key = demoIndustry; if (!key) return;
     setTeam(INDUSTRY_TEAMS[key] || INDUSTRY_TEAMS.ecommerce);
   }, []);

@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/dashboard/sidebar";
 import CommandPalette from "@/components/dashboard/command-palette";
@@ -17,7 +17,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [healthStats, setHealthStats] = useState<any>(null);
 
   useEffect(() => {
-    const demoIndustry = getDemoIndustry();
+    const demoIndustry = getActiveIndustry();
 
     if (demoIndustry) {
       // Demo mode — load demo stats

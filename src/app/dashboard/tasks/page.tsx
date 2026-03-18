@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useCRM, type Task } from "@/lib/crm-store";
@@ -145,7 +145,7 @@ export default function TasksPage() {
   // Seed demo tasks when CRM store is empty
   useEffect(() => {
     if (crmTasks.length > 0) return; // Real data exists, don't seed
-    const demoIndustry = getDemoIndustry();
+    const demoIndustry = getActiveIndustry();
     const key = demoIndustry; if (!key) return;
     setDemoTasks(INDUSTRY_TASKS[key] || DEFAULT_TASKS);
   }, [crmTasks.length]);

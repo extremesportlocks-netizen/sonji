@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/dashboard/header";
 import { useModal } from "@/components/modals/modal-provider";
@@ -128,7 +128,7 @@ export default function MeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
 
   useEffect(() => {
-    const demoIndustry = getDemoIndustry();
+    const demoIndustry = getActiveIndustry();
     if (demoIndustry && INDUSTRY_MEETINGS[demoIndustry]) {
       setMeetings(INDUSTRY_MEETINGS[demoIndustry]);
       return;

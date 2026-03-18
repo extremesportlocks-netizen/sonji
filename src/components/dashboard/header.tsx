@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -265,7 +265,7 @@ export default function Header({ title, subtitle }: Props) {
                   </div>
                   <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
                     {(() => {
-                      const di = getDemoIndustry();
+                      const di = getActiveIndustry();
                       if (!di) {
                         // Real tenant — no demo notifications
                         return (

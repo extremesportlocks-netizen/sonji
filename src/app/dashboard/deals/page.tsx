@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useMemo, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useCRM } from "@/lib/crm-store";
@@ -494,7 +494,7 @@ export default function DealsPage() {
   const [tenantIndustry, setTenantIndustry] = useState<string | null>(null);
 
   useEffect(() => {
-    const key = getDemoIndustry();
+    const key = getActiveIndustry();
     setDemoIndustry(key || null);
     if (key && INDUSTRY_DEALS[key]) setDemoDeals([...INDUSTRY_DEALS[key]]);
 

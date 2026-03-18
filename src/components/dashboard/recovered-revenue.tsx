@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { TrendingUp, Zap, ArrowUpRight } from "lucide-react";
 
@@ -137,7 +137,7 @@ export default function RecoveredRevenue() {
   const [data, setData] = useState<{ total: number; metrics: RecoveryMetric[] } | null>(null);
 
   useEffect(() => {
-    const demoIndustry = getDemoIndustry();
+    const demoIndustry = getActiveIndustry();
     if (!demoIndustry) return; // Real tenant — no fake recovery data
     setData(INDUSTRY_RECOVERY[demoIndustry] || INDUSTRY_RECOVERY.ecommerce);
   }, []);

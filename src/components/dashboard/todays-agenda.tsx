@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import { Calendar, Clock, Phone, Mail, CheckCircle, AlertTriangle, DollarSign, Zap, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -118,7 +118,7 @@ export default function TodaysAgenda() {
   const [items, setItems] = useState<AgendaItem[]>([]);
 
   useEffect(() => {
-    const di = getDemoIndustry();
+    const di = getActiveIndustry();
     const key = di; if (!key) return;
     setItems(INDUSTRY_AGENDAS[key] || INDUSTRY_AGENDAS.ecommerce);
   }, []);

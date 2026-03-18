@@ -1,6 +1,6 @@
 "use client";
 
-import { getDemoIndustry } from "@/lib/tenant-utils";
+import { getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import Link from "next/link";
@@ -51,7 +51,7 @@ export default function ReportsPage() {
   const reportTabs = reportTabsDef.map(t => t.key === "customers" ? { ...t, label: `Top ${ic?.contactLabelPlural || "Customers"}` } : t);
 
   useEffect(() => {
-    const demoIndustry = getDemoIndustry();
+    const demoIndustry = getActiveIndustry();
 
     if (demoIndustry) {
       fetch(`/api/demo?industry=${demoIndustry}`).then(r => r.json()).then(d => {
