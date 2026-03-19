@@ -28,7 +28,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     db.select({ source: contacts.source, count: count() }).from(contacts).where(eq(contacts.tenantId, tid)).groupBy(contacts.source),
     // Get customFields for revenue computation — only contacts with purchases
     db.select({ customFields: contacts.customFields }).from(contacts)
-      .where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'purchaseCount')::int > 0`)),
+      .where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'purchaseCount') ~ '^\d+$' AND (${contacts.customFields}->>'purchaseCount')::int > 0`)),
   ]);
 
   // Compute revenue metrics from customFields
@@ -61,7 +61,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
 
   // Top 5 customers for dashboard
   const topRows = await db.select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, customFields: contacts.customFields })
-    .from(contacts).where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'ltv')::numeric > 0`))
+    .from(contacts).where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'ltv') IS NOT NULL AND (${contacts.customFields}->>'ltv') ~ '^[0-9.]+$' AND (${contacts.customFields}->>'ltv')::numeric > 0`))
     .orderBy(sql`(${contacts.customFields}->>'ltv')::numeric DESC`).limit(5);
 
   const top5 = topRows.map((r) => {
