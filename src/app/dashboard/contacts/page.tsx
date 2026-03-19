@@ -335,10 +335,22 @@ export default function ContactsPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Delete this contact? This cannot be undone.")) return;
     try {
-      await fetch(`/api/contacts?id=${id}`, { method: "DELETE" });
+      await fetch(`/api/contacts/${id}`, { method: "DELETE" });
       fetchContacts();
       setMenuId(null);
+      setSelected(prev => { const n = new Set(prev); n.delete(id); return n; });
+    } catch {}
+  };
+
+  const handleBulkDelete = async () => {
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} contact${selected.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    try {
+      await Promise.all(Array.from(selected).map(id => fetch(`/api/contacts/${id}`, { method: "DELETE" })));
+      setSelected(new Set());
+      fetchContacts();
     } catch {}
   };
 
@@ -423,6 +435,21 @@ export default function ContactsPage() {
             </div>
           </div>
 
+          {/* Bulk Action Bar */}
+          {selected.size > 0 && (
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50 border-b border-indigo-100">
+              <span className="text-xs font-semibold text-indigo-700">{selected.size} selected</span>
+              <button onClick={handleBulkDelete}
+                className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition">
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+              <button onClick={() => setSelected(new Set())}
+                className="text-xs text-gray-500 hover:text-gray-700 ml-auto">
+                Clear selection
+              </button>
+            </div>
+          )}
+
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -475,7 +502,7 @@ export default function ContactsPage() {
                   contactsList.map((c) => (
                     <tr key={c.id} onClick={() => window.location.href = `/dashboard/contacts/${c.id}`}
                       className={`group transition cursor-pointer ${selected.has(c.id) ? "bg-indigo-50/50" : "hover:bg-gray-50/70"}`}>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <input type="checkbox" checked={selected.has(c.id)}
                           onChange={() => {
                             const n = new Set(selected);
