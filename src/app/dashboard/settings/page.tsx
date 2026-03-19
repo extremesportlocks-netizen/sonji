@@ -398,6 +398,9 @@ function StripeIntegration() {
         {/* Twilio SMS Integration */}
         <TwilioIntegration />
 
+        {/* CLYR Patient Sync — only for health_wellness tenants */}
+        <CLYRSync />
+
         {/* Coming Soon */}
         <div className="mt-4 space-y-3">
           {comingSoonIntegrations.map((int) => (
@@ -1041,5 +1044,67 @@ export default function SettingsPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function CLYRSync() {
+  const [syncing, setSyncing] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+  const [tenant, setTenant] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const t = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+      setTenant(t);
+    } catch {}
+  }, []);
+
+  // Only show for health_wellness tenants
+  if (!tenant || tenant.industry !== "health_wellness") return null;
+
+  const handleSync = async () => {
+    setSyncing(true); setError(""); setResult(null);
+    try {
+      const res = await fetch("https://clyr-backend.onrender.com/api/admin/backfill-sonji?key=CLYR2026");
+      const data = await res.json();
+      if (data.success) {
+        setResult(data);
+      } else {
+        setError(data.error || "Sync failed");
+      }
+    } catch (e: any) {
+      setError(e.message || "Connection failed");
+    } finally { setSyncing(false); }
+  };
+
+  return (
+    <div className="mt-4 border border-gray-100 rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-xl">🏥</div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">CLYR Health Sync</p>
+            <p className="text-xs text-gray-400">Push all patients from CLYR backend to Sonji</p>
+          </div>
+        </div>
+        <button onClick={handleSync} disabled={syncing}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 rounded-lg transition">
+          {syncing ? "Syncing..." : "Sync Now"}
+        </button>
+      </div>
+      {result && (
+        <div className="px-4 pb-4">
+          <div className="bg-emerald-50 rounded-lg p-3 text-sm text-emerald-700">
+            ✓ Synced {result.synced} of {result.total} patients to Sonji
+          </div>
+        </div>
+      )}
+      {error && (
+        <div className="px-4 pb-4">
+          <div className="bg-red-50 rounded-lg p-3 text-sm text-red-700">{error}</div>
+        </div>
+      )}
+    </div>
   );
 }
