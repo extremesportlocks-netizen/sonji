@@ -583,16 +583,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* New Tenant Welcome */}
-        <NewTenantWelcome stats={s} />
-
-        {/* Away Summary — shows once per session */}
-        <AwaySummary />
-
-        {/* Getting Started — shows for fresh tenants with few contacts */}
-        <GettingStarted totalContacts={s.totalContacts || 0} tenantIndustry={(() => {
-          try { return JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}").industry; } catch { return undefined; }
-        })()} />
+        {/* Getting Started — disabled for stability */}
 
         {/* Widget Library Modal */}
         {showLibrary && (

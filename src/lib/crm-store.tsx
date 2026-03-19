@@ -211,9 +211,9 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const [contactsRes, dealsRes, tasksRes, meetingsRes] = await Promise.allSettled([
-        apiFetch<any>("/api/contacts?pageSize=500"),
-        apiFetch<any>("/api/deals?pageSize=500"),
-        apiFetch<any>("/api/tasks?pageSize=500"),
+        apiFetch<any>("/api/contacts?pageSize=50"),
+        apiFetch<any>("/api/deals?pageSize=50"),
+        apiFetch<any>("/api/tasks?pageSize=50"),
         apiFetch<any>("/api/meetings"),
       ]);
 
