@@ -48,8 +48,9 @@ export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
  * Must be called at the start of every tenant-scoped request.
  */
 export async function setTenantContext(tenantId: string) {
-  const client = getClient();
-  await client`SELECT set_config('app.current_tenant', ${tenantId}, true)`;
+  // RLS is disabled — all queries use explicit WHERE tenant_id = ...
+  // This was running SELECT set_config() on every API call for no reason.
+  // Re-enable when RLS is turned back on.
 }
 
 /** Get the raw postgres client (for custom queries). */

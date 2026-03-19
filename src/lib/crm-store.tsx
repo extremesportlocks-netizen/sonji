@@ -255,7 +255,12 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    // Dashboard page uses /api/dashboard — doesn't need CRM store data
+    // Only fetch on pages that actually use it (deals, tasks, contacts, etc.)
+    if (typeof window !== "undefined" && window.location.pathname === "/dashboard") return;
+    fetchData();
+  }, [fetchData]);
 
   const logActivity = useCallback((type: Activity["type"], description: string, contactName?: string) => {
     setActivities((prev) => [{ id: genId(), type, description, timestamp: new Date().toISOString(), contactName }, ...prev]);

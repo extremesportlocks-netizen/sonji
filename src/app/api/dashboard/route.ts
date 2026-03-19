@@ -53,7 +53,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     });
   } catch {}
 
-  return ok({
+  const response = ok({
     totalContacts: Number(contactCount.total),
     totalDeals: Number(dealCount.total),
     activeDeals: Number(activeDealCount.total),
@@ -77,6 +77,8 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     tenantSlug: ctx.tenantSlug,
     pipeline: await getPipelineStages(tid),
   });
+  response.headers.set("Cache-Control", "s-maxage=30, stale-while-revalidate=60");
+  return response;
 });
 
 async function getPipelineStages(tenantId: string) {
