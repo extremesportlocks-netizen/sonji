@@ -1,81 +1,97 @@
 import { NextRequest } from "next/server";
-import { getClient_raw } from "@/lib/db";
+import { db, setTenantContext } from "@/lib/db";
+import { contacts, deals, tasks } from "@/lib/db/schema";
+import { eq, and, count, sql, desc } from "drizzle-orm";
 import { ok, withErrorHandler } from "@/lib/api/responses";
 import { requireAuth } from "@/lib/api/auth-context";
 
 export const GET = withErrorHandler(async (req: NextRequest) => {
   const ctx = await requireAuth(req);
+  await setTenantContext(ctx.tenantId);
   const tid = ctx.tenantId;
-  const raw = getClient_raw();
 
-  // Safe query helper — never throws
-  async function q<T>(query: Promise<T[]>, fallback: T[] = []): Promise<T[]> {
-    try { return await query; } catch { return fallback; }
+  const [
+    [contactCount], [dealCount], [activeDealCount], [wonDealCount],
+    [taskCount], [openTaskCount],
+    recentContacts, statusBreakdown, sourceBreakdown,
+    allContactFields,
+  ] = await Promise.all([
+    db.select({ total: count() }).from(contacts).where(eq(contacts.tenantId, tid)),
+    db.select({ total: count() }).from(deals).where(eq(deals.tenantId, tid)),
+    db.select({ total: count() }).from(deals).where(and(eq(deals.tenantId, tid), sql`${deals.stage} NOT IN ('Closed Won','Closed Lost')`)),
+    db.select({ total: count() }).from(deals).where(and(eq(deals.tenantId, tid), eq(deals.stage, "Closed Won"))),
+    db.select({ total: count() }).from(tasks).where(eq(tasks.tenantId, tid)),
+    db.select({ total: count() }).from(tasks).where(and(eq(tasks.tenantId, tid), sql`${tasks.status} != 'done'`)),
+    db.select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, status: contacts.status, source: contacts.source, customFields: contacts.customFields, createdAt: contacts.createdAt })
+      .from(contacts).where(eq(contacts.tenantId, tid)).orderBy(desc(contacts.createdAt)).limit(10),
+    db.select({ status: contacts.status, count: count() }).from(contacts).where(eq(contacts.tenantId, tid)).groupBy(contacts.status),
+    db.select({ source: contacts.source, count: count() }).from(contacts).where(eq(contacts.tenantId, tid)).groupBy(contacts.source),
+    // Get customFields for revenue computation — only contacts with purchases
+    db.select({ customFields: contacts.customFields }).from(contacts)
+      .where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'purchaseCount')::int > 0`)),
+  ]);
+
+  // Compute revenue metrics from customFields
+  let totalRevenue = 0, totalPurchases = 0;
+  const ltvBuckets = { whale: 0, mid: 0, low: 0, zero: 0 };
+  const subStatuses: Record<string, number> = {};
+  const topCustomers: any[] = [];
+
+  // Process ALL contacts for sub status (not just those with purchases)
+  const allForSubs = await db.select({ customFields: contacts.customFields, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, id: contacts.id })
+    .from(contacts).where(eq(contacts.tenantId, tid));
+
+  for (const c of allForSubs) {
+    const cf = (c.customFields as any) || {};
+    const ss = cf.subscriptionStatus || "never";
+    subStatuses[ss] = (subStatuses[ss] || 0) + 1;
   }
 
-  const countsP = q(raw`SELECT
-    (SELECT count(*) FROM contacts WHERE tenant_id = ${tid})::int as total_contacts,
-    (SELECT count(*) FROM deals WHERE tenant_id = ${tid})::int as total_deals,
-    (SELECT count(*) FROM tasks WHERE tenant_id = ${tid})::int as total_tasks,
-    (SELECT count(*) FROM tasks WHERE tenant_id = ${tid} AND status != 'done')::int as open_tasks
-  `);
+  for (const c of allContactFields) {
+    const cf = (c.customFields as any) || {};
+    const ltv = Number(cf.ltv) || 0;
+    const pc = Number(cf.purchaseCount) || 0;
+    totalRevenue += ltv;
+    totalPurchases += pc;
+    if (ltv >= 500) ltvBuckets.whale++;
+    else if (ltv >= 200) ltvBuckets.mid++;
+    else if (ltv > 0) ltvBuckets.low++;
+    else ltvBuckets.zero++;
+  }
 
-  const recentP = q(raw`SELECT id, first_name, last_name, email, status, source, custom_fields, created_at
-    FROM contacts WHERE tenant_id = ${tid} ORDER BY created_at DESC LIMIT 10`);
+  // Top 5 customers for dashboard
+  const topRows = await db.select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, customFields: contacts.customFields })
+    .from(contacts).where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'ltv')::numeric > 0`))
+    .orderBy(sql`(${contacts.customFields}->>'ltv')::numeric DESC`).limit(5);
 
-  const pipelineStagesP = q(raw`SELECT stages FROM pipelines WHERE tenant_id = ${tid} LIMIT 1`);
-  const dealCountsP = q(raw`SELECT stage, count(*)::int as c FROM deals WHERE tenant_id = ${tid} GROUP BY stage`);
-
-  const top5P = q(raw`SELECT id, first_name, last_name, email, custom_fields
-    FROM contacts WHERE tenant_id = ${tid}
-    AND custom_fields->>'ltv' IS NOT NULL
-    ORDER BY created_at DESC LIMIT 5`);
-
-  // Run all in parallel
-  const [counts, recentContacts, pipelineStages, dealCounts, top5Rows] =
-    await Promise.all([countsP, recentP, pipelineStagesP, dealCountsP, top5P]);
-
-  const c = counts[0] || { total_contacts: 0, total_deals: 0, total_tasks: 0, open_tasks: 0 };
-
-  // Pipeline
-  let pipeline: any[] = [];
-  try {
-    if (pipelineStages.length > 0) {
-      const stages = ((pipelineStages[0] as any).stages || []) as any[];
-      const countMap: Record<string, number> = {};
-      for (const d of dealCounts) countMap[(d as any).stage] = (d as any).c;
-      pipeline = stages
-        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-        .map((s: any) => ({ stage: s.name, color: s.color || "#6366f1", count: countMap[s.name] || 0 }));
-    }
-  } catch {}
-
-  // Top customers
-  const topCustomers = top5Rows.map((r: any) => {
-    const cf = r.custom_fields || {};
-    return { id: r.id, name: `${r.first_name} ${r.last_name}`.trim(), email: r.email, ltv: cf.ltv || 0, purchases: cf.purchaseCount || 0, subStatus: cf.subscriptionStatus || "never" };
+  const top5 = topRows.map((r) => {
+    const cf = (r.customFields as any) || {};
+    return { id: r.id, name: `${r.firstName} ${r.lastName}`.trim(), email: r.email, ltv: cf.ltv || 0, purchases: cf.purchaseCount || 0, subStatus: cf.subscriptionStatus || "never" };
   });
 
+  const contactsWithPurchases = allContactFields.length;
+
   return ok({
-    totalContacts: (c as any).total_contacts || 0,
-    totalDeals: (c as any).total_deals || 0,
-    activeDeals: (c as any).total_deals || 0,
-    wonDeals: 0,
-    totalTasks: (c as any).total_tasks || 0,
-    openTasks: (c as any).open_tasks || 0,
-    recentContacts: recentContacts.map((r: any) => ({
-      id: r.id, firstName: r.first_name, lastName: r.last_name, email: r.email,
-      status: r.status, source: r.source, customFields: r.custom_fields, createdAt: r.created_at,
-      ltv: r.custom_fields?.ltv || 0, subStatus: r.custom_fields?.subscriptionStatus || "never",
-    })),
-    statusBreakdown: [],
-    sourceBreakdown: [],
-    revenue: { total: 0, totalPurchases: 0, avgLTV: 0, avgOrder: 0, contactsWithPurchases: 0 },
-    ltvBuckets: { whale: 0, mid: 0, low: 0, zero: 0 },
-    subscriptionBreakdown: {},
-    topCustomers,
+    totalContacts: Number(contactCount.total),
+    totalDeals: Number(dealCount.total),
+    activeDeals: Number(activeDealCount.total),
+    wonDeals: Number(wonDealCount.total),
+    totalTasks: Number(taskCount.total),
+    openTasks: Number(openTaskCount.total),
+    recentContacts: recentContacts.map((c) => ({ ...c, ltv: ((c.customFields as any)?.ltv) || 0, subStatus: ((c.customFields as any)?.subscriptionStatus) || "never" })),
+    statusBreakdown: statusBreakdown.map((r) => ({ status: r.status, count: Number(r.count) })),
+    sourceBreakdown: sourceBreakdown.map((r) => ({ source: r.source || "unknown", count: Number(r.count) })),
+    revenue: {
+      total: Math.round(totalRevenue * 100) / 100,
+      totalPurchases,
+      avgLTV: contactsWithPurchases > 0 ? Math.round((totalRevenue / contactsWithPurchases) * 100) / 100 : 0,
+      avgOrder: totalPurchases > 0 ? Math.round((totalRevenue / totalPurchases) * 100) / 100 : 0,
+      contactsWithPurchases,
+    },
+    ltvBuckets,
+    subscriptionBreakdown: subStatuses,
+    topCustomers: top5,
     tenantName: ctx.tenantName,
     tenantSlug: ctx.tenantSlug,
-    pipeline,
   });
 });
