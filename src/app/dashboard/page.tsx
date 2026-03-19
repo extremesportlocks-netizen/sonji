@@ -496,10 +496,18 @@ export default function DashboardPage() {
       setIc(getIndustryConfig(demoIndustry));
     } else {
       // Real tenant — load real data from API
+      const emptyStats = {
+        totalContacts: 0, totalDeals: 0, activeDeals: 0, wonDeals: 0,
+        totalTasks: 0, openTasks: 0, recentContacts: [], statusBreakdown: [],
+        sourceBreakdown: [], revenue: { total: 0, totalPurchases: 0, avgLTV: 0, avgOrder: 0, contactsWithPurchases: 0 },
+        ltvBuckets: { whale: 0, mid: 0, low: 0, zero: 0 },
+        subscriptionBreakdown: {}, topCustomers: [],
+        tenantName: "", tenantSlug: "", pipeline: [],
+      };
       fetch("/api/dashboard")
         .then(r => r.json())
-        .then(d => { if (d.ok || d.data) setS(d.data); })
-        .catch(() => {})
+        .then(d => setS(d.data || emptyStats))
+        .catch(() => setS(emptyStats as any))
         .finally(() => setLoading(false));
 
       // Set industry config from tenant data for label overrides
@@ -550,7 +558,7 @@ export default function DashboardPage() {
   const availableWidgets = widgetDefs.filter(d => !activeTypes.has(d.type));
 
   if (loading) return (<><Header title="Dashboard" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);
-  if (!s) return (<><Header title="Dashboard" /><div className="p-6 text-center py-32 text-gray-500">Unable to load dashboard</div></>);
+  if (!s) return (<><Header title="Dashboard" /><div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div></>);
 
   return (
     <>
