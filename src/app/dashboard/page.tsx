@@ -19,10 +19,8 @@ import RevenueForecast from "@/components/dashboard/revenue-forecast";
 import TeamPerformance from "@/components/dashboard/team-performance";
 import ClientHealth from "@/components/dashboard/client-health";
 import TodaysAgenda from "@/components/dashboard/todays-agenda";
-import AwaySummary from "@/components/dashboard/away-summary";
-import GettingStarted from "@/components/dashboard/getting-started";
-import NewTenantWelcome from "@/components/dashboard/new-tenant-welcome";
 import { getIndustryConfig, type IndustryConfig } from "@/lib/industry-config";
+import WidgetErrorBoundary from "@/components/dashboard/widget-error-boundary";
 import IndustryActivityFeed from "@/components/dashboard/industry-activity-feed";
 
 // ═══════════════════════════════════════
@@ -657,7 +655,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 )}
-                {renderWidget(w.type, s, ic)}
+                <WidgetErrorBoundary key={`eb-${w.id}`}>
+                  {renderWidget(w.type, s, ic)}
+                </WidgetErrorBoundary>
               </div>
             );
           })}

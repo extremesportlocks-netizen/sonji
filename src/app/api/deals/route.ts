@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { deals } from "@/lib/db/schema";
+import { deals, contacts } from "@/lib/db/schema";
 import { eq, and, desc, asc, count } from "drizzle-orm";
 import { ok, created, notFound, validationError, withErrorHandler } from "@/lib/api/responses";
 import { createDealSchema, updateDealSchema, moveDealSchema, parseBody, paginationSchema, parseQuery } from "@/lib/api/validation";
@@ -31,13 +31,25 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
 
   const [{ total }] = await db.select({ total: count() }).from(deals).where(and(...conditions));
 
-  const rows = await db.select().from(deals)
+  const rows = await db.select({
+    id: deals.id, tenantId: deals.tenantId, pipelineId: deals.pipelineId,
+    contactId: deals.contactId, title: deals.title, value: deals.value,
+    stage: deals.stage, assignedTo: deals.assignedTo, expectedClose: deals.expectedClose,
+    notes: deals.notes, status: deals.status, createdAt: deals.createdAt, updatedAt: deals.updatedAt,
+    contactFirstName: contacts.firstName, contactLastName: contacts.lastName,
+  })
+    .from(deals)
+    .leftJoin(contacts, eq(deals.contactId, contacts.id))
     .where(and(...conditions))
     .orderBy(desc(deals.updatedAt))
     .limit(pageSize)
     .offset((page - 1) * pageSize);
 
-  return ok(rows, { page, pageSize, total: Number(total), hasMore: page * pageSize < Number(total) });
+  const formatted = rows.map(r => ({
+    ...r, contactName: [r.contactFirstName, r.contactLastName].filter(Boolean).join(" ") || "",
+  }));
+
+  return ok(formatted, { page, pageSize, total: Number(total), hasMore: page * pageSize < Number(total) });
 });
 
 /**

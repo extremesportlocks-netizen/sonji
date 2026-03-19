@@ -258,7 +258,10 @@ export function CRMProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Dashboard page uses /api/dashboard — doesn't need CRM store data
     // Only fetch on pages that actually use it (deals, tasks, contacts, etc.)
-    if (typeof window !== "undefined" && window.location.pathname === "/dashboard") return;
+    if (typeof window !== "undefined") {
+      const p = window.location.pathname;
+      if (p === "/dashboard" || p === "/dashboard/") return;
+    }
     fetchData();
   }, [fetchData]);
 
