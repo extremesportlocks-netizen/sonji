@@ -28,6 +28,7 @@ export interface Deal {
   pipeline: string;
   contactId: string;
   contactName: string;
+  contactEmail?: string;
   assignedTo: string;
   closeDate: string;
   notes: string;
@@ -107,7 +108,8 @@ function mapDealFromAPI(row: any): Deal {
     stage: row.stage || "Lead",
     pipeline: row.pipeline || "Default",
     contactId: row.contactId || row.contact_id || "",
-    contactName: row.contactName || "",
+    contactName: row.contactName || [row.contactFirstName, row.contactLastName].filter(Boolean).join(" ") || "",
+    contactEmail: row.contactEmail || row.contact_email || "",
     assignedTo: row.assignedTo || row.assigned_to || "",
     closeDate: row.expectedClose || row.expected_close || "",
     notes: row.notes || "",

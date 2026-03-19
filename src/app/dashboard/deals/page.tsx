@@ -307,12 +307,13 @@ function getCompanyInitials(name: string) {
 // DEAL CARD
 // ────────────────────────────────────
 
-function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
-  deal: { id: string; title: string; value: number; stage: string; pipeline: string; contactName: string; assignedTo: string; closeDate: string; notes: string };
+function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate, industry }: {
+  deal: { id: string; title: string; value: number; stage: string; pipeline: string; contactName: string; assignedTo: string; closeDate: string; notes: string; createdAt?: string; contactEmail?: string };
   onDragStart: (e: React.DragEvent, dealId: string) => void;
   onDragEnd: () => void;
   onDelete: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<typeof deal>) => void;
+  industry?: string | null;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -334,6 +335,23 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
     setAddingNote(false);
   };
 
+  const isTelehealth = industry === "health_wellness";
+
+  // Parse treatment info from title for telehealth
+  const isTirz = deal.title.toLowerCase().includes("tirzepatide");
+  const isSema = deal.title.toLowerCase().includes("semaglutide");
+  const treatmentBadge = isTirz ? { label: "Tirzepatide", color: "bg-violet-100 text-violet-700" }
+    : isSema ? { label: "Semaglutide", color: "bg-teal-100 text-teal-700" }
+    : null;
+
+  // Parse plan type from title
+  const planType = deal.title.toLowerCase().includes("6-month") ? "6-Month"
+    : deal.title.toLowerCase().includes("3-month") ? "3-Month"
+    : "Monthly";
+
+  // Format date
+  const startDate = deal.createdAt ? new Date(deal.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : deal.closeDate;
+
   return (
     <div
       draggable={!editing && !addingNote}
@@ -341,12 +359,18 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
       onDragEnd={onDragEnd}
       className={`bg-white rounded-xl border p-4 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition group ${editing ? "border-indigo-300 shadow-md" : "border-gray-100"} ${!editing && !addingNote ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
-      <div className="flex items-start justify-between mb-3">
+      {/* Header: Treatment badge + menu */}
+      <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {!editing && <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" />}
           {editing ? (
             <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
               className="text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          ) : isTelehealth && treatmentBadge ? (
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${treatmentBadge.color}`}>{treatmentBadge.label}</span>
+              <span className="text-[10px] font-medium text-gray-400">{planType}</span>
+            </div>
           ) : (
             <h4 className="text-sm font-semibold text-gray-900 leading-snug truncate">{deal.title}</h4>
           )}
@@ -363,9 +387,6 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
                 <button onClick={() => { setEditing(true); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Edit</button>
                 <button onClick={() => { setExpanded(!expanded); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">{expanded ? "Collapse" : "View Details"}</button>
                 <button onClick={() => { setAddingNote(true); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left">Add Note</button>
-                {(deal.stage === "Closed Won" || deal.stage === "Contract Signed" || deal.stage === "Active Client") && (
-                  <button onClick={() => { setMenuOpen(false); window.location.href = "/dashboard/projects"; }} className="w-full px-3 py-2 text-sm text-emerald-600 hover:bg-emerald-50 text-left flex items-center gap-2"><FolderKanban className="w-3.5 h-3.5" /> Create Project</button>
-                )}
                 <div className="border-t border-gray-100 my-1" />
                 <button onClick={() => { onDelete(deal.id); setMenuOpen(false); }} className="w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left flex items-center gap-2"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
               </div>
@@ -374,27 +395,31 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
         </div>
       </div>
 
-      {/* Contact */}
-      <div className="flex items-center gap-2 mb-2">
-        <User className="w-3.5 h-3.5 text-gray-400" />
-        {editing ? (
-          <input type="text" value={editContact} onChange={(e) => setEditContact(e.target.value)}
-            className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
-        ) : (
-          <span className="text-xs text-gray-600">{deal.contactName}</span>
-        )}
-      </div>
+      {/* Patient/Contact Name */}
+      {deal.contactName && (
+        <div className="flex items-center gap-2 mb-1.5">
+          <User className="w-3.5 h-3.5 text-gray-400" />
+          {editing ? (
+            <input type="text" value={editContact} onChange={(e) => setEditContact(e.target.value)}
+              className="text-xs text-gray-600 border border-gray-200 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
+          ) : (
+            <span className="text-sm font-medium text-gray-800">{deal.contactName}</span>
+          )}
+        </div>
+      )}
 
-      {/* Pipeline */}
-      <div className="flex items-center gap-2 mb-3">
-        <Building2 className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-xs text-gray-500">{deal.pipeline}</span>
-      </div>
+      {/* Non-telehealth: show pipeline/title if not already shown */}
+      {!isTelehealth && !deal.contactName && (
+        <div className="flex items-center gap-2 mb-2">
+          <Building2 className="w-3.5 h-3.5 text-gray-400" />
+          <span className="text-xs text-gray-500">{deal.pipeline}</span>
+        </div>
+      )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+      {/* Footer: Value + Date */}
+      <div className="flex items-center justify-between pt-2 mt-2 border-t border-gray-50">
         <div className="flex items-center gap-1.5">
-          <DollarSign className="w-3.5 h-3.5 text-gray-400" />
+          <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
           {editing ? (
             <input type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
               className="text-sm font-bold text-gray-900 border border-gray-200 rounded px-2 py-0.5 w-24 focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
@@ -406,9 +431,9 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
           <Calendar className="w-3 h-3 text-gray-400" />
           {editing ? (
             <input type="text" value={editClose} onChange={(e) => setEditClose(e.target.value)}
-              className="text-xs text-gray-400 border border-gray-200 rounded px-2 py-0.5 w-20 focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
+              className="text-xs text-gray-400 border border-gray-200 rounded px-2 py-0.5 w-24 focus:outline-none focus:ring-1 focus:ring-indigo-500/20" />
           ) : (
-            <span className="text-xs text-gray-400">{deal.closeDate}</span>
+            <span className="text-[11px] text-gray-400">{startDate}</span>
           )}
         </div>
       </div>
@@ -425,18 +450,30 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
       {/* Expanded Details */}
       {expanded && !editing && (
         <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Assigned</span>
-            <span className="text-xs text-gray-600">{deal.assignedTo || "Unassigned"}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Pipeline</span>
-            <span className="text-xs text-gray-600">{deal.pipeline}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Stage</span>
-            <span className="text-xs text-gray-600">{deal.stage}</span>
-          </div>
+          {isTelehealth && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Treatment</span>
+                <span className="text-xs text-gray-600">{deal.title}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Stage</span>
+                <span className="text-xs font-medium text-indigo-600">{deal.stage}</span>
+              </div>
+            </>
+          )}
+          {!isTelehealth && (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Assigned</span>
+                <span className="text-xs text-gray-600">{deal.assignedTo || "Unassigned"}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider">Pipeline</span>
+                <span className="text-xs text-gray-600">{deal.pipeline}</span>
+              </div>
+            </>
+          )}
           {deal.notes && (
             <div>
               <span className="text-[10px] text-gray-400 uppercase tracking-wider">Notes</span>
@@ -446,23 +483,10 @@ function DealCard({ deal, onDragStart, onDragEnd, onDelete, onUpdate }: {
         </div>
       )}
 
-      {/* Convert to Project — shows on won deals */}
-      {(deal.stage === "Closed Won" || deal.stage === "Contract Signed" || deal.stage === "Active Client") && !editing && !addingNote && (
-        <button onClick={() => {
-          sessionStorage.setItem("sonji-new-project", JSON.stringify({
-            name: deal.title, client: deal.contactName, budget: deal.value, dealId: deal.id,
-          }));
-          window.location.href = "/dashboard/projects";
-        }}
-          className="w-full mt-3 flex items-center justify-center gap-2 py-2 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition">
-          <Rocket className="w-3.5 h-3.5" /> Convert to Project
-        </button>
-      )}
-
       {/* Add Note */}
       {addingNote && (
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Add a note about this deal..."
+          <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Add a note..."
             rows={3} className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none" />
           <div className="flex items-center gap-2 mt-2">
             <button onClick={handleSaveNote} className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition">Save Note</button>
@@ -770,7 +794,7 @@ export default function DealsPage() {
                   }`}
                 >
                   {stageDeals.map((deal) => (
-                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} onDragEnd={() => { setDragOverStage(null); setDraggingId(null); }} onDelete={handleDeleteDeal} onUpdate={handleUpdateDeal} />
+                    <DealCard key={deal.id} deal={deal} onDragStart={handleDragStart} onDragEnd={() => { setDragOverStage(null); setDraggingId(null); }} onDelete={handleDeleteDeal} onUpdate={handleUpdateDeal} industry={activeIndustry} />
                   ))}
 
                   {stageDeals.length === 0 && !isDragOver && (
