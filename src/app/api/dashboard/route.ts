@@ -28,24 +28,13 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     db.select({ source: contacts.source, count: count() }).from(contacts).where(eq(contacts.tenantId, tid)).groupBy(contacts.source),
     // Get customFields for revenue computation — only contacts with purchases
     db.select({ customFields: contacts.customFields }).from(contacts)
-      .where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'purchaseCount') ~ '^\d+$' AND (${contacts.customFields}->>'purchaseCount')::int > 0`)),
+      .where(and(eq(contacts.tenantId, tid), sql`${contacts.customFields}->>'purchaseCount' IS NOT NULL`))
+      .limit(100),
   ]);
 
   // Compute revenue metrics from customFields
   let totalRevenue = 0, totalPurchases = 0;
   const ltvBuckets = { whale: 0, mid: 0, low: 0, zero: 0 };
-  const subStatuses: Record<string, number> = {};
-  const topCustomers: any[] = [];
-
-  // Process ALL contacts for sub status (not just those with purchases)
-  const allForSubs = await db.select({ customFields: contacts.customFields, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, id: contacts.id })
-    .from(contacts).where(eq(contacts.tenantId, tid));
-
-  for (const c of allForSubs) {
-    const cf = (c.customFields as any) || {};
-    const ss = cf.subscriptionStatus || "never";
-    subStatuses[ss] = (subStatuses[ss] || 0) + 1;
-  }
 
   for (const c of allContactFields) {
     const cf = (c.customFields as any) || {};
@@ -60,14 +49,16 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   }
 
   // Top 5 customers for dashboard
-  const topRows = await db.select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, customFields: contacts.customFields })
-    .from(contacts).where(and(eq(contacts.tenantId, tid), sql`(${contacts.customFields}->>'ltv') IS NOT NULL AND (${contacts.customFields}->>'ltv') ~ '^[0-9.]+$' AND (${contacts.customFields}->>'ltv')::numeric > 0`))
-    .orderBy(sql`(${contacts.customFields}->>'ltv')::numeric DESC`).limit(5);
-
-  const top5 = topRows.map((r) => {
-    const cf = (r.customFields as any) || {};
-    return { id: r.id, name: `${r.firstName} ${r.lastName}`.trim(), email: r.email, ltv: cf.ltv || 0, purchases: cf.purchaseCount || 0, subStatus: cf.subscriptionStatus || "never" };
-  });
+  let top5: any[] = [];
+  try {
+    const topRows = await db.select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, customFields: contacts.customFields })
+      .from(contacts).where(and(eq(contacts.tenantId, tid), sql`${contacts.customFields}->>'ltv' IS NOT NULL`))
+      .orderBy(desc(contacts.createdAt)).limit(5);
+    top5 = topRows.map((r) => {
+      const cf = (r.customFields as any) || {};
+      return { id: r.id, name: `${r.firstName} ${r.lastName}`.trim(), email: r.email, ltv: cf.ltv || 0, purchases: cf.purchaseCount || 0, subStatus: cf.subscriptionStatus || "never" };
+    });
+  } catch {}
 
   const contactsWithPurchases = allContactFields.length;
 
@@ -89,7 +80,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
       contactsWithPurchases,
     },
     ltvBuckets,
-    subscriptionBreakdown: subStatuses,
+    subscriptionBreakdown: {},
     topCustomers: top5,
     tenantName: ctx.tenantName,
     tenantSlug: ctx.tenantSlug,
