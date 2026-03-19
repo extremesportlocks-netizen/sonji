@@ -111,14 +111,35 @@ export async function POST(req: NextRequest) {
         WHERE id = ${existing[0].id}
       `;
 
-      // Update existing deal stage if deal exists
-      await sql`
-        UPDATE deals
-        SET stage = ${stage},
-            updated_at = NOW()
-        WHERE tenant_id = ${tenantId}
-          AND contact_id = ${existing[0].id}
+      // Update or create deal for this contact
+      const existingDeal = await sql`
+        SELECT id FROM deals WHERE tenant_id = ${tenantId} AND contact_id = ${existing[0].id} LIMIT 1
       `;
+
+      if (existingDeal.length > 0) {
+        // Update existing deal stage
+        await sql`
+          UPDATE deals SET stage = ${stage}, updated_at = NOW()
+          WHERE id = ${existingDeal[0].id}
+        `;
+      } else {
+        // No deal yet — create one
+        const pipelineRows = await sql`SELECT id FROM pipelines WHERE tenant_id = ${tenantId} LIMIT 1`;
+        const dealTitle = (treatment === "tirzepatide" ? "Tirzepatide" : treatment === "semaglutide" ? "Semaglutide" : treatment || "Treatment")
+          + " " + (plan === "3-month" ? "3-Month" : plan === "6-month" ? "6-Month" : "Monthly");
+
+        if (pipelineRows.length > 0) {
+          await sql`
+            INSERT INTO deals (tenant_id, contact_id, pipeline_id, title, value, stage, notes, status)
+            VALUES (
+              ${tenantId}, ${existing[0].id}, ${pipelineRows[0].id},
+              ${dealTitle}, ${amount || 0}, ${stage},
+              ${`Patient: ${firstName || ""} ${lastName || ""} | Email: ${email} | Plan: ${plan || "monthly"}`},
+              'open'
+            )
+          `;
+        }
+      }
 
       return NextResponse.json({ ok: true, action: "updated", contactId: existing[0].id });
     } else {
