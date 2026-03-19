@@ -3,6 +3,7 @@
 import { getDemoIndustry } from "@/lib/tenant-utils";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import {
   Search, Bell, Plus, ChevronDown, Phone, Mail, Video,
   Users, Handshake, CheckSquare, Calendar, DollarSign,
@@ -24,6 +25,7 @@ interface Props { title: string; subtitle?: string; }
 export default function Header({ title, subtitle }: Props) {
   const { openModal } = useModal();
   const router = useRouter();
+  const { signOut } = useClerk();
   const [userName, setUserName] = useState("Orlando");
   const [userEmail, setUserEmail] = useState("hello@sonji.io");
   const [userInitial, setUserInitial] = useState("O");
@@ -110,9 +112,11 @@ export default function Header({ title, subtitle }: Props) {
     sessionStorage.removeItem("sonji-tenant-verified");
     sessionStorage.removeItem("sonji-tenant");
     sessionStorage.removeItem("sonji-user");
+    localStorage.removeItem("sonji-demo-industry");
+    localStorage.removeItem("sonji-dashboard-layout");
     document.cookie = "site_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    // Redirect to login (Clerk handles the actual sign-out via its middleware)
-    window.location.href = "/login";
+    // Actually sign out of Clerk — this clears the auth cookie
+    await signOut({ redirectUrl: "/login" });
   };
 
   return (
