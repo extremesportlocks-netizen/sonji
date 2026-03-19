@@ -84,7 +84,10 @@ export const PATCH = withErrorHandler(async (req: NextRequest) => {
   await setTenantContext(ctx.tenantId);
 
   const body = await req.json();
-  const dealId = body.id;
+  const url = new URL(req.url);
+  const dealId = url.searchParams.get("id") || body.id;
+  if (!dealId) return validationError({ id: ["Deal ID required"] });
+
   const { data, errors } = await parseBody(
     new Request(req.url, { method: "POST", body: JSON.stringify(body), headers: req.headers }),
     moveDealSchema

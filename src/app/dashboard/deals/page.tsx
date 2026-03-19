@@ -491,7 +491,7 @@ export default function DealsPage() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [demoIndustry, setDemoIndustry] = useState<string | null>(null);
   const [demoDeals, setDemoDeals] = useState<DemoDeal[]>([]);
-  const [tenantIndustry, setTenantIndustry] = useState<string | null>(null);
+  const [dbStages, setDbStages] = useState<Stage[] | null>(null);
 
   useEffect(() => {
     // Demo data records: only for demo visitors (null for real tenants like CLYR)
@@ -499,14 +499,37 @@ export default function DealsPage() {
     setDemoIndustry(demoKey || null);
     if (demoKey && INDUSTRY_DEALS[demoKey]) setDemoDeals([...INDUSTRY_DEALS[demoKey]]);
 
-    // Pipeline stages: use tenant's real industry (health_wellness for CLYR)
-    const industry = getActiveIndustry();
-    if (industry) setTenantIndustry(industry);
+    // Real tenant: fetch pipeline stages from database
+    if (!demoKey) {
+      fetch("/api/pipelines")
+        .then(r => r.json())
+        .then(d => {
+          const rows = d.data || d;
+          if (Array.isArray(rows) && rows.length > 0) {
+            const pipeline = rows[0]; // Use first/default pipeline
+            const stagesRaw = pipeline.stages || [];
+            const colors = ["text-indigo-700", "text-blue-700", "text-amber-700", "text-emerald-700", "text-cyan-700", "text-violet-700", "text-teal-700", "text-green-700"];
+            const borders = ["border-indigo-400", "border-blue-400", "border-amber-400", "border-emerald-400", "border-cyan-400", "border-violet-400", "border-teal-400", "border-green-400"];
+            const bgs = ["bg-indigo-50", "bg-blue-50", "bg-amber-50", "bg-emerald-50", "bg-cyan-50", "bg-violet-50", "bg-teal-50", "bg-green-50"];
+            const mapped: Stage[] = stagesRaw.map((s: any, i: number) => ({
+              id: s.name,
+              name: s.name,
+              color: colors[i % colors.length],
+              borderColor: borders[i % borders.length],
+              bgColor: bgs[i % bgs.length],
+            }));
+            if (mapped.length > 0) setDbStages(mapped);
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
-  // Stages always use the active industry (demo or real tenant)
+  // Stages: DB pipeline > industry hardcoded > default
   const activeIndustry = getActiveIndustry();
-  const stages = activeIndustry && INDUSTRY_STAGES[activeIndustry] ? INDUSTRY_STAGES[activeIndustry] : defaultStages;
+  const stages = dbStages
+    || (activeIndustry && INDUSTRY_STAGES[activeIndustry] ? INDUSTRY_STAGES[activeIndustry] : null)
+    || defaultStages;
   const isDemo = !!demoIndustry && !!INDUSTRY_DEALS[demoIndustry];
   const ic = activeIndustry ? getIndustryConfig(activeIndustry) : null;
   const deals = isDemo ? demoDeals : crmDeals;
