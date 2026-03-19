@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db, setTenantContext } from "@/lib/db";
-import { contacts, deals, tasks } from "@/lib/db/schema";
+import { contacts, deals, tasks, pipelines } from "@/lib/db/schema";
 import { eq, and, count, sql, desc } from "drizzle-orm";
 import { ok, withErrorHandler } from "@/lib/api/responses";
 import { requireAuth } from "@/lib/api/auth-context";
@@ -93,5 +93,37 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     topCustomers: top5,
     tenantName: ctx.tenantName,
     tenantSlug: ctx.tenantSlug,
+    pipeline: await getPipelineStages(tid),
   });
 });
+
+// Get pipeline stages with deal counts
+async function getPipelineStages(tenantId: string) {
+  try {
+    const pipelineRows = await db.select().from(pipelines).where(eq(pipelines.tenantId, tenantId)).limit(1);
+    if (pipelineRows.length === 0) return [];
+
+    const stages = (pipelineRows[0].stages as any[]) || [];
+
+    // Count deals per stage
+    const dealCounts = await db.select({
+      stage: deals.stage,
+      count: count(),
+    }).from(deals).where(eq(deals.tenantId, tenantId)).groupBy(deals.stage);
+
+    const countMap: Record<string, number> = {};
+    for (const d of dealCounts) {
+      countMap[d.stage] = Number(d.count);
+    }
+
+    return stages
+      .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+      .map((s: any) => ({
+        stage: s.name,
+        color: s.color || "#6366f1",
+        count: countMap[s.name] || 0,
+      }));
+  } catch {
+    return [];
+  }
+}
