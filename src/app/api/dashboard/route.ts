@@ -10,12 +10,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   await setTenantContext(ctx.tenantId);
   const tid = ctx.tenantId;
 
-  const [
-    [contactCount], [dealCount], [activeDealCount], [wonDealCount],
-    [taskCount], [openTaskCount],
-    recentContacts, statusBreakdown, sourceBreakdown,
-    allContactFields,
-  ] = await Promise.all([
+  const results = await Promise.allSettled([
     db.select({ total: count() }).from(contacts).where(eq(contacts.tenantId, tid)),
     db.select({ total: count() }).from(deals).where(eq(deals.tenantId, tid)),
     db.select({ total: count() }).from(deals).where(and(eq(deals.tenantId, tid), sql`${deals.stage} NOT IN ('Closed Won','Closed Lost')`)),
@@ -26,27 +21,25 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
       .from(contacts).where(eq(contacts.tenantId, tid)).orderBy(desc(contacts.createdAt)).limit(10),
     db.select({ status: contacts.status, count: count() }).from(contacts).where(eq(contacts.tenantId, tid)).groupBy(contacts.status),
     db.select({ source: contacts.source, count: count() }).from(contacts).where(eq(contacts.tenantId, tid)).groupBy(contacts.source),
-    // Get customFields for revenue computation — only contacts with purchases
-    db.select({ customFields: contacts.customFields }).from(contacts)
-      .where(and(eq(contacts.tenantId, tid), sql`${contacts.customFields}->>'purchaseCount' IS NOT NULL`))
-      .limit(100),
   ]);
 
-  // Compute revenue metrics from customFields
-  let totalRevenue = 0, totalPurchases = 0;
-  const ltvBuckets = { whale: 0, mid: 0, low: 0, zero: 0 };
+  // Safe extract — returns fallback if query failed
+  const v = (i: number, fallback: any = []) => results[i].status === "fulfilled" ? results[i].value : fallback;
 
-  for (const c of allContactFields) {
-    const cf = (c.customFields as any) || {};
-    const ltv = Number(cf.ltv) || 0;
-    const pc = Number(cf.purchaseCount) || 0;
-    totalRevenue += ltv;
-    totalPurchases += pc;
-    if (ltv >= 500) ltvBuckets.whale++;
-    else if (ltv >= 200) ltvBuckets.mid++;
-    else if (ltv > 0) ltvBuckets.low++;
-    else ltvBuckets.zero++;
-  }
+  const contactCount = v(0, [{ total: 0 }])[0];
+  const dealCount = v(1, [{ total: 0 }])[0];
+  const activeDealCount = v(2, [{ total: 0 }])[0];
+  const wonDealCount = v(3, [{ total: 0 }])[0];
+  const taskCount = v(4, [{ total: 0 }])[0];
+  const openTaskCount = v(5, [{ total: 0 }])[0];
+  const recentContacts = v(6);
+  const statusBreakdown = v(7);
+  const sourceBreakdown = v(8);
+
+  const contactsWithPurchases = 0;
+  const totalRevenue = 0;
+  const totalPurchases = 0;
+  const ltvBuckets = { whale: 0, mid: 0, low: 0, zero: 0 };
 
   // Top 5 customers for dashboard
   let top5: any[] = [];
@@ -60,8 +53,6 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     });
   } catch {}
 
-  const contactsWithPurchases = allContactFields.length;
-
   return ok({
     totalContacts: Number(contactCount.total),
     totalDeals: Number(dealCount.total),
@@ -69,9 +60,9 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     wonDeals: Number(wonDealCount.total),
     totalTasks: Number(taskCount.total),
     openTasks: Number(openTaskCount.total),
-    recentContacts: recentContacts.map((c) => ({ ...c, ltv: ((c.customFields as any)?.ltv) || 0, subStatus: ((c.customFields as any)?.subscriptionStatus) || "never" })),
-    statusBreakdown: statusBreakdown.map((r) => ({ status: r.status, count: Number(r.count) })),
-    sourceBreakdown: sourceBreakdown.map((r) => ({ source: r.source || "unknown", count: Number(r.count) })),
+    recentContacts: recentContacts.map((c: any) => ({ ...c, ltv: ((c.customFields as any)?.ltv) || 0, subStatus: ((c.customFields as any)?.subscriptionStatus) || "never" })),
+    statusBreakdown: statusBreakdown.map((r: any) => ({ status: r.status, count: Number(r.count) })),
+    sourceBreakdown: sourceBreakdown.map((r: any) => ({ source: r.source || "unknown", count: Number(r.count) })),
     revenue: {
       total: Math.round(totalRevenue * 100) / 100,
       totalPurchases,
