@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { db, setTenantContext } from "@/lib/db";
+import { db, setTenantContext, getClient_raw } from "@/lib/db";
 import { contacts, deals, tasks, pipelines } from "@/lib/db/schema";
 import { eq, and, count, sql, desc } from "drizzle-orm";
 import { ok, withErrorHandler } from "@/lib/api/responses";
@@ -23,7 +23,6 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     db.select({ source: contacts.source, count: count() }).from(contacts).where(eq(contacts.tenantId, tid)).groupBy(contacts.source),
   ]);
 
-  // Safe extract — returns fallback if query failed
   const v = (i: number, fallback: any = []) => results[i].status === "fulfilled" ? results[i].value : fallback;
 
   const contactCount = v(0, [{ total: 0 }])[0];
@@ -36,10 +35,72 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   const statusBreakdown = v(7);
   const sourceBreakdown = v(8);
 
-  const contactsWithPurchases = 0;
-  const totalRevenue = 0;
-  const totalPurchases = 0;
-  const ltvBuckets = { whale: 0, mid: 0, low: 0, zero: 0 };
+  // Revenue: aggregate from deals (value) and contacts (custom_fields->>ltv)
+  let totalRevenue = 0;
+  let totalPurchases = 0;
+  let contactsWithPurchases = 0;
+  let ltvBuckets = { whale: 0, mid: 0, low: 0, zero: 0 };
+  let subscriptionBreakdown: Record<string, number> = {};
+
+  try {
+    const rawSql = getClient_raw();
+    const [revResult, ltvResult, subResult] = await Promise.allSettled([
+      rawSql`
+        SELECT COALESCE(SUM(value), 0) as total_rev, COUNT(*) as deal_count
+        FROM deals WHERE tenant_id = ${tid} AND value > 0
+      `,
+      rawSql`
+        SELECT 
+          COUNT(*) FILTER (WHERE (custom_fields->>'ltv')::numeric >= 500) as whale,
+          COUNT(*) FILTER (WHERE (custom_fields->>'ltv')::numeric >= 200 AND (custom_fields->>'ltv')::numeric < 500) as mid,
+          COUNT(*) FILTER (WHERE (custom_fields->>'ltv')::numeric > 0 AND (custom_fields->>'ltv')::numeric < 200) as low,
+          COUNT(*) FILTER (WHERE custom_fields->>'ltv' IS NULL OR (custom_fields->>'ltv')::numeric = 0) as zero,
+          COUNT(*) FILTER (WHERE (custom_fields->>'ltv')::numeric > 0) as with_purchases,
+          COALESCE(SUM((custom_fields->>'ltv')::numeric) FILTER (WHERE (custom_fields->>'ltv')::numeric > 0), 0) as ltv_total,
+          COALESCE(SUM((custom_fields->>'purchaseCount')::int) FILTER (WHERE (custom_fields->>'purchaseCount')::int > 0), 0) as purchase_total
+        FROM contacts WHERE tenant_id = ${tid}
+      `,
+      rawSql`
+        SELECT COALESCE(custom_fields->>'subscriptionStatus', 'never') as sub_status, COUNT(*) as cnt
+        FROM contacts WHERE tenant_id = ${tid}
+        GROUP BY COALESCE(custom_fields->>'subscriptionStatus', 'never')
+      `,
+    ]);
+
+    // Use deal revenue if available, fall back to contact LTV aggregation
+    if (revResult.status === "fulfilled" && revResult.value?.[0]) {
+      const r = revResult.value[0] as any;
+      const dealRev = Number(r.total_rev) || 0;
+      if (dealRev > 0) {
+        totalRevenue = dealRev;
+        totalPurchases = Number(r.deal_count) || 0;
+      }
+    }
+
+    if (ltvResult.status === "fulfilled" && ltvResult.value?.[0]) {
+      const r = ltvResult.value[0] as any;
+      ltvBuckets = {
+        whale: Number(r.whale) || 0,
+        mid: Number(r.mid) || 0,
+        low: Number(r.low) || 0,
+        zero: Number(r.zero) || 0,
+      };
+      contactsWithPurchases = Number(r.with_purchases) || 0;
+      // If no deal revenue, use LTV from contacts (ESL Sports data is in custom_fields)
+      if (totalRevenue === 0) {
+        totalRevenue = Number(r.ltv_total) || 0;
+        totalPurchases = Number(r.purchase_total) || 0;
+      }
+    }
+
+    if (subResult.status === "fulfilled" && subResult.value) {
+      for (const row of subResult.value as any[]) {
+        subscriptionBreakdown[row.sub_status || "never"] = Number(row.cnt) || 0;
+      }
+    }
+  } catch (e) {
+    // Revenue queries failed — use zeros (non-blocking)
+  }
 
   // Top 5 customers for dashboard
   let top5: any[] = [];
@@ -71,7 +132,7 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
       contactsWithPurchases,
     },
     ltvBuckets,
-    subscriptionBreakdown: {},
+    subscriptionBreakdown,
     topCustomers: top5,
     tenantName: ctx.tenantName,
     tenantSlug: ctx.tenantSlug,

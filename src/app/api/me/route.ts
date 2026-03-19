@@ -8,91 +8,82 @@ import { ok, unauthorized } from "@/lib/api/responses";
 /**
  * GET /api/me — Returns current user + tenant info.
  * 
- * Used by the dashboard to know which tenant to load,
- * and by the router to decide: dashboard vs onboarding.
- * 
- * Uses raw SQL to bypass RLS — we don't know the tenant yet,
- * that's the whole point of this route.
+ * PERFORMANCE: Single auth() call + single JOIN query.
+ * currentUser() is deferred — only called if clerk_id lookup fails
+ * (handles production Clerk switch, same email new ID).
  */
 export async function GET(req: NextRequest) {
   try {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) return unauthorized("Not signed in");
 
-    const clerkUser = await currentUser();
     const sql = getClient_raw();
 
-    // Look up Sonji user by Clerk ID (bypasses RLS)
-    let userRows = await sql`
-      SELECT id, tenant_id, email, name, role, clerk_id 
-      FROM users 
-      WHERE clerk_id = ${clerkUserId} 
+    // Single JOIN query — user + tenant in one round-trip
+    let rows = await sql`
+      SELECT 
+        u.id as user_id, u.email, u.name as user_name, u.role,
+        t.id as tenant_id, t.slug, t.name as tenant_name, 
+        t.plan, t.industry, t.status
+      FROM users u
+      JOIN tenants t ON t.id = u.tenant_id
+      WHERE u.clerk_id = ${clerkUserId}
       LIMIT 1
     `;
 
-    let user = userRows[0] || null;
-
-    // If no match by Clerk ID, try matching by email
-    // This handles production Clerk switch — same email, new Clerk user ID
-    if (!user && clerkUser?.emailAddresses?.[0]?.emailAddress) {
-      const email = clerkUser.emailAddresses[0].emailAddress;
-      const emailRows = await sql`
-        SELECT id, tenant_id, email, name, role, clerk_id 
-        FROM users 
-        WHERE email = ${email} 
-        LIMIT 1
-      `;
-
-      if (emailRows.length > 0) {
-        user = emailRows[0];
-        // Auto-link: update the user's Clerk ID to the new production one
-        await sql`
-          UPDATE users SET clerk_id = ${clerkUserId} WHERE id = ${user.id}
+    // If no match by Clerk ID, try email fallback (deferred currentUser call)
+    if (rows.length === 0) {
+      const clerkUser = await currentUser();
+      const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+      
+      if (email) {
+        rows = await sql`
+          SELECT 
+            u.id as user_id, u.email, u.name as user_name, u.role,
+            t.id as tenant_id, t.slug, t.name as tenant_name, 
+            t.plan, t.industry, t.status
+          FROM users u
+          JOIN tenants t ON t.id = u.tenant_id
+          WHERE u.email = ${email}
+          LIMIT 1
         `;
+
+        if (rows.length > 0) {
+          // Auto-link: update Clerk ID for future fast lookups
+          await sql`UPDATE users SET clerk_id = ${clerkUserId} WHERE id = ${rows[0].user_id}`;
+        }
+      }
+
+      if (rows.length === 0) {
+        return ok({
+          hasTenant: false,
+          clerkUser: {
+            id: clerkUserId,
+            email: clerkUser?.emailAddresses?.[0]?.emailAddress || null,
+            firstName: clerkUser?.firstName || null,
+            lastName: clerkUser?.lastName || null,
+          },
+        });
       }
     }
 
-    if (!user) {
-      return ok({
-        hasTenant: false,
-        clerkUser: {
-          id: clerkUserId,
-          email: clerkUser?.emailAddresses[0]?.emailAddress || null,
-          firstName: clerkUser?.firstName || null,
-          lastName: clerkUser?.lastName || null,
-        },
-      });
-    }
-
-    // Look up tenant (also bypass RLS)
-    const tenantRows = await sql`
-      SELECT id, slug, name, plan, industry, status 
-      FROM tenants 
-      WHERE id = ${user.tenant_id} 
-      LIMIT 1
-    `;
-
-    if (tenantRows.length === 0) {
-      return ok({ hasTenant: false });
-    }
-
-    const tenant = tenantRows[0];
+    const r = rows[0];
 
     return ok({
       hasTenant: true,
       tenant: {
-        id: tenant.id,
-        slug: tenant.slug,
-        name: tenant.name,
-        plan: tenant.plan,
-        industry: tenant.industry,
-        status: tenant.status,
+        id: r.tenant_id,
+        slug: r.slug,
+        name: r.tenant_name,
+        plan: r.plan,
+        industry: r.industry,
+        status: r.status,
       },
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+        id: r.user_id,
+        email: r.email,
+        name: r.user_name,
+        role: r.role,
       },
     });
   } catch (err: any) {

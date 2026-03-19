@@ -72,46 +72,34 @@ export async function getAuthContext(req: NextRequest): Promise<AuthContext | nu
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) return null;
 
-    // Look up the Sonji user by Clerk ID
-    const userRows = await db
+    // Single JOIN — user + tenant in one round-trip
+    const rows = await db
       .select({
-        id: users.id,
+        userId: users.id,
         tenantId: users.tenantId,
         email: users.email,
         name: users.name,
         role: users.role,
+        tenantSlug: tenants.slug,
+        tenantName: tenants.name,
       })
       .from(users)
+      .innerJoin(tenants, eq(tenants.id, users.tenantId))
       .where(eq(users.clerkId, clerkUserId))
       .limit(1);
 
-    if (userRows.length === 0) return null;
+    if (rows.length === 0) return null;
 
-    const user = userRows[0];
-
-    // Get tenant info
-    const tenantRows = await db
-      .select({
-        id: tenants.id,
-        slug: tenants.slug,
-        name: tenants.name,
-      })
-      .from(tenants)
-      .where(eq(tenants.id, user.tenantId))
-      .limit(1);
-
-    if (tenantRows.length === 0) return null;
-
-    const tenant = tenantRows[0];
+    const r = rows[0];
 
     return {
-      tenantId: tenant.id,
-      tenantSlug: tenant.slug,
-      tenantName: tenant.name,
-      userId: user.id,
-      userEmail: user.email,
-      userName: user.name,
-      userRole: user.role as TenantRole,
+      tenantId: r.tenantId,
+      tenantSlug: r.tenantSlug,
+      tenantName: r.tenantName,
+      userId: r.userId,
+      userEmail: r.email,
+      userName: r.name,
+      userRole: r.role as TenantRole,
     };
   } catch (err) {
     console.error("[AuthContext] Failed to resolve:", err);
