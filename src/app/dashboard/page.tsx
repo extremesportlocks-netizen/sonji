@@ -185,11 +185,11 @@ function TopCustomers({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">Top {ic?.contactLabelPlural || "Customers"}</h3>
-        <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+        <Link prefetch={false} href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
       </div>
       <div className="space-y-1">
         {s.topCustomers.map((c, i) => (
-          <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
+          <Link prefetch={false} key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
             <div className="flex items-center gap-3">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? "bg-violet-500" : i === 1 ? "bg-blue-500" : "bg-gray-400"}`}>{i + 1}</div>
               <div><p className="text-sm font-medium text-gray-900">{c.name}</p><p className="text-xs text-gray-400">{c.purchases} purchases</p></div>
@@ -255,11 +255,11 @@ function RecentContacts({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">Recently Added</h3>
-        <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+        <Link prefetch={false} href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
       </div>
       <div className="space-y-1">
         {s.recentContacts.slice(0, 6).map((c: any) => (
-          <Link key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
+          <Link prefetch={false} key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                 <span className="text-xs font-semibold text-gray-600">{c.firstName?.[0]||"?"}{c.lastName?.[0]||""}</span>
@@ -291,7 +291,7 @@ function QuickActions({ ic }: { ic?: IndustryConfig | null }) {
           { href: "/dashboard/analytics", icon: BarChart3, c: "bg-emerald-50 group-hover:bg-emerald-100", ic: "text-emerald-600", l: "View Analytics" },
           { href: "/dashboard/settings?tab=integrations", icon: Zap, c: "bg-amber-50 group-hover:bg-amber-100", ic: "text-amber-600", l: "Integrations" },
         ].map(a => (
-          <Link key={a.l} href={a.href} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition group">
+          <Link prefetch={false} key={a.l} href={a.href} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 transition group">
             <div className={`w-8 h-8 rounded-lg ${a.c} flex items-center justify-center transition`}><a.icon className={`w-4 h-4 ${a.ic}`} /></div>
             <span className="text-sm font-medium text-gray-700">{a.l}</span>
           </Link>
@@ -311,7 +311,7 @@ function Pipeline({ s }: { s: Stats }) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900">Pipeline</h3>
-          <Link href="/dashboard/deals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+          <Link prefetch={false} href="/dashboard/deals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
         </div>
         <div className="space-y-2">
           {pipelineStages.map((p, i) => (
@@ -338,7 +338,7 @@ function Pipeline({ s }: { s: Stats }) {
         <div className="text-center p-3 bg-blue-50 rounded-xl"><p className="text-2xl font-bold text-blue-700">{s.activeDeals}</p><p className="text-[10px] text-gray-500">Active</p></div>
         <div className="text-center p-3 bg-emerald-50 rounded-xl"><p className="text-2xl font-bold text-emerald-700">{s.wonDeals}</p><p className="text-[10px] text-gray-500">Won</p></div>
       </div>
-      <Link href="/dashboard/deals" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-3">Go to Pipeline <ChevronRight className="w-3 h-3" /></Link>
+      <Link prefetch={false} href="/dashboard/deals" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-3">Go to Pipeline <ChevronRight className="w-3 h-3" /></Link>
     </div>
   );
 }
@@ -351,7 +351,7 @@ function OpenTasks({ s }: { s: Stats }) {
         <div className="text-center p-3 bg-amber-50 rounded-xl"><p className="text-2xl font-bold text-amber-700">{s.openTasks}</p><p className="text-[10px] text-gray-500">Open</p></div>
         <div className="text-center p-3 bg-gray-50 rounded-xl"><p className="text-2xl font-bold text-gray-700">{s.totalTasks}</p><p className="text-[10px] text-gray-500">Total</p></div>
       </div>
-      <Link href="/dashboard/tasks" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-3">Go to Tasks <ChevronRight className="w-3 h-3" /></Link>
+      <Link prefetch={false} href="/dashboard/tasks" className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-3">Go to Tasks <ChevronRight className="w-3 h-3" /></Link>
     </div>
   );
 }
@@ -362,7 +362,7 @@ function ActivityFeed({ s }: { s: Stats }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">Recent Activity</h3>
-        <Link href="/dashboard/activities" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+        <Link prefetch={false} href="/dashboard/activities" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
       </div>
       <div className="space-y-2">
         {s.recentContacts.slice(0, 5).map((c: any, i: number) => (
@@ -383,7 +383,7 @@ function UpcomingMeetings() {
       <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
         <Calendar className="w-6 h-6 text-gray-300 mx-auto mb-2" />
         <p className="text-xs text-gray-500">No meetings scheduled</p>
-        <Link href="/dashboard/meetings" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">Schedule one →</Link>
+        <Link prefetch={false} href="/dashboard/meetings" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">Schedule one →</Link>
       </div>
     </div>
   );
@@ -399,7 +399,7 @@ function RevenueChart({ s }: { s: Stats }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">Revenue Trend</h3>
-        <Link href="/dashboard/analytics" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">Full analytics <ChevronRight className="w-3 h-3" /></Link>
+        <Link prefetch={false} href="/dashboard/analytics" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">Full analytics <ChevronRight className="w-3 h-3" /></Link>
       </div>
       <div className="flex items-end gap-3 h-32">
         {months.map((m, i) => (
@@ -423,7 +423,7 @@ function CampaignStats() {
       <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
         <Send className="w-6 h-6 text-gray-300 mx-auto mb-2" />
         <p className="text-xs text-gray-500">Send your first campaign to see stats</p>
-        <Link href="/dashboard/campaigns" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">Create campaign →</Link>
+        <Link prefetch={false} href="/dashboard/campaigns" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">Create campaign →</Link>
       </div>
     </div>
   );
@@ -433,7 +433,7 @@ function EmptyWidget({ msg, cta, href }: { msg: string; cta: string; href: strin
   return (
     <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
       <p className="text-xs text-gray-500">{msg}</p>
-      <Link href={href} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">{cta} →</Link>
+      <Link prefetch={false} href={href} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium mt-1 inline-block">{cta} →</Link>
     </div>
   );
 }

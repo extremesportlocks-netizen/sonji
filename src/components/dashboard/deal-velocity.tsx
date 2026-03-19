@@ -145,7 +145,7 @@ export default function DealVelocity() {
             </span>
           )}
         </div>
-        <Link href="/dashboard/deals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+        <Link prefetch={false} href="/dashboard/deals" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
       </div>
       <div className="space-y-2">
         {deals.sort((a, b) => {

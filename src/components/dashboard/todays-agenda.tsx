@@ -138,7 +138,7 @@ export default function TodaysAgenda() {
             </span>
           )}
         </div>
-        <Link href="/dashboard/meetings" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+        <Link prefetch={false} href="/dashboard/meetings" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           Calendar <ChevronRight className="w-3 h-3" />
         </Link>
       </div>

@@ -110,7 +110,7 @@ export default function GhostingAlerts() {
             </span>
           )}
         </div>
-        <Link href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+        <Link prefetch={false} href="/dashboard/contacts" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
       </div>
       <div className="space-y-2.5">
         {visible.map(a => (

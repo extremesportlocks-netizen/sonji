@@ -100,7 +100,7 @@ export default function TeamPerformance() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">Team Performance</h3>
-        <Link href="/dashboard/projects" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+        <Link prefetch={false} href="/dashboard/projects" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           Projects <ChevronRight className="w-3 h-3" />
         </Link>
       </div>

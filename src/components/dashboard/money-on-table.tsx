@@ -137,7 +137,7 @@ export default function MoneyOnTable() {
       <div className="space-y-1">
         {lapsed.map((c, i) => (
           <div key={c.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50 transition group">
-            <Link href={`/dashboard/contacts/${c.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+            <Link prefetch={false} href={`/dashboard/contacts/${c.id}`} className="flex items-center gap-3 flex-1 min-w-0">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${
                 c.ltv >= 500 ? "bg-red-500" : "bg-amber-400"
               }`}>
@@ -164,7 +164,7 @@ export default function MoneyOnTable() {
         ))}
       </div>
 
-      <Link href="/dashboard/campaigns" className="flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 mt-3 px-3">
+      <Link prefetch={false} href="/dashboard/campaigns" className="flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 mt-3 px-3">
         Run a full re-engagement campaign <ChevronRight className="w-3 h-3" />
       </Link>
     </div>
