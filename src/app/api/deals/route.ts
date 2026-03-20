@@ -5,9 +5,6 @@ import { eq, and, desc, asc, count } from "drizzle-orm";
 import { ok, created, notFound, validationError, withErrorHandler } from "@/lib/api/responses";
 import { createDealSchema, updateDealSchema, moveDealSchema, parseBody, paginationSchema, parseQuery } from "@/lib/api/validation";
 import { requireAuth, requirePermission } from "@/lib/api/auth-context";
-import { logActivity } from "@/lib/services/activity-logger";
-import { sendNotification } from "@/lib/services/notifications";
-import { inngest } from "@/lib/inngest/client";
 import { setTenantContext } from "@/lib/db";
 
 /**
@@ -75,13 +72,13 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     notes: data!.notes,
   }).returning();
 
-  logActivity({
-    tenantId: ctx.tenantId,
-    userId: ctx.userId,
-    contactId: data!.contactId,
-    action: "deal.created",
-    metadata: { dealId: deal.id, title: deal.title, value: deal.value },
-  });
+  // Fire-and-forget (lazy-loaded)
+  import("@/lib/services/activity-logger").then(({ logActivity }) => {
+    logActivity({
+      tenantId: ctx.tenantId, userId: ctx.userId, contactId: data!.contactId,
+      action: "deal.created", metadata: { dealId: deal.id, title: deal.title, value: deal.value },
+    });
+  }).catch(() => {});
 
   return created(deal);
 });
@@ -124,38 +121,29 @@ export const PATCH = withErrorHandler(async (req: NextRequest) => {
     : newStage.toLowerCase().includes("lost") ? "deal.lost"
     : "deal.moved";
 
-  logActivity({
-    tenantId: ctx.tenantId,
-    userId: ctx.userId,
-    action,
-    metadata: { dealId, title: updated.title, from: previousStage, to: newStage },
+  // Fire-and-forget (lazy-loaded)
+  Promise.resolve().then(async () => {
+    try {
+      const { logActivity } = await import("@/lib/services/activity-logger");
+      const { sendNotification } = await import("@/lib/services/notifications");
+      const { inngest } = await import("@/lib/inngest/client");
+
+      logActivity({ tenantId: ctx.tenantId, userId: ctx.userId, action,
+        metadata: { dealId, title: updated.title, from: previousStage, to: newStage } });
+
+      if (action === "deal.won") {
+        sendNotification({ tenantId: ctx.tenantId, userId: ctx.userId, type: "deal.won",
+          title: "Deal won!", body: `${updated.title} moved to ${newStage}. Value: $${updated.value || 0}`,
+          actionUrl: `/dashboard/deals?highlight=${dealId}` });
+      }
+
+      inngest.send({
+        name: action === "deal.won" ? "crm/deal.won" : action === "deal.lost" ? "crm/deal.lost" : "crm/deal.stage_changed",
+        data: { tenantId: ctx.tenantId, userId: ctx.userId, dealId, dealTitle: updated.title,
+          dealValue: updated.value, previousStage, newStage, contactId: updated.contactId },
+      }).catch(() => {});
+    } catch {}
   });
-
-  if (action === "deal.won") {
-    sendNotification({
-      tenantId: ctx.tenantId,
-      userId: ctx.userId,
-      type: "deal.won",
-      title: "Deal won!",
-      body: `${updated.title} moved to ${newStage}. Value: $${updated.value || 0}`,
-      actionUrl: `/dashboard/deals?highlight=${dealId}`,
-    });
-  }
-
-  // Emit Inngest event → triggers automations
-  inngest.send({
-    name: action === "deal.won" ? "crm/deal.won" : action === "deal.lost" ? "crm/deal.lost" : "crm/deal.stage_changed",
-    data: {
-      tenantId: ctx.tenantId,
-      userId: ctx.userId,
-      dealId,
-      dealTitle: updated.title,
-      dealValue: updated.value,
-      previousStage,
-      newStage,
-      contactId: updated.contactId,
-    },
-  }).catch(() => {}); // Fire and forget
 
   return ok(updated);
 });

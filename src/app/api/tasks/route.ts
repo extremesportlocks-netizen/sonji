@@ -5,8 +5,6 @@ import { eq, and, desc, count } from "drizzle-orm";
 import { ok, created, validationError, notFound, withErrorHandler } from "@/lib/api/responses";
 import { createTaskSchema, updateTaskSchema, parseBody, paginationSchema, parseQuery } from "@/lib/api/validation";
 import { requireAuth, requirePermission } from "@/lib/api/auth-context";
-import { logActivity } from "@/lib/services/activity-logger";
-import { sendNotification } from "@/lib/services/notifications";
 import { setTenantContext } from "@/lib/db";
 
 export const GET = withErrorHandler(async (req: NextRequest) => {
@@ -44,22 +42,19 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     tenantId: ctx.tenantId, ...data!,
   }).returning();
 
-  logActivity({
-    tenantId: ctx.tenantId, userId: ctx.userId, contactId: data!.contactId || undefined,
-    action: "task.created", metadata: { taskId: task.id, title: task.title },
+  // Fire-and-forget (lazy-loaded)
+  Promise.resolve().then(async () => {
+    try {
+      const { logActivity } = await import("@/lib/services/activity-logger");
+      const { sendNotification } = await import("@/lib/services/notifications");
+      logActivity({ tenantId: ctx.tenantId, userId: ctx.userId, contactId: data!.contactId || undefined,
+        action: "task.created", metadata: { taskId: task.id, title: task.title } });
+      if (data!.assignedTo && data!.assignedTo !== ctx.userId) {
+        sendNotification({ tenantId: ctx.tenantId, userId: data!.assignedTo, type: "task.assigned",
+          title: "New task assigned to you", body: task.title, actionUrl: `/dashboard/tasks` });
+      }
+    } catch {}
   });
-
-  // Notify assignee if different from creator
-  if (data!.assignedTo && data!.assignedTo !== ctx.userId) {
-    sendNotification({
-      tenantId: ctx.tenantId,
-      userId: data!.assignedTo,
-      type: "task.assigned",
-      title: "New task assigned to you",
-      body: task.title,
-      actionUrl: `/dashboard/tasks`,
-    });
-  }
 
   return created(task);
 });
@@ -100,10 +95,10 @@ export const PATCH = withErrorHandler(async (req: NextRequest) => {
     .returning();
 
   const action = body.status === "done" ? "task.completed" : "task.created";
-  logActivity({
-    tenantId: ctx.tenantId, userId: ctx.userId, contactId: current.contactId || undefined,
-    action, metadata: { taskId, title: updated.title, changes: Object.keys(updateData) },
-  });
+  import("@/lib/services/activity-logger").then(({ logActivity }) => {
+    logActivity({ tenantId: ctx.tenantId, userId: ctx.userId, contactId: current.contactId || undefined,
+      action, metadata: { taskId, title: updated.title, changes: Object.keys(updateData) } });
+  }).catch(() => {});
 
   return ok(updated);
 });

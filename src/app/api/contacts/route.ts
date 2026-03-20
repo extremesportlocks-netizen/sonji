@@ -5,9 +5,6 @@ import { eq, and, ilike, or, desc, asc, sql, count } from "drizzle-orm";
 import { ok, created, notFound, validationError, serverError, withErrorHandler } from "@/lib/api/responses";
 import { createContactSchema, updateContactSchema, parseBody, paginationSchema, parseQuery } from "@/lib/api/validation";
 import { requireAuth, requirePermission } from "@/lib/api/auth-context";
-import { logActivity } from "@/lib/services/activity-logger";
-import { sendNotification } from "@/lib/services/notifications";
-import { inngest } from "@/lib/inngest/client";
 import { setTenantContext } from "@/lib/db";
 
 /**
@@ -114,36 +111,43 @@ export const POST = withErrorHandler(async (req: NextRequest) => {
     status: data!.status,
   }).returning();
 
-  // Fire-and-forget: log activity + notify
-  logActivity({
-    tenantId: ctx.tenantId,
-    userId: ctx.userId,
-    contactId: contact.id,
-    action: "contact.created",
-    metadata: { name: `${contact.firstName} ${contact.lastName || ""}`.trim() },
-  });
+  // Fire-and-forget: log activity + notify + emit event (lazy-loaded)
+  Promise.resolve().then(async () => {
+    try {
+      const { logActivity } = await import("@/lib/services/activity-logger");
+      const { sendNotification } = await import("@/lib/services/notifications");
+      const { inngest } = await import("@/lib/inngest/client");
 
-  sendNotification({
-    tenantId: ctx.tenantId,
-    userId: ctx.userId,
-    type: "contact.created",
-    title: "New contact created",
-    body: `${contact.firstName} ${contact.lastName || ""} was added to your CRM.`,
-    actionUrl: `/dashboard/contacts/${contact.id}`,
-  });
+      logActivity({
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
+        contactId: contact.id,
+        action: "contact.created",
+        metadata: { name: `${contact.firstName} ${contact.lastName || ""}`.trim() },
+      });
 
-  // Emit Inngest event → triggers automations
-  inngest.send({
-    name: "crm/contact.created",
-    data: {
-      tenantId: ctx.tenantId,
-      userId: ctx.userId,
-      contactId: contact.id,
-      contactName: `${contact.firstName} ${contact.lastName || ""}`.trim(),
-      contactEmail: contact.email,
-      contactPhone: contact.phone,
-    },
-  }).catch(() => {});
+      sendNotification({
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
+        type: "contact.created",
+        title: "New contact created",
+        body: `${contact.firstName} ${contact.lastName || ""} was added to your CRM.`,
+        actionUrl: `/dashboard/contacts/${contact.id}`,
+      });
+
+      inngest.send({
+        name: "crm/contact.created",
+        data: {
+          tenantId: ctx.tenantId,
+          userId: ctx.userId,
+          contactId: contact.id,
+          contactName: `${contact.firstName} ${contact.lastName || ""}`.trim(),
+          contactEmail: contact.email,
+          contactPhone: contact.phone,
+        },
+      }).catch(() => {});
+    } catch {}
+  });
 
   return created(contact);
 });
