@@ -426,11 +426,13 @@ function RevenueChart({ s }: { s: Stats }) {
       </div>
       <div className="flex items-end gap-3 h-32">
         {months.map((m, i) => (
-          <div key={m} className="flex-1 flex flex-col items-center gap-1">
-            <div className="w-full bg-indigo-100 rounded-t-lg relative overflow-hidden" style={{ height: `${Math.max((perMonth[i]/max)*100, 4)}%` }}>
-              <div className="absolute inset-0 bg-indigo-500 rounded-t-lg" style={{ opacity: 0.6 + (i * 0.08) }} />
+          <div key={m} className="flex-1 flex flex-col items-center gap-1 h-full">
+            <div className="w-full flex-1 flex items-end">
+              <div className="w-full bg-indigo-100 rounded-t-lg relative overflow-hidden" style={{ height: `${Math.max((perMonth[i]/max)*100, 8)}%` }}>
+                <div className="absolute inset-0 bg-indigo-500 rounded-t-lg" style={{ opacity: 0.6 + (i * 0.08) }} />
+              </div>
             </div>
-            <span className="text-[10px] text-gray-400">{m}</span>
+            <span className="text-[10px] text-gray-400 flex-shrink-0">{m}</span>
           </div>
         ))}
       </div>

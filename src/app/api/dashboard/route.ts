@@ -127,9 +127,14 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     revenue: {
       total: Math.round(totalRevenue * 100) / 100,
       totalPurchases,
-      avgLTV: contactsWithPurchases > 0 ? Math.round((totalRevenue / contactsWithPurchases) * 100) / 100 : 0,
+      // avgLTV: from contact custom_fields, or fall back to revenue/deals if no LTV data
+      avgLTV: contactsWithPurchases > 0
+        ? Math.round((totalRevenue / contactsWithPurchases) * 100) / 100
+        : totalPurchases > 0
+          ? Math.round((totalRevenue / totalPurchases) * 100) / 100
+          : 0,
       avgOrder: totalPurchases > 0 ? Math.round((totalRevenue / totalPurchases) * 100) / 100 : 0,
-      contactsWithPurchases,
+      contactsWithPurchases: contactsWithPurchases || totalPurchases,
     },
     ltvBuckets,
     subscriptionBreakdown,
