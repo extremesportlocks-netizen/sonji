@@ -108,15 +108,15 @@ const INDUSTRY_LAYOUTS: Record<string, WidgetConfig[]> = {
   health_wellness: [
     { id: "w1", type: "revenue_overview", size: "full" },
     { id: "w7", type: "pipeline", size: "half" },
-    { id: "w4", type: "subscription_breakdown", size: "half" },
-    { id: "w2", type: "quick_actions", size: "half" },
     { id: "w8", type: "open_tasks", size: "half" },
     { id: "w6", type: "recent_contacts", size: "full" },
     { id: "w10", type: "revenue_chart", size: "full" },
+    { id: "w2", type: "quick_actions", size: "half" },
+    { id: "w4", type: "subscription_breakdown", size: "half" },
     { id: "w9", type: "activity_feed", size: "full" },
+    { id: "w5", type: "top_customers", size: "full" },
     { id: "w12", type: "campaign_stats", size: "half" },
     { id: "w11", type: "upcoming_meetings", size: "half" },
-    { id: "w5", type: "top_customers", size: "full" },
   ],
   agency_consulting: [
     { id: "w1", type: "revenue_overview", size: "full" },
@@ -154,10 +154,33 @@ function getDefaultLayout(): WidgetConfig[] {
 
 function loadLayout(): WidgetConfig[] {
   if (typeof window === "undefined") return defaultLayout;
-  try { const s = localStorage.getItem("sonji-dashboard-layout"); return s ? JSON.parse(s) : getDefaultLayout(); } catch { return getDefaultLayout(); }
+  try {
+    const saved = localStorage.getItem("sonji-dashboard-layout");
+    const savedIndustry = localStorage.getItem("sonji-dashboard-industry");
+    const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+    const currentIndustry = tenant.industry || null;
+
+    // If tenant industry changed (or no industry tracked), reset to industry defaults
+    if (saved && currentIndustry && (!savedIndustry || savedIndustry !== currentIndustry)) {
+      localStorage.removeItem("sonji-dashboard-layout");
+      localStorage.setItem("sonji-dashboard-industry", currentIndustry);
+      return getDefaultLayout();
+    }
+
+    if (saved) {
+      if (currentIndustry && !savedIndustry) localStorage.setItem("sonji-dashboard-industry", currentIndustry);
+      return JSON.parse(saved);
+    }
+    return getDefaultLayout();
+  } catch { return getDefaultLayout(); }
 }
+
 function saveLayout(layout: WidgetConfig[]) {
-  try { localStorage.setItem("sonji-dashboard-layout", JSON.stringify(layout)); } catch {}
+  try {
+    localStorage.setItem("sonji-dashboard-layout", JSON.stringify(layout));
+    const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+    if (tenant.industry) localStorage.setItem("sonji-dashboard-industry", tenant.industry);
+  } catch {}
 }
 
 // ═══════════════════════════════════════

@@ -113,13 +113,49 @@ function loadConfig(): SonjiBoxConfig {
   if (typeof window === "undefined") return { slots: defaultSlots, gradientFrom: "#0f172a", gradientTo: "#1e293b" };
   try {
     const s = localStorage.getItem("sonji-box-config");
-    if (s) return JSON.parse(s);
+    const currentIndustry = getTenantIndustry();
+    
+    if (s) {
+      const parsed = JSON.parse(s);
+      const savedIndustry = localStorage.getItem("sonji-box-industry");
+      
+      // Case 1: Config exists but no industry tracked → legacy/stale config, reset to current industry
+      // Case 2: Saved industry doesn't match current tenant → tenant switched, reset
+      if (currentIndustry && (!savedIndustry || savedIndustry !== currentIndustry)) {
+        localStorage.removeItem("sonji-box-config");
+        localStorage.setItem("sonji-box-industry", currentIndustry);
+        const preset = INDUSTRY_PRESETS[currentIndustry];
+        if (preset) return { slots: preset.slots, gradientFrom: preset.from, gradientTo: preset.to };
+        return { slots: defaultSlots, gradientFrom: "#0f172a", gradientTo: "#1e293b" };
+      }
+      return parsed;
+    }
   } catch {}
+  // No saved config — use industry defaults if available
+  const industry = getTenantIndustry();
+  if (industry) {
+    localStorage.setItem("sonji-box-industry", industry);
+    const preset = INDUSTRY_PRESETS[industry];
+    if (preset) return { slots: preset.slots, gradientFrom: preset.from, gradientTo: preset.to };
+  }
   return { slots: defaultSlots, gradientFrom: "#0f172a", gradientTo: "#1e293b" };
 }
 
+/** Get the current tenant's industry from sessionStorage */
+function getTenantIndustry(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const t = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+    return t.industry || null;
+  } catch { return null; }
+}
+
 function saveConfig(c: SonjiBoxConfig) {
-  try { localStorage.setItem("sonji-box-config", JSON.stringify(c)); } catch {}
+  try {
+    localStorage.setItem("sonji-box-config", JSON.stringify(c));
+    const industry = getTenantIndustry();
+    if (industry) localStorage.setItem("sonji-box-industry", industry);
+  } catch {}
 }
 
 function formatValue(n: number, fmt: "currency" | "number" | "percent") {
@@ -142,15 +178,21 @@ export default function SonjiBox({ stats }: { stats: any }) {
   useEffect(() => {
     const key = getDemoIndustry();
     setDemoIndustry(key || null);
+    // For real tenants, set industry from tenant data
+    if (!key) {
+      const tenantIndustry = getTenantIndustry();
+      if (tenantIndustry) setDemoIndustry(tenantIndustry);
+    }
   }, []);
 
   // Use industry presets as defaults, but allow customization
-  const industryPreset = demoIndustry && INDUSTRY_PRESETS[demoIndustry] ? INDUSTRY_PRESETS[demoIndustry] : null;
+  const activeIndustry = demoIndustry || getTenantIndustry();
+  const industryPreset = activeIndustry && INDUSTRY_PRESETS[activeIndustry] ? INDUSTRY_PRESETS[activeIndustry] : null;
   const effectiveConfig = industryPreset && config.slots.join(",") === defaultSlots.join(",")
     ? { slots: industryPreset.slots, gradientFrom: industryPreset.from, gradientTo: industryPreset.to }
     : config;
 
-  const labelOverrides = demoIndustry ? (INDUSTRY_LABELS[demoIndustry] || {}) : {};
+  const labelOverrides = activeIndustry ? (INDUSTRY_LABELS[activeIndustry] || {}) : {};
 
   const updateConfig = (next: Partial<SonjiBoxConfig>) => {
     const updated = { ...config, ...next };
