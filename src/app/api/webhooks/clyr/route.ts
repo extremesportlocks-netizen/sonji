@@ -153,7 +153,17 @@ export async function POST(req: NextRequest) {
 
     if (existing.length > 0) {
       contactId = existing[0].id;
-      const prevCf = (existing[0].custom_fields as any) || {};
+      // Defensive: raw SQL may return custom_fields as string, object, or corrupted
+      let prevCf: any = {};
+      try {
+        const raw = existing[0].custom_fields;
+        if (typeof raw === "string") {
+          prevCf = JSON.parse(raw);
+        } else if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+          // Clone to avoid mutating the Row proxy object
+          prevCf = JSON.parse(JSON.stringify(raw));
+        }
+      } catch { prevCf = {}; }
       const mergedCf = { ...prevCf, ...customFields };
 
       // Don't overwrite ltv with 0 if we already have a real value
