@@ -131,6 +131,9 @@ export default function Sidebar() {
   const [demoKey, setDemoKey] = useState<string | null>(null);
   const [tenantName, setTenantName] = useState<string | null>(null);
   const [isRealTenant, setIsRealTenant] = useState(false);
+  const [allTenants, setAllTenants] = useState<any[]>([]);
+  const [showSwitcher, setShowSwitcher] = useState(false);
+  const [currentTenantId, setCurrentTenantId] = useState<string | null>(null);
 
   // Listen for demo mode changes
   useEffect(() => {
@@ -142,13 +145,18 @@ export default function Sidebar() {
     update();
     window.addEventListener("sonji-demo-change", update);
 
-    // Load real tenant name from session
+    // Load real tenant name + all tenants from session
     try {
       const t = sessionStorage.getItem("sonji-tenant");
       if (t) {
         const parsed = JSON.parse(t);
         setTenantName(parsed.name || null);
+        setCurrentTenantId(parsed.id || null);
         setIsRealTenant(true);
+      }
+      const at = sessionStorage.getItem("sonji-all-tenants");
+      if (at) {
+        setAllTenants(JSON.parse(at));
       }
     } catch {}
 
@@ -159,6 +167,22 @@ export default function Sidebar() {
   const workspaceName = isRealTenant ? (tenantName || "Sonji") : (demoCompany?.name || "Sonji");
   const workspaceInitial = isRealTenant ? (tenantName ? tenantName[0].toUpperCase() : "S") : (demoCompany?.initial || "S");
   const workspaceLabel = isRealTenant ? "Live Workspace" : demoCompany ? "Demo Workspace" : "My Workspace";
+
+  // Tenant switcher handler
+  const switchTenant = useCallback((tenant: any) => {
+    // Set cookie — this is what /api/me and getAuthContext read
+    document.cookie = `sonji-tenant-id=${tenant.id}; path=/; max-age=31536000; SameSite=Lax`;
+    // Clear all cached state so the new tenant loads fresh
+    sessionStorage.clear();
+    localStorage.removeItem("sonji-demo-industry");
+    localStorage.removeItem("sonji-dashboard-layout");
+    localStorage.removeItem("sonji-dashboard-industry");
+    localStorage.removeItem("sonji-box-config");
+    localStorage.removeItem("sonji-box-industry");
+    setShowSwitcher(false);
+    // Full reload — ensures all components re-fetch with new tenant
+    window.location.href = "/dashboard";
+  }, []);
 
   // Get label for a nav item, with industry override
   const getLabel = (item: NavItem) => {
@@ -279,17 +303,23 @@ export default function Sidebar() {
   };
 
   return (
+    <>
+    {/* Click-outside backdrop for tenant switcher */}
+    {showSwitcher && <div className="fixed inset-0 z-30" onClick={() => setShowSwitcher(false)} />}
     <aside data-tour="sidebar"
       className={`fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-white border-r border-gray-100 transition-all duration-200 ease-in-out ${collapsed ? "w-[68px]" : "w-[260px]"}`}>
 
-      {/* Logo */}
-      <div className={`flex items-center h-16 border-b border-gray-100 ${collapsed ? "justify-center px-2" : "px-5"}`}>
+      {/* Logo + Tenant Switcher */}
+      <div className={`relative flex items-center h-16 border-b border-gray-100 ${collapsed ? "justify-center px-2" : "px-5"}`}>
         {collapsed ? (
           <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
             <span className="text-white font-bold text-sm">{workspaceInitial}</span>
           </div>
         ) : (
-          <div className="flex items-center gap-3 w-full">
+          <div
+            className={`flex items-center gap-3 w-full ${allTenants.length > 1 ? "cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition" : ""}`}
+            onClick={() => allTenants.length > 1 && setShowSwitcher(!showSwitcher)}
+          >
             <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-sm">{workspaceInitial}</span>
             </div>
@@ -297,7 +327,42 @@ export default function Sidebar() {
               <p className="text-sm font-semibold text-gray-900 truncate">{workspaceName}</p>
               <p className="text-xs text-gray-400 truncate">{workspaceLabel}</p>
             </div>
-            <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${showSwitcher ? "rotate-180" : ""}`} />
+          </div>
+        )}
+
+        {/* Tenant Switcher Dropdown */}
+        {showSwitcher && allTenants.length > 1 && (
+          <div className="absolute top-full left-3 right-3 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="px-3 py-2 border-b border-gray-100">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Switch workspace</p>
+            </div>
+            {allTenants.map((t: any) => (
+              <button
+                key={t.id}
+                onClick={() => switchTenant(t)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition ${
+                  t.id === currentTenantId ? "bg-indigo-50" : ""
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
+                  t.id === currentTenantId ? "bg-indigo-600" : "bg-gray-200"
+                }`}>
+                  <span className={`text-xs font-bold ${t.id === currentTenantId ? "text-white" : "text-gray-600"}`}>
+                    {(t.name || "S")[0].toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm truncate ${t.id === currentTenantId ? "font-semibold text-indigo-700" : "text-gray-700"}`}>
+                    {t.name}
+                  </p>
+                  <p className="text-[10px] text-gray-400 truncate">{t.industry?.replace(/_/g, " ") || t.plan}</p>
+                </div>
+                {t.id === currentTenantId && (
+                  <div className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0" />
+                )}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -409,5 +474,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

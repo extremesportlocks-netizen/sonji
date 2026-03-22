@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { users, tenants } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 
 // ════════════════════════════════════════
 // TYPES
@@ -64,29 +64,52 @@ const PERMISSIONS: Record<string, TenantRole[]> = {
 /**
  * Resolve auth context from Clerk session → database lookup.
  *
- * Flow: Clerk JWT → userId → query users table → get tenant → return full context.
- * This is the bridge between Clerk auth and Sonji's multi-tenant data layer.
+ * MULTI-TENANT FIX: Reads `sonji-tenant-id` cookie to determine which tenant
+ * to resolve for. This ensures Path 1 (/api/me → TenantGate → cookie) and
+ * Path 2 (getAuthContext → every API route) always agree on the tenant.
+ *
+ * If no cookie, falls back to deterministic ORDER BY created_at ASC.
  */
 export async function getAuthContext(req: NextRequest): Promise<AuthContext | null> {
   try {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) return null;
 
-    // Single JOIN — user + tenant in one round-trip
-    const rows = await db
-      .select({
-        userId: users.id,
-        tenantId: users.tenantId,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        tenantSlug: tenants.slug,
-        tenantName: tenants.name,
-      })
-      .from(users)
-      .innerJoin(tenants, eq(tenants.id, users.tenantId))
-      .where(eq(users.clerkId, clerkUserId))
-      .limit(1);
+    // Read tenant selection cookie (set by TenantGate on dashboard load)
+    const selectedTenantId = req.cookies.get("sonji-tenant-id")?.value;
+
+    const selectFields = {
+      userId: users.id,
+      tenantId: users.tenantId,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      tenantSlug: tenants.slug,
+      tenantName: tenants.name,
+    };
+
+    let rows: any[] = [];
+
+    // If cookie is set, do a targeted query — user must belong to this specific tenant
+    if (selectedTenantId) {
+      rows = await db
+        .select(selectFields)
+        .from(users)
+        .innerJoin(tenants, eq(tenants.id, users.tenantId))
+        .where(and(eq(users.clerkId, clerkUserId), eq(users.tenantId, selectedTenantId)))
+        .limit(1);
+    }
+
+    // Fallback — no cookie or cookie didn't match. Use deterministic ORDER BY.
+    if (rows.length === 0) {
+      rows = await db
+        .select(selectFields)
+        .from(users)
+        .innerJoin(tenants, eq(tenants.id, users.tenantId))
+        .where(eq(users.clerkId, clerkUserId))
+        .orderBy(asc(tenants.createdAt))
+        .limit(1);
+    }
 
     if (rows.length === 0) return null;
 

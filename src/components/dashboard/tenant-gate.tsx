@@ -7,15 +7,16 @@ import { Loader2 } from "lucide-react";
 
 /**
  * TENANT GATE
- * 
+ *
  * Wraps the dashboard layout. On load:
- * 1. If signed in via Clerk → resolve tenant from /api/me
- *    - Has tenant → set industry, render dashboard
+ * 1. If signed in → call /api/me to get tenant(s)
+ *    - Has tenant → set cookie + sessionStorage, render dashboard
+ *    - Multiple tenants → also store allTenants for sidebar switcher
  *    - No tenant → redirect to /onboarding
  * 2. If not signed in → allow access (demo/password-gate mode)
- * 
- * Sets localStorage("sonji-demo-industry") from tenant.industry
- * so all dashboard widgets show the correct industry data.
+ *
+ * The `sonji-tenant-id` cookie is the single source of truth for tenant selection.
+ * Both /api/me and getAuthContext (every API route) read this cookie.
  */
 export default function TenantGate({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
@@ -26,7 +27,6 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (!isLoaded) return;
 
-    // Not signed in → allow access for demo/password-gate visitors
     if (!isSignedIn) {
       setHasAccess(true);
       setChecked(true);
@@ -38,11 +38,9 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
     if (cached === "true") {
       try {
         const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
-        // ONLY the ESL platform admin account gets brain mode
         const isAdmin = user.email === "contact@extremesportlocks.com";
 
         if (!isAdmin) {
-          // Real tenant owner (CLYR, Power Marketing, etc.) — ALWAYS clear demo state
           localStorage.removeItem("sonji-demo-industry");
           localStorage.removeItem("sonji-dashboard-layout");
           localStorage.removeItem("sonji-dashboard-industry");
@@ -55,27 +53,39 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
       return;
     }
 
-    // Signed in → check /api/me for tenant
+    // Signed in → resolve tenant(s) from /api/me
     fetch("/api/me")
       .then(r => r.json())
       .then(data => {
         if (data.data?.hasTenant) {
           const tenant = data.data.tenant;
           const user = data.data.user;
+          const allTenants = data.data.allTenants; // only present if multiple
 
+          // ─── Set the tenant selection cookie ───
+          // This is the critical fix: every API route reads this cookie
+          // to resolve the correct tenant. No more LIMIT 1 guessing.
+          document.cookie = `sonji-tenant-id=${tenant.id}; path=/; max-age=31536000; SameSite=Lax`;
+
+          // Store in sessionStorage for UI components
           sessionStorage.setItem("sonji-tenant-verified", "true");
           sessionStorage.setItem("sonji-tenant", JSON.stringify(tenant));
           sessionStorage.setItem("sonji-user", JSON.stringify(user));
 
-          // ONLY the ESL platform admin account gets brain mode
+          // Store allTenants for the sidebar tenant switcher
+          if (allTenants && allTenants.length > 1) {
+            sessionStorage.setItem("sonji-all-tenants", JSON.stringify(allTenants));
+          } else {
+            sessionStorage.removeItem("sonji-all-tenants");
+          }
+
+          // Only ESL platform admin gets brain mode
           const isAdmin = user.email === "contact@extremesportlocks.com";
 
           if (isAdmin && tenant.industry) {
-            // Admin brain mode — set demo industry for industry switching
             localStorage.setItem("sonji-demo-industry", tenant.industry);
           } else {
-            // Real tenant owner — ALWAYS clear ALL stale demo/layout state
-            // This prevents Power Marketing data from bleeding into CLYR
+            // Real tenant owner — clear ALL stale demo/layout state
             localStorage.removeItem("sonji-demo-industry");
             localStorage.removeItem("sonji-dashboard-layout");
             localStorage.removeItem("sonji-dashboard-industry");
@@ -85,12 +95,10 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
 
           setHasAccess(true);
         } else {
-          // Signed in but no tenant → send to onboarding
           router.replace("/onboarding");
         }
       })
       .catch(() => {
-        // API error — allow access anyway (graceful degradation)
         setHasAccess(true);
       })
       .finally(() => setChecked(true));

@@ -1,16 +1,17 @@
 import { NextRequest } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { db, getClient_raw } from "@/lib/db";
-import { users, tenants } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { getClient_raw } from "@/lib/db";
 import { ok, unauthorized } from "@/lib/api/responses";
 
 /**
  * GET /api/me — Returns current user + tenant info.
- * 
- * PERFORMANCE: Single auth() call + single JOIN query.
- * currentUser() is deferred — only called if clerk_id lookup fails
- * (handles production Clerk switch, same email new ID).
+ *
+ * MULTI-TENANT FIX: Returns ALL tenants for the Clerk user.
+ * Uses `sonji-tenant-id` cookie to determine which tenant is selected.
+ * If no cookie or cookie doesn't match, defaults to first tenant (by created_at).
+ *
+ * Response includes `allTenants` array when user belongs to multiple tenants,
+ * enabling the sidebar tenant switcher.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     const sql = getClient_raw();
 
-    // Single JOIN query — user + tenant in one round-trip
+    // Get ALL tenants for this Clerk user — NO LIMIT 1
     let rows = await sql`
       SELECT 
         u.id as user_id, u.email, u.name as user_name, u.role,
@@ -28,14 +29,14 @@ export async function GET(req: NextRequest) {
       FROM users u
       JOIN tenants t ON t.id = u.tenant_id
       WHERE u.clerk_id = ${clerkUserId}
-      LIMIT 1
+      ORDER BY t.created_at ASC
     `;
 
     // If no match by Clerk ID, try email fallback (deferred currentUser call)
     if (rows.length === 0) {
       const clerkUser = await currentUser();
       const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
-      
+
       if (email) {
         rows = await sql`
           SELECT 
@@ -45,12 +46,13 @@ export async function GET(req: NextRequest) {
           FROM users u
           JOIN tenants t ON t.id = u.tenant_id
           WHERE u.email = ${email}
-          LIMIT 1
+          ORDER BY t.created_at ASC
         `;
 
         if (rows.length > 0) {
-          // Auto-link: update Clerk ID for future fast lookups
-          await sql`UPDATE users SET clerk_id = ${clerkUserId} WHERE id = ${rows[0].user_id}`;
+          for (const row of rows) {
+            await sql`UPDATE users SET clerk_id = ${clerkUserId} WHERE id = ${row.user_id}`;
+          }
         }
       }
 
@@ -67,24 +69,42 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const r = rows[0];
+    // ─── Determine selected tenant ───
+    // Priority: cookie > first tenant (oldest by created_at)
+    const cookieTenantId = req.cookies.get("sonji-tenant-id")?.value;
+    let selected = rows[0];
+
+    if (cookieTenantId) {
+      const match = rows.find((r: any) => r.tenant_id === cookieTenantId);
+      if (match) selected = match;
+    }
+
+    const allTenants = rows.map((r: any) => ({
+      id: r.tenant_id,
+      slug: r.slug,
+      name: r.tenant_name,
+      plan: r.plan,
+      industry: r.industry,
+      status: r.status,
+    }));
 
     return ok({
       hasTenant: true,
       tenant: {
-        id: r.tenant_id,
-        slug: r.slug,
-        name: r.tenant_name,
-        plan: r.plan,
-        industry: r.industry,
-        status: r.status,
+        id: selected.tenant_id,
+        slug: selected.slug,
+        name: selected.tenant_name,
+        plan: selected.plan,
+        industry: selected.industry,
+        status: selected.status,
       },
       user: {
-        id: r.user_id,
-        email: r.email,
-        name: r.user_name,
-        role: r.role,
+        id: selected.user_id,
+        email: selected.email,
+        name: selected.user_name,
+        role: selected.role,
       },
+      ...(allTenants.length > 1 ? { allTenants } : {}),
     });
   } catch (err: any) {
     return ok({ hasTenant: false, error: err.message });
