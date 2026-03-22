@@ -59,7 +59,7 @@ export default function DemoBar() {
       // Real tenant — only show for platform admin (Orlando's brain mode)
       try {
         const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
-        const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
+        const adminEmails = ["contact@extremesportlocks.com"];
         if (adminEmails.includes(user.email)) setShowBar(true);
       } catch {}
     } else {

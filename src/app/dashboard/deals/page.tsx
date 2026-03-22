@@ -53,6 +53,8 @@ const defaultStages: Stage[] = [
 const INDUSTRY_STAGES: Record<string, Stage[]> = {
   health_wellness: [
     { id: "Intake", name: "Intake", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },
+    { id: "Intake Abandoned", name: "Intake Abandoned", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
+    { id: "Abandoned Checkout", name: "Abandoned", color: "text-red-700", borderColor: "border-red-400", bgColor: "bg-red-50" },
     { id: "Payment Collected", name: "Payment", color: "text-blue-700", borderColor: "border-blue-400", bgColor: "bg-blue-50" },
     { id: "Under Review", name: "Under Review", color: "text-amber-700", borderColor: "border-amber-400", bgColor: "bg-amber-50" },
     { id: "Approved", name: "Approved", color: "text-emerald-700", borderColor: "border-emerald-400", bgColor: "bg-emerald-50" },
@@ -60,6 +62,7 @@ const INDUSTRY_STAGES: Record<string, Stage[]> = {
     { id: "Shipped", name: "Shipped", color: "text-violet-700", borderColor: "border-violet-400", bgColor: "bg-violet-50" },
     { id: "Delivered", name: "Delivered", color: "text-teal-700", borderColor: "border-teal-400", bgColor: "bg-teal-50" },
     { id: "Active", name: "Active", color: "text-green-700", borderColor: "border-green-400", bgColor: "bg-green-50" },
+    { id: "Cancelled", name: "Cancelled", color: "text-red-600", borderColor: "border-red-400", bgColor: "bg-red-50" },
   ],
   agency_consulting: [
     { id: "Discovery", name: "Discovery", color: "text-indigo-700", borderColor: "border-indigo-400", bgColor: "bg-indigo-50" },

@@ -38,19 +38,16 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
     if (cached === "true") {
       try {
         const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
-        const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
-        const isAdmin = adminEmails.includes(user.email);
+        // ONLY the ESL platform admin account gets brain mode
+        const isAdmin = user.email === "contact@extremesportlocks.com";
 
-        if (isAdmin) {
-          // Admin brain mode — keep demo industry for industry switching
-          const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
-          const currentDemo = localStorage.getItem("sonji-demo-industry");
-          if (tenant.industry && (!currentDemo || currentDemo === tenant.industry)) {
-            localStorage.setItem("sonji-demo-industry", tenant.industry);
-          }
-        } else {
-          // Real tenant — REMOVE demo industry so pages load real data
+        if (!isAdmin) {
+          // Real tenant owner (CLYR, Power Marketing, etc.) — ALWAYS clear demo state
           localStorage.removeItem("sonji-demo-industry");
+          localStorage.removeItem("sonji-dashboard-layout");
+          localStorage.removeItem("sonji-dashboard-industry");
+          localStorage.removeItem("sonji-box-config");
+          localStorage.removeItem("sonji-box-industry");
         }
       } catch {}
       setHasAccess(true);
@@ -70,15 +67,20 @@ export default function TenantGate({ children }: { children: React.ReactNode }) 
           sessionStorage.setItem("sonji-tenant", JSON.stringify(tenant));
           sessionStorage.setItem("sonji-user", JSON.stringify(user));
 
-          const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
-          const isAdmin = adminEmails.includes(user.email);
+          // ONLY the ESL platform admin account gets brain mode
+          const isAdmin = user.email === "contact@extremesportlocks.com";
 
           if (isAdmin && tenant.industry) {
             // Admin brain mode — set demo industry for industry switching
             localStorage.setItem("sonji-demo-industry", tenant.industry);
           } else {
-            // Real tenant — remove demo industry so pages load real data
+            // Real tenant owner — ALWAYS clear ALL stale demo/layout state
+            // This prevents Power Marketing data from bleeding into CLYR
             localStorage.removeItem("sonji-demo-industry");
+            localStorage.removeItem("sonji-dashboard-layout");
+            localStorage.removeItem("sonji-dashboard-industry");
+            localStorage.removeItem("sonji-box-config");
+            localStorage.removeItem("sonji-box-industry");
           }
 
           setHasAccess(true);

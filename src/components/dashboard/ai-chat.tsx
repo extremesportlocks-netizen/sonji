@@ -63,7 +63,7 @@ export default function AIChat() {
     if (verified === "true") {
       try {
         const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
-        const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com"];
+        const adminEmails = ["contact@extremesportlocks.com", "orlandosmith1996@gmail.com", "orlandoenterprises54@gmail.com", "contact@clyr.health"];
         if (adminEmails.includes(user.email)) setShowChat(true);
       } catch {}
     }

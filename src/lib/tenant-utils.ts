@@ -9,9 +9,7 @@
  */
 
 const ADMIN_EMAILS = [
-  "contact@extremesportlocks.com",
-  "orlandosmith1996@gmail.com",
-  "orlandoenterprises54@gmail.com",
+  "contact@extremesportlocks.com",  // Platform admin — brain mode + tenant switcher ONLY from ESL account
 ];
 
 /**

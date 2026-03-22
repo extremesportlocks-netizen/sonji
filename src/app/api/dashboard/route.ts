@@ -10,11 +10,30 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
   await setTenantContext(ctx.tenantId);
   const tid = ctx.tenantId;
 
+  // Get tenant industry for stage-aware metrics
+  const rawSql = getClient_raw();
+  const tenantInfo = await rawSql`SELECT industry FROM tenants WHERE id = ${tid} LIMIT 1`;
+  const industry = tenantInfo[0]?.industry || "default";
+
+  // Terminal stages vary by industry
+  const TERMINAL_POSITIVE: Record<string, string[]> = {
+    health_wellness: ["Delivered", "Active", "Prescribed"],
+    real_estate: ["Closed"],
+    default: ["Closed Won", "Won"],
+  };
+  const TERMINAL_NEGATIVE: Record<string, string[]> = {
+    health_wellness: ["Cancelled"],
+    default: ["Closed Lost", "Lost"],
+  };
+  const positiveStages = TERMINAL_POSITIVE[industry] || TERMINAL_POSITIVE.default;
+  const negativeStages = TERMINAL_NEGATIVE[industry] || TERMINAL_NEGATIVE.default;
+  const allTerminal = [...positiveStages, ...negativeStages];
+
   const results = await Promise.allSettled([
     db.select({ total: count() }).from(contacts).where(eq(contacts.tenantId, tid)),
     db.select({ total: count() }).from(deals).where(eq(deals.tenantId, tid)),
-    db.select({ total: count() }).from(deals).where(and(eq(deals.tenantId, tid), sql`${deals.stage} NOT IN ('Closed Won','Closed Lost')`)),
-    db.select({ total: count() }).from(deals).where(and(eq(deals.tenantId, tid), eq(deals.stage, "Closed Won"))),
+    rawSql`SELECT COUNT(*)::int as total FROM deals WHERE tenant_id = ${tid} AND stage != ALL(${allTerminal})`,
+    rawSql`SELECT COUNT(*)::int as total FROM deals WHERE tenant_id = ${tid} AND stage = ANY(${positiveStages})`,
     db.select({ total: count() }).from(tasks).where(eq(tasks.tenantId, tid)),
     db.select({ total: count() }).from(tasks).where(and(eq(tasks.tenantId, tid), sql`${tasks.status} != 'done'`)),
     db.select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, status: contacts.status, source: contacts.source, customFields: contacts.customFields, createdAt: contacts.createdAt })
@@ -27,8 +46,11 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
 
   const contactCount = v(0, [{ total: 0 }])[0];
   const dealCount = v(1, [{ total: 0 }])[0];
-  const activeDealCount = v(2, [{ total: 0 }])[0];
-  const wonDealCount = v(3, [{ total: 0 }])[0];
+  // Raw SQL returns array of row objects
+  const activeDealResult = v(2, [{ total: 0 }]);
+  const wonDealResult = v(3, [{ total: 0 }]);
+  const activeDealCount = { total: Number(Array.isArray(activeDealResult) ? activeDealResult[0]?.total : activeDealResult?.total) || 0 };
+  const wonDealCount = { total: Number(Array.isArray(wonDealResult) ? wonDealResult[0]?.total : wonDealResult?.total) || 0 };
   const taskCount = v(4, [{ total: 0 }])[0];
   const openTaskCount = v(5, [{ total: 0 }])[0];
   const recentContacts = v(6);
