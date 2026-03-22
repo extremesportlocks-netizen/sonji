@@ -232,7 +232,7 @@ export default function ContactsPage() {
 
   // Pagination
   const [page, setPage] = useState(1);
-  const [per, setPer] = useState(50);
+  const [per, setPer] = useState(25);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 

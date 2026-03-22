@@ -211,9 +211,9 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const [contactsRes, dealsRes, tasksRes, meetingsRes] = await Promise.allSettled([
-        apiFetch<any>("/api/contacts?pageSize=50"),
-        apiFetch<any>("/api/deals?pageSize=50"),
-        apiFetch<any>("/api/tasks?pageSize=50"),
+        apiFetch<any>("/api/contacts?pageSize=25"),
+        apiFetch<any>("/api/deals?pageSize=25"),
+        apiFetch<any>("/api/tasks?pageSize=25"),
         apiFetch<any>("/api/meetings"),
       ]);
 
@@ -260,7 +260,12 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     // Only fetch on pages that actually use it (deals, tasks, contacts, etc.)
     if (typeof window !== "undefined") {
       const p = window.location.pathname;
-      if (p === "/dashboard" || p === "/dashboard/") return;
+      // Skip CRM store fetch on pages that fetch their own data
+      // This prevents duplicate Vercel cold starts that cause 500 errors
+      if (p === "/dashboard" || p === "/dashboard/" ||
+          p.startsWith("/dashboard/contacts") ||
+          p.startsWith("/dashboard/deals") ||
+          p.startsWith("/dashboard/tasks")) return;
     }
     fetchData();
   }, [fetchData]);
