@@ -396,7 +396,7 @@ async function sendRecoveryEmail(
     to,
     subject: options.subject,
     html,
-    from: "CLYR Health <noreply@clyr.health>",
+    from: "CLYR Health <care@clyr.health>",
     replyTo: "contact@clyr.health",
   });
 
