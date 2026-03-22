@@ -396,7 +396,7 @@ async function sendRecoveryEmail(
     to,
     subject: options.subject,
     html,
-    from: "CLYR Health <noreply@sonji.io>", // TODO: Switch to noreply@clyr.health once Resend domain is verified
+    from: "CLYR Health <noreply@clyr.health>",
     replyTo: "contact@clyr.health",
   });
 
