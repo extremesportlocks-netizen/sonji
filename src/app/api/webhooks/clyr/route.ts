@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getClient_raw } from "@/lib/db";
-import { inngest } from "@/lib/inngest/client";
 
 /**
  * POST /api/webhooks/clyr — Receive patient data from clyr-backend
@@ -349,6 +348,9 @@ async function fireAutomationEvents(
   payload: any
 ) {
   try {
+    // Lazy-load inngest (7.7MB) — only needed when firing events, not on every webhook call
+    const { inngest } = await import("@/lib/inngest/client");
+
     const baseData = {
       tenantId,
       contactId,
