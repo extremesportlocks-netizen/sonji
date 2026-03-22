@@ -313,7 +313,12 @@ async function ensurePipelineStages(sql: any, tenantId: string) {
   `;
   if (rows.length === 0) return;
 
-  const currentStages = (rows[0].stages as any[]) || [];
+  // Parse stages — raw SQL client may return jsonb as string
+  let rawStages = rows[0].stages;
+  if (typeof rawStages === "string") {
+    try { rawStages = JSON.parse(rawStages); } catch { rawStages = []; }
+  }
+  const currentStages: any[] = Array.isArray(rawStages) ? rawStages : [];
   const currentNames = new Set(currentStages.map((s: any) => s.name));
   const missing = REQUIRED_STAGES.filter((s) => !currentNames.has(s.name));
   if (missing.length === 0) return;
