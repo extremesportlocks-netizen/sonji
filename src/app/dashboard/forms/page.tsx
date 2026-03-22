@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -112,9 +112,9 @@ export default function FormsPage() {
   const [forms, setForms] = useState<Form[]>([]);
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
-    if (demoIndustry && INDUSTRY_FORMS[demoIndustry]) {
-      setForms(INDUSTRY_FORMS[demoIndustry]);
+    const demoKey = getDemoIndustry();
+    if (demoKey && INDUSTRY_FORMS[demoKey]) {
+      setForms(INDUSTRY_FORMS[demoKey]);
       return;
     }
     fetch("/api/forms").then(r => r.json()).then(data => {

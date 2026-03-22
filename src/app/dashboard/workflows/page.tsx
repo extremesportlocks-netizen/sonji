@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -138,12 +138,12 @@ export default function WorkflowsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   useEffect(() => {
-    const demoIndustry = getActiveIndustry();
-    if (demoIndustry && INDUSTRY_AUTOMATIONS[demoIndustry]) {
-      setAutomations(INDUSTRY_AUTOMATIONS[demoIndustry]);
+    const demoKey = getDemoIndustry();
+    if (demoKey && INDUSTRY_AUTOMATIONS[demoKey]) {
+      setAutomations(INDUSTRY_AUTOMATIONS[demoKey]);
       return;
     }
-    // Try real API first
+    // Real tenant — try real API first
     fetch("/api/automations").then(r => r.json()).then(data => {
       if (data?.data?.length) {
         setAutomations(data.data.map((a: any) => ({

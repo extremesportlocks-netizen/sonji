@@ -1,24 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
+import { getDemoIndustry } from "@/lib/tenant-utils";
 import { Palette, Type, Globe, Image, Eye, Save, RotateCcw, Check, Monitor, Smartphone } from "lucide-react";
+
+function getTenantDefaults() {
+  if (typeof window === "undefined") return { name: "", domain: "", industry: "" };
+  try {
+    const t = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+    return { name: t.name || "", domain: t.slug ? `${t.slug}.sonji.io` : "", industry: t.industry || "" };
+  } catch { return { name: "", domain: "", industry: "" }; }
+}
+
+// Demo data — only shown in ESL admin brain mode
+const DEMO_BRANDS: Record<string, any> = {
+  agency_consulting: {
+    name: "Power Marketing", domain: "app.powermarketing.com", primaryColor: "#6366f1", accentColor: "#8b5cf6",
+    emailFrom: "team@powermarketing.com", emailReplyTo: "colton@powermarketing.com",
+    loginMessage: "Sign in to your client dashboard", footerText: "© 2026 Power Marketing Agency",
+  },
+  health_wellness: {
+    name: "CLYR Health", domain: "app.clyr.health", primaryColor: "#2bbcb3", accentColor: "#0074d4",
+    emailFrom: "care@clyr.health", emailReplyTo: "contact@clyr.health",
+    loginMessage: "Sign in to your patient portal", footerText: "© 2026 Clyr Health, LLC",
+  },
+};
 
 export default function WhiteLabelPage() {
   const [brand, setBrand] = useState({
-    name: "Power Marketing",
-    domain: "app.powermarketing.com",
-    primaryColor: "#6366f1",
-    accentColor: "#8b5cf6",
-    logoUrl: "",
-    faviconUrl: "",
-    emailFrom: "team@powermarketing.com",
-    emailReplyTo: "colton@powermarketing.com",
-    loginMessage: "Sign in to your client dashboard",
-    footerText: "© 2026 Power Marketing Agency",
+    name: "", domain: "", primaryColor: "#6366f1", accentColor: "#8b5cf6",
+    logoUrl: "", faviconUrl: "", emailFrom: "", emailReplyTo: "",
+    loginMessage: "Sign in to your dashboard", footerText: "",
   });
   const [saved, setSaved] = useState(false);
   const [preview, setPreview] = useState<"desktop" | "mobile">("desktop");
+
+  useEffect(() => {
+    const demoKey = getDemoIndustry();
+    if (demoKey && DEMO_BRANDS[demoKey]) {
+      setBrand(b => ({ ...b, ...DEMO_BRANDS[demoKey] }));
+    } else {
+      // Real tenant — use tenant's own info as defaults
+      const t = getTenantDefaults();
+      setBrand(b => ({
+        ...b,
+        name: t.name || b.name,
+        domain: t.domain || b.domain,
+        footerText: t.name ? `© 2026 ${t.name}` : b.footerText,
+      }));
+    }
+  }, []);
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
 

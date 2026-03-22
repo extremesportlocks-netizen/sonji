@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -112,9 +112,34 @@ export default function TeamPage() {
   const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
-    const di = getActiveIndustry();
-    const key = di || "ecommerce";
-    setTeam(INDUSTRY_TEAMS[key] || DEFAULT_TEAM);
+    const demoKey = getDemoIndustry();
+    if (demoKey) {
+      // Demo/brain mode — show industry demo team
+      setTeam(INDUSTRY_TEAMS[demoKey] || DEFAULT_TEAM);
+    } else {
+      // Real tenant — show the logged-in user as the only team member
+      // TODO: wire to /api/team endpoint when team management is built
+      try {
+        const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
+        const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+        if (user.name || user.email) {
+          setTeam([{
+            id: user.id || "u1",
+            name: user.name || user.email?.split("@")[0] || "You",
+            email: user.email || "",
+            role: (user.role as any) || "owner",
+            status: "active",
+            joinDate: "Active",
+            lastActive: "Just now",
+            avatar: (user.name || user.email || "U")[0].toUpperCase(),
+          }]);
+        } else {
+          setTeam([]);
+        }
+      } catch {
+        setTeam([]);
+      }
+    }
   }, []);
 
   const filtered = team.filter(m => {

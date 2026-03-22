@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -99,9 +99,12 @@ export default function SchedulingPage() {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    const di = getActiveIndustry();
-    const key = di || "ecommerce";
-    setLinks(INDUSTRY_LINKS[key] || INDUSTRY_LINKS.ecommerce);
+    const demoKey = getDemoIndustry();
+    if (demoKey) {
+      setLinks(INDUSTRY_LINKS[demoKey] || INDUSTRY_LINKS.ecommerce);
+    } else {
+      setLinks([]);
+    }
   }, []);
 
   const copyUrl = (id: string, url: string) => {

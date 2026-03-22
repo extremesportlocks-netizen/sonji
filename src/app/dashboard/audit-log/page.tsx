@@ -47,11 +47,33 @@ const DEMO_LOG: AuditEntry[] = [
 ];
 
 export default function AuditLogPage() {
-  const [log, setLog] = useState<AuditEntry[]>(DEMO_LOG);
+  const [log, setLog] = useState<AuditEntry[]>([]);
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("all");
 
   useEffect(() => {
+    // Check if we should show demo data (ESL admin brain mode only)
+    const demoKey = (() => {
+      try {
+        if (typeof window === "undefined") return null;
+        const verified = sessionStorage.getItem("sonji-tenant-verified");
+        if (verified !== "true") return localStorage.getItem("sonji-demo-industry") || "ecommerce";
+        const user = JSON.parse(sessionStorage.getItem("sonji-user") || "{}");
+        if (user.email === "contact@extremesportlocks.com") {
+          const dk = localStorage.getItem("sonji-demo-industry");
+          const tenant = JSON.parse(sessionStorage.getItem("sonji-tenant") || "{}");
+          if (dk && dk !== tenant.industry) return dk;
+        }
+        return null;
+      } catch { return null; }
+    })();
+
+    if (demoKey) {
+      setLog(DEMO_LOG);
+      return;
+    }
+
+    // Real tenant — fetch real audit log
     fetch("/api/audit-log?limit=50").then(r => r.json()).then(data => {
       if (data?.data?.length) {
         setLog(data.data.map((e: any) => ({

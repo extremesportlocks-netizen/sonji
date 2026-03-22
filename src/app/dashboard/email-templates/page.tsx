@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -131,9 +131,13 @@ export default function EmailTemplatesPage() {
   const [newTpl, setNewTpl] = useState({ name: "", category: "welcome", subject: "", preview: "" });
 
   useEffect(() => {
-    const di = getActiveIndustry();
-    const key = di || "ecommerce";
-    setTemplates(INDUSTRY_TEMPLATES[key] || DEFAULT_TEMPLATES);
+    const demoKey = getDemoIndustry();
+    if (demoKey) {
+      setTemplates(INDUSTRY_TEMPLATES[demoKey] || DEFAULT_TEMPLATES);
+    } else {
+      // Real tenant — show default generic templates (not industry demo data)
+      setTemplates(DEFAULT_TEMPLATES);
+    }
   }, []);
 
   const categories = Array.from(new Set(templates.map(t => t.category)));

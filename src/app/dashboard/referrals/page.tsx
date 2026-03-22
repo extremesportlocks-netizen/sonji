@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -145,9 +145,13 @@ export default function ReferralsPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const di = getActiveIndustry();
-    const key = di || "ecommerce";
-    setData(INDUSTRY_REFERRALS[key] || INDUSTRY_REFERRALS.ecommerce);
+    const demoKey = getDemoIndustry();
+    if (demoKey) {
+      setData(INDUSTRY_REFERRALS[demoKey] || INDUSTRY_REFERRALS.ecommerce);
+    } else {
+      // Real tenant — show ecommerce as generic baseline (referral module is not API-wired yet)
+      setData(INDUSTRY_REFERRALS.ecommerce);
+    }
   }, []);
 
   if (!data) return <><Header title="Referrals" /><div className="p-6">Loading...</div></>;

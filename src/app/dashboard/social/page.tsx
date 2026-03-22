@@ -1,6 +1,6 @@
 "use client";
 
-import { getActiveIndustry } from "@/lib/tenant-utils";
+import { getDemoIndustry, getActiveIndustry } from "@/lib/tenant-utils";
 import { useState, useEffect } from "react";
 import Header from "@/components/dashboard/header";
 import { useIndustry } from "@/lib/use-industry";
@@ -108,9 +108,13 @@ export default function SocialPage() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
 
   useEffect(() => {
-    const di = getActiveIndustry();
-    const key = di || "ecommerce";
-    setPosts(INDUSTRY_POSTS[key] || INDUSTRY_POSTS.ecommerce);
+    const demoKey = getDemoIndustry();
+    if (demoKey) {
+      setPosts(INDUSTRY_POSTS[demoKey] || INDUSTRY_POSTS.ecommerce);
+    } else {
+      // Real tenant — no social posts yet (feature not wired to APIs)
+      setPosts([]);
+    }
   }, []);
   const [filter, setFilter] = useState<"all" | "draft" | "scheduled" | "published">("all");
   const [view, setView] = useState<"list" | "calendar">("list");
