@@ -131,12 +131,22 @@ export default function EmailTemplatesPage() {
   const [newTpl, setNewTpl] = useState({ name: "", category: "welcome", subject: "", preview: "" });
 
   useEffect(() => {
+    // Load industry-appropriate templates as defaults
     const demoKey = getDemoIndustry();
-    if (demoKey) {
-      setTemplates(INDUSTRY_TEMPLATES[demoKey] || DEFAULT_TEMPLATES);
-    } else {
-      // Real tenant — show default generic templates (not industry demo data)
-      setTemplates(DEFAULT_TEMPLATES);
+    const industryKey = demoKey || getActiveIndustry() || "ecommerce";
+    setTemplates(INDUSTRY_TEMPLATES[industryKey] || DEFAULT_TEMPLATES);
+
+    // Real tenant: fetch saved templates from API (overrides defaults if found)
+    if (!demoKey) {
+      fetch("/api/email-templates").then(r => r.json()).then(data => {
+        if (data?.data?.length) {
+          setTemplates(data.data.map((t: any) => ({
+            id: t.id, name: t.name, category: t.category || "nurture",
+            subject: t.subject || "", preview: (t.html || t.body || "").substring(0, 120),
+            sends: 0, openRate: 0, clickRate: 0, starred: false,
+          })));
+        }
+      }).catch(() => {});
     }
   }, []);
 

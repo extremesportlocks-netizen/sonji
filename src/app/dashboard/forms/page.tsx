@@ -117,6 +117,11 @@ export default function FormsPage() {
       setForms(INDUSTRY_FORMS[demoKey]);
       return;
     }
+    // Real tenant: load industry defaults, then override with API data
+    const industryKey = getActiveIndustry();
+    if (industryKey && INDUSTRY_FORMS[industryKey]) {
+      setForms(INDUSTRY_FORMS[industryKey]);
+    }
     fetch("/api/forms").then(r => r.json()).then(data => {
       if (data?.data?.length) {
         setForms(data.data.map((f: any) => ({

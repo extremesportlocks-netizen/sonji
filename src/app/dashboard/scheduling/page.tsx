@@ -100,10 +100,9 @@ export default function SchedulingPage() {
 
   useEffect(() => {
     const demoKey = getDemoIndustry();
-    if (demoKey) {
-      setLinks(INDUSTRY_LINKS[demoKey] || INDUSTRY_LINKS.ecommerce);
-    } else {
-      setLinks([]);
+    const industryKey = demoKey || getActiveIndustry();
+    if (industryKey) {
+      setLinks(INDUSTRY_LINKS[industryKey] || []);
     }
   }, []);
 

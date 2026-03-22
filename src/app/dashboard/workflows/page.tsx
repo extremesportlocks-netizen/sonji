@@ -143,7 +143,11 @@ export default function WorkflowsPage() {
       setAutomations(INDUSTRY_AUTOMATIONS[demoKey]);
       return;
     }
-    // Real tenant — try real API first
+    // Real tenant: load industry defaults first, then override with API data
+    const industryKey = getActiveIndustry();
+    if (industryKey && INDUSTRY_AUTOMATIONS[industryKey]) {
+      setAutomations(INDUSTRY_AUTOMATIONS[industryKey]);
+    }
     fetch("/api/automations").then(r => r.json()).then(data => {
       if (data?.data?.length) {
         setAutomations(data.data.map((a: any) => ({
@@ -152,8 +156,6 @@ export default function WorkflowsPage() {
           actions: ((a.actions as any[]) || []).map((act: any) => act.type).join(", "),
           status: a.status, category: "custom", lastRun: a.lastRun || "Never", runsTotal: 0,
         })));
-      } else {
-        setAutomations([]);
       }
     }).catch(() => {});
   }, []);
