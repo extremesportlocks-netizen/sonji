@@ -27,11 +27,31 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleStripe(rawBody: string, signature: string) {
-  const event = JSON.parse(rawBody);
+  let event: any;
 
-  // TODO: Verify signature with STRIPE_WEBHOOK_SECRET when available
-  // const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-  // const event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+  if (webhookSecret && stripeKey) {
+    // Verify signature — required in production to prevent spoofed events
+    try {
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as any });
+      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    } catch (err: any) {
+      console.error("[Stripe Webhook] Signature verification failed:", err.message);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+  } else {
+    // No webhook secret configured — parse unverified (dev/setup mode)
+    // WARNING: Set STRIPE_WEBHOOK_SECRET in Vercel to enable verification
+    try {
+      event = JSON.parse(rawBody);
+      console.warn("[Stripe Webhook] UNVERIFIED — set STRIPE_WEBHOOK_SECRET in Vercel env vars");
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+  }
 
   console.log(`[Stripe Webhook] ${event.type} — ${event.data?.object?.id || "no id"}`);
 
@@ -186,21 +206,31 @@ async function handleCustomerCreated(event: any) {
   const existing = await findContactByStripeId(cust.id);
   if (existing) return; // Already imported
 
-  // Find which tenant this belongs to — check all tenants with Stripe connected
+  // Find which tenant this customer belongs to by matching the Stripe account ID
+  // cust.object comes from a specific Stripe account — match via API key verification
   const allTenants = await db.select({ id: tenants.id, settings: tenants.settings }).from(tenants);
   let tenantId: string | null = null;
 
   for (const t of allTenants) {
     const s = (t.settings as any) || {};
-    if (s.stripeSecretKey) {
-      // This tenant has Stripe connected — assume new customers belong to the first tenant with Stripe
-      // TODO: In multi-tenant mode, verify via Stripe API that this customer belongs to this tenant's Stripe account
-      tenantId = t.id;
-      break;
-    }
+    if (!s.stripeSecretKey) continue;
+    // Verify this key owns the incoming customer by checking against the Stripe account
+    // We match by checking if the customer ID can be retrieved with this tenant's key
+    try {
+      const resp = await fetch(`https://api.stripe.com/v1/customers/${cust.id}`, {
+        headers: { Authorization: `Bearer ${s.stripeSecretKey}` },
+      });
+      if (resp.ok) {
+        tenantId = t.id;
+        break; // Found the right tenant
+      }
+    } catch { /* key doesn't own this customer, try next */ }
   }
 
-  if (!tenantId) return;
+  if (!tenantId) {
+    console.log(`[Webhook] Could not attribute customer ${cust.id} to any tenant`);
+    return;
+  }
 
   const nm = (cust.name || "").trim().split(/\s+/);
   await db.insert(contacts).values({

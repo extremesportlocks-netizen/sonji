@@ -276,51 +276,6 @@ export async function POST(req: NextRequest) {
       )
     `;
 
-    // ─── Send welcome email directly for checkout events ───
-    // Inngest requires INNGEST_EVENT_KEY to be configured; until then, send directly.
-    if (isPaid && email) {
-      try {
-        const { sendEmail } = await import("@/lib/services/email");
-        const treatmentName = treatment === "tirzepatide" ? "Tirzepatide" : "Semaglutide";
-        const planLabel = plan === "3-month" ? "3-Month Starter" : plan === "6-month" ? "6-Month Plan" : "Monthly";
-
-        await sendEmail(null, {
-          to: email,
-          subject: `Welcome to CLYR Health — your ${treatmentName} journey starts now`,
-          from: "CLYR Health <care@clyr.health>",
-          replyTo: "contact@clyr.health",
-          html: `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f8fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<div style="max-width:600px;margin:0 auto;padding:40px 24px;">
-<div style="text-align:center;margin-bottom:32px;">
-<span style="font-size:28px;font-weight:700;color:#1a1a2e;">CLY<span style="color:#2bbcb3;">R</span></span>
-</div>
-<div style="background:#fff;border-radius:16px;padding:40px 32px;border:1px solid rgba(0,0,0,0.06);">
-<h1 style="font-size:24px;color:#1a1a2e;margin:0 0 16px;">Welcome to CLYR Health</h1>
-<p style="color:#4b5563;line-height:1.7;margin:0 0 16px;">Hi ${firstName || "there"},</p>
-<p style="color:#4b5563;line-height:1.7;margin:0 0 16px;">Thank you for choosing CLYR Health! Your order has been confirmed and a licensed provider is now reviewing your case.</p>
-<p style="color:#4b5563;line-height:1.7;margin:0 0 8px;"><strong>Your order:</strong> ${treatmentName} + B12 — ${planLabel}${amount ? ` ($${amount})` : ""}</p>
-<p style="color:#4b5563;line-height:1.7;margin:0 0 16px;"><strong>What happens next:</strong></p>
-<ol style="color:#4b5563;line-height:2;margin:0 0 24px;padding-left:20px;">
-<li><strong>Provider Review</strong> — A licensed physician reviews your profile (24-48 hours)</li>
-<li><strong>Prescription</strong> — If approved, sent to our compounding pharmacy</li>
-<li><strong>Shipping</strong> — Discreet packaging, usually 5-7 business days</li>
-</ol>
-<div style="text-align:center;margin:24px 0;">
-<a href="https://www.clyr.health/portal/" style="display:inline-block;padding:14px 32px;background:#2bbcb3;color:#fff;text-decoration:none;border-radius:10px;font-weight:600;font-size:15px;">Visit Your Patient Portal</a>
-</div>
-<p style="color:#9ca3af;font-size:13px;margin:24px 0 0;text-align:center;">Questions? Email us at <a href="mailto:contact@clyr.health" style="color:#2bbcb3;">contact@clyr.health</a></p>
-</div>
-<p style="color:#9ca3af;font-size:11px;text-align:center;margin-top:24px;">&copy; 2026 Clyr Health, LLC. All rights reserved.</p>
-</div></body></html>`,
-        });
-        console.log(`[CLYR Webhook] Welcome email sent to ${email}`);
-      } catch (emailErr: any) {
-        console.error(`[CLYR Webhook] Welcome email failed:`, emailErr.message);
-        // Non-blocking — don't fail the webhook for email issues
-      }
-    }
-
     // ─── Fire Inngest events for automations (async, requires INNGEST_EVENT_KEY) ───
     if (!shouldSkipStageUpdate) {
       await fireAutomationEvents(tenantId, contactId, dealId, event, body);
