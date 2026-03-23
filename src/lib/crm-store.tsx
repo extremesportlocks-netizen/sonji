@@ -75,7 +75,7 @@ export interface Activity {
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<{ data: T | null; error: string | null }> {
   try {
-    const res = await fetch(url, options);
+    const res = await fetch(url, { credentials: "include", ...options });
     const json = await res.json();
     if (!res.ok) return { data: null, error: json.error || json.message || "Request failed" };
     return { data: json.data ?? json, error: null };
@@ -210,11 +210,14 @@ export function CRMProvider({ children }: { children: ReactNode }) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [contactsRes, dealsRes, tasksRes, meetingsRes] = await Promise.allSettled([
-        apiFetch<any>("/api/contacts?pageSize=25"),
-        apiFetch<any>("/api/deals?pageSize=25"),
-        apiFetch<any>("/api/tasks?pageSize=25"),
-        apiFetch<any>("/api/meetings"),
+      // Timeout wrapper — never let a slow API stall the whole page
+      const withTimeout = <T,>(p: Promise<T>, ms = 8000): Promise<T> =>
+        Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+
+      const [contactsRes, dealsRes, tasksRes] = await Promise.allSettled([
+        withTimeout(apiFetch<any>("/api/contacts?pageSize=25")),
+        withTimeout(apiFetch<any>("/api/deals?pageSize=25")),
+        withTimeout(apiFetch<any>("/api/tasks?pageSize=25")),
       ]);
 
       if (contactsRes.status === "fulfilled" && contactsRes.value.data) {
@@ -233,21 +236,19 @@ export function CRMProvider({ children }: { children: ReactNode }) {
         setTasks(rows.map(mapTaskFromAPI));
       }
 
-      if (meetingsRes.status === "fulfilled" && meetingsRes.value.data) {
-        const rows = Array.isArray(meetingsRes.value.data) ? meetingsRes.value.data : meetingsRes.value.data.data || [];
-        setMeetings(rows.map((m: any) => ({
-          id: m.id,
-          title: m.title || "Meeting",
-          contactName: m.contactName || "",
-          date: m.startsAt ? new Date(m.startsAt).toISOString().split("T")[0] : "",
-          startTime: m.startsAt ? new Date(m.startsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "",
-          endTime: m.endsAt ? new Date(m.endsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "",
-          type: m.type || "call",
-          location: m.location || "",
-          notes: m.notes || "",
-          createdAt: m.createdAt || "",
-        })));
-      }
+      // Meetings: non-blocking fire-and-forget — never delays deals/tasks page load
+      apiFetch<any>("/api/meetings").then(meetingsRes => {
+        if (meetingsRes.data) {
+          const rows = Array.isArray(meetingsRes.data) ? meetingsRes.data : meetingsRes.data.data || [];
+          setMeetings(rows.map((m: any) => ({
+            id: m.id, title: m.title || "Meeting", contactName: m.contactName || "",
+            date: m.startsAt ? new Date(m.startsAt).toISOString().split("T")[0] : "",
+            startTime: m.startsAt ? new Date(m.startsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "",
+            endTime: m.endsAt ? new Date(m.endsAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "",
+            type: m.type || "call", location: m.location || "", notes: m.notes || "", createdAt: m.createdAt || "",
+          })));
+        }
+      }).catch(() => {});
     } catch (err) {
       console.error("[CRM] Failed to fetch data:", err);
     } finally {
