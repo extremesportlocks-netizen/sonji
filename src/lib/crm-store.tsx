@@ -261,11 +261,10 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       const p = window.location.pathname;
       // Skip CRM store fetch on pages that fetch their own data
-      // This prevents duplicate Vercel cold starts that cause 500 errors
+      // Contacts page has its own /api/contacts call — the CRM store call was redundant
+      // Deals and tasks pages USE useCRM() — do NOT skip those
       if (p === "/dashboard" || p === "/dashboard/" ||
-          p.startsWith("/dashboard/contacts") ||
-          p.startsWith("/dashboard/deals") ||
-          p.startsWith("/dashboard/tasks")) return;
+          p.startsWith("/dashboard/contacts")) return;
     }
     fetchData();
   }, [fetchData]);
