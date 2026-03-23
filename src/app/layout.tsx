@@ -2,6 +2,14 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
+// Force dynamic rendering across the entire app.
+// ClerkProvider reads request headers (auth tokens) at runtime.
+// Without this, Next.js tries to statically pre-render every page at build time,
+// which fails because NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY isn't available during
+// static generation — producing "Missing publishableKey" errors in the build log.
+// The app works fine at runtime either way, but this eliminates the build noise.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Sonji — The CRM that just works",
   description:
