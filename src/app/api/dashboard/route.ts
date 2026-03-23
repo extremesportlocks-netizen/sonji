@@ -124,16 +124,85 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     // Revenue queries failed — use zeros (non-blocking)
   }
 
-  // Top 5 customers for dashboard
+  // Top 5 — sorted by LTV descending (not createdAt)
   let top5: any[] = [];
   try {
-    const topRows = await db.select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email, customFields: contacts.customFields })
-      .from(contacts).where(and(eq(contacts.tenantId, tid), sql`${contacts.customFields}->>'ltv' IS NOT NULL`))
-      .orderBy(desc(contacts.createdAt)).limit(5);
-    top5 = topRows.map((r) => {
-      const cf = (r.customFields as any) || {};
-      return { id: r.id, name: `${r.firstName} ${r.lastName}`.trim(), email: r.email, ltv: cf.ltv || 0, purchases: cf.purchaseCount || 0, subStatus: cf.subscriptionStatus || "never" };
+    const topRows = await rawSql`
+      SELECT id, first_name, last_name, email, custom_fields
+      FROM contacts
+      WHERE tenant_id = ${tid}
+        AND (custom_fields->>'ltv') IS NOT NULL
+        AND (custom_fields->>'ltv')::numeric > 0
+      ORDER BY (custom_fields->>'ltv')::numeric DESC
+      LIMIT 5
+    `;
+    top5 = (topRows as any[]).map((r: any) => {
+      let cf: any = {};
+      try {
+        const raw = r.custom_fields;
+        cf = typeof raw === "string" ? JSON.parse(raw) : raw ? JSON.parse(JSON.stringify(raw)) : {};
+      } catch {}
+      return {
+        id: r.id,
+        name: `${r.first_name || ""} ${r.last_name || ""}`.trim(),
+        email: r.email,
+        ltv: Number(cf.ltv) || 0,
+        purchases: Number(cf.purchaseCount) || 0,
+        subStatus: cf.subscriptionStatus || "never",
+        treatment: cf.treatment || null,
+        plan: cf.plan || null,
+      };
     });
+  } catch {}
+
+  // Recent activity log — real patient journey events
+  let recentActivity: any[] = [];
+  try {
+    const actRows = await rawSql`
+      SELECT al.action, al.metadata, al.created_at,
+             c.first_name, c.last_name, c.id as contact_id
+      FROM activity_log al
+      LEFT JOIN contacts c ON c.id = al.contact_id
+      WHERE al.tenant_id = ${tid}
+      ORDER BY al.created_at DESC
+      LIMIT 20
+    `;
+    recentActivity = (actRows as any[]).map((r: any) => {
+      let meta: any = {};
+      try {
+        const raw = r.metadata;
+        meta = typeof raw === "string" ? JSON.parse(raw) : raw ? JSON.parse(JSON.stringify(raw)) : {};
+      } catch {}
+      return {
+        action: r.action,
+        contactId: r.contact_id,
+        contactName: `${r.first_name || ""} ${r.last_name || ""}`.trim() || "Unknown",
+        stage: meta.stage || null,
+        treatment: meta.treatment || null,
+        amount: meta.amount || 0,
+        createdAt: r.created_at,
+      };
+    });
+  } catch {}
+
+  // Monthly revenue from deals (last 6 months)
+  let monthlyRevenue: { month: string; revenue: number }[] = [];
+  try {
+    const monthRows = await rawSql`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month,
+        COALESCE(SUM(value), 0)::float as revenue
+      FROM deals
+      WHERE tenant_id = ${tid}
+        AND value > 0
+        AND created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY DATE_TRUNC('month', created_at)
+      ORDER BY DATE_TRUNC('month', created_at) ASC
+    `;
+    monthlyRevenue = (monthRows as any[]).map((r: any) => ({
+      month: r.month as string,
+      revenue: Number(r.revenue) || 0,
+    }));
   } catch {}
 
   const response = ok({
@@ -161,6 +230,8 @@ export const GET = withErrorHandler(async (req: NextRequest) => {
     ltvBuckets,
     subscriptionBreakdown,
     topCustomers: top5,
+    recentActivity,
+    monthlyRevenue,
     tenantName: ctx.tenantName,
     tenantSlug: ctx.tenantSlug,
     pipeline: await getPipelineStages(tid),

@@ -49,7 +49,9 @@ interface Stats {
   revenue: { total: number; totalPurchases: number; avgLTV: number; avgOrder: number; contactsWithPurchases: number };
   ltvBuckets: { whale: number; mid: number; low: number; zero: number };
   subscriptionBreakdown: Record<string, number>;
-  topCustomers: { id: string; name: string; email: string; ltv: number; purchases: number; subStatus: string }[];
+  topCustomers: { id: string; name: string; email: string; ltv: number; purchases: number; subStatus: string; treatment?: string; plan?: string }[];
+  recentActivity?: { action: string; contactId: string; contactName: string; stage: string | null; treatment: string | null; amount: number; createdAt: string }[];
+  monthlyRevenue?: { month: string; revenue: number }[];
   tenantName: string; tenantSlug: string;
 }
 
@@ -106,17 +108,17 @@ const defaultLayout: WidgetConfig[] = [
 // Industry-specific default layouts — prioritize the most relevant widgets
 const INDUSTRY_LAYOUTS: Record<string, WidgetConfig[]> = {
   health_wellness: [
-    { id: "w1", type: "revenue_overview", size: "full" },
-    { id: "w7", type: "pipeline", size: "half" },
-    { id: "w8", type: "open_tasks", size: "half" },
-    { id: "w6", type: "recent_contacts", size: "full" },
-    { id: "w10", type: "revenue_chart", size: "full" },
-    { id: "w2", type: "quick_actions", size: "half" },
-    { id: "w4", type: "subscription_breakdown", size: "half" },
-    { id: "w9", type: "activity_feed", size: "full" },
-    { id: "w5", type: "top_customers", size: "full" },
-    { id: "w12", type: "campaign_stats", size: "half" },
-    { id: "w11", type: "upcoming_meetings", size: "half" },
+    { id: "w1",  type: "revenue_overview",        size: "full" },
+    { id: "w7",  type: "pipeline",                size: "half" },
+    { id: "w8",  type: "open_tasks",              size: "half" },
+    { id: "w9",  type: "activity_feed",           size: "full" },
+    { id: "w6",  type: "recent_contacts",         size: "full" },
+    { id: "w5",  type: "top_customers",           size: "full" },
+    { id: "w10", type: "revenue_chart",           size: "full" },
+    { id: "w4",  type: "subscription_breakdown",  size: "half" },
+    { id: "w2",  type: "quick_actions",           size: "half" },
+    { id: "w11", type: "upcoming_meetings",       size: "half" },
+    { id: "w12", type: "campaign_stats",          size: "half" },
   ],
   agency_consulting: [
     { id: "w1", type: "revenue_overview", size: "full" },
@@ -203,7 +205,20 @@ function RevenueOverview({ s }: { s: Stats }) {
 }
 
 function TopCustomers({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
-  if (s.topCustomers.length === 0) return <EmptyWidget msg="No customer data yet" cta="Import from Stripe" href="/dashboard/settings?tab=integrations" />;
+  if (s.topCustomers.length === 0) {
+    const isHealth = ic?.key === "health_wellness";
+    return <EmptyWidget
+      msg={isHealth ? "No patients yet" : "No customer data yet"}
+      cta={isHealth ? "View Patients" : "Import from Stripe"}
+      href={isHealth ? "/dashboard/contacts" : "/dashboard/settings?tab=integrations"}
+    />;
+  }
+  const isHealth = ic?.key === "health_wellness";
+  const TREATMENT_COLORS: Record<string, string> = {
+    tirzepatide: "bg-violet-100 text-violet-700",
+    semaglutide:  "bg-teal-100 text-teal-700",
+  };
+  const avatarColors = ["bg-violet-500", "bg-blue-500", "bg-teal-500", "bg-indigo-500", "bg-cyan-500"];
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -214,10 +229,19 @@ function TopCustomers({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
         {s.topCustomers.map((c, i) => (
           <Link prefetch={false} key={c.id} href={`/dashboard/contacts/${c.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 transition">
             <div className="flex items-center gap-3">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${i === 0 ? "bg-violet-500" : i === 1 ? "bg-blue-500" : "bg-gray-400"}`}>{i + 1}</div>
-              <div><p className="text-sm font-medium text-gray-900">{c.name}</p><p className="text-xs text-gray-400">{c.purchases} purchases</p></div>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColors[i] || "bg-gray-400"}`}>{i + 1}</div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">{c.name || c.email}</p>
+                {isHealth && (c as any).treatment ? (
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded capitalize ${TREATMENT_COLORS[(c as any).treatment] || "bg-gray-100 text-gray-600"}`}>
+                    {(c as any).treatment === "tirzepatide" ? "Tirzepatide" : "Semaglutide"}{(c as any).plan ? ` · ${(c as any).plan}` : ""}
+                  </span>
+                ) : (
+                  <p className="text-xs text-gray-400">{c.purchases} purchase{c.purchases !== 1 ? "s" : ""}</p>
+                )}
+              </div>
             </div>
-            <p className={`text-sm font-bold ${c.ltv >= 500 ? "text-violet-600" : "text-gray-900"}`}>{fmt(c.ltv)}</p>
+            <p className={`text-sm font-bold ${c.ltv >= 500 ? "text-violet-600" : c.ltv > 0 ? "text-gray-900" : "text-gray-400"}`}>{c.ltv > 0 ? fmt(c.ltv) : "—"}</p>
           </Link>
         ))}
       </div>
@@ -247,7 +271,18 @@ function CustomerTiers({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
 }
 
 function SubscriptionBreakdown({ s, ic }: { s: Stats; ic?: IndustryConfig | null }) {
-  const totalSubs = Object.values(s.subscriptionBreakdown).reduce((a, b) => a + b, 0) || 1;
+  const isHealth = ic?.key === "health_wellness";
+  // For CLYR: augment breakdown with deal stage counts if subscriptionBreakdown is all "never"
+  const allNever = Object.keys(s.subscriptionBreakdown).length === 1 && s.subscriptionBreakdown["never"] > 0;
+  const breakdown = (isHealth && allNever && (s as any).pipeline?.length > 0)
+    ? Object.fromEntries(
+        ((s as any).pipeline as { stage: string; color: string; count: number }[])
+          .filter(p => p.count > 0)
+          .slice(0, 5)
+          .map(p => [p.stage, p.count])
+      )
+    : s.subscriptionBreakdown;
+  const totalSubs = Object.values(breakdown).reduce((a, b) => a + (b as number), 0) || 1;
   const subLabelsMap: Record<string, string> = ic ? {
     active: ic.key === "nonprofit" ? "Active Donors" : ic.key === "agency_consulting" ? "Active Retainers" : ic.key === "fitness_gym" ? "Active Members" : ic.key === "health_wellness" ? "Active Patients" : ic.key === "beauty_salon" ? "Regulars" : "Active",
     canceled: ic.key === "nonprofit" ? "Lapsed Donors" : "Canceled",
@@ -259,13 +294,13 @@ function SubscriptionBreakdown({ s, ic }: { s: Stats; ic?: IndustryConfig | null
     <div>
       <h3 className="text-sm font-semibold text-gray-900 mb-3">{ic?.key === "nonprofit" ? "Donor Status" : ic?.key === "fitness_gym" ? "Membership Status" : ic?.key === "agency_consulting" ? "Client Status" : "Subscriptions"}</h3>
       <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden flex mb-4">
-        {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).map(([k,v]) => (
-          <div key={k} className={`h-full ${subColors[k] || "bg-gray-400"}`} style={{ width: `${(v/totalSubs)*100}%` }} />
+        {Object.entries(breakdown).sort((a,b) => (b[1] as number)-(a[1] as number)).map(([k,v]) => (
+          <div key={k} className={`h-full ${subColors[k] || "bg-indigo-400"}`} style={{ width: `${((v as number)/totalSubs)*100}%` }} />
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {Object.entries(s.subscriptionBreakdown).sort((a,b) => b[1]-a[1]).slice(0, 4).map(([k,v]) => (
-          <div key={k} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${subColors[k] || "bg-gray-400"}`} /><span className="text-xs text-gray-500">{(ic ? subLabelsMap[k] : subLabels[k]) || k}</span><span className="text-xs font-bold text-gray-700 ml-auto">{num(v)}</span></div>
+        {Object.entries(breakdown).sort((a,b) => (b[1] as number)-(a[1] as number)).slice(0, 4).map(([k,v]) => (
+          <div key={k} className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${subColors[k] || "bg-indigo-400"}`} /><span className="text-xs text-gray-500">{(ic ? subLabelsMap[k] : subLabels[k]) || k}</span><span className="text-xs font-bold text-gray-700 ml-auto">{num(v as number)}</span></div>
         ))}
       </div>
     </div>
@@ -380,20 +415,79 @@ function OpenTasks({ s }: { s: Stats }) {
 }
 
 function ActivityFeed({ s }: { s: Stats }) {
-  if (s.recentContacts.length === 0) return <EmptyWidget msg="No activity yet" cta="Get started" href="/dashboard/contacts" />;
+  const activities = s.recentActivity;
+  if (!activities || activities.length === 0) {
+    if (s.recentContacts.length === 0) return <EmptyWidget msg="No activity yet" cta="Get started" href="/dashboard/contacts" />;
+    // Fallback: show recent contacts added
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Recent Activity</h3>
+          <Link prefetch={false} href="/dashboard/activities" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
+        </div>
+        <div className="space-y-2">
+          {s.recentContacts.slice(0, 5).map((c: any) => (
+            <div key={c.id} className="flex items-center gap-3 py-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+              <p className="text-sm text-gray-600"><span className="font-medium text-gray-900">{c.firstName} {c.lastName}</span> was added as a contact</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Map event names to readable labels + colors
+  const EVENT_LABELS: Record<string, { label: string; color: string }> = {
+    "clyr.checkout_confirmed": { label: "Payment received", color: "bg-emerald-500" },
+    "clyr.checkout":           { label: "Payment received", color: "bg-emerald-500" },
+    "clyr.mdi_approved":       { label: "Treatment approved", color: "bg-violet-500" },
+    "clyr.mdi_prescribed":     { label: "Prescription written", color: "bg-cyan-500" },
+    "clyr.shipped":            { label: "Medication shipped", color: "bg-blue-500" },
+    "clyr.delivered":          { label: "Delivered", color: "bg-teal-500" },
+    "clyr.abandoned":          { label: "Abandoned checkout", color: "bg-red-400" },
+    "clyr.checkout_abandoned": { label: "Abandoned checkout", color: "bg-red-400" },
+    "clyr.intake_abandoned":   { label: "Abandoned intake", color: "bg-amber-400" },
+    "clyr.waiting":            { label: "Under review", color: "bg-blue-400" },
+    "clyr.cancelled":          { label: "Cancelled", color: "bg-gray-400" },
+    "clyr.intake_completed":   { label: "Intake submitted", color: "bg-indigo-400" },
+  };
+
+  function timeAgo(iso: string) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900">Recent Activity</h3>
         <Link prefetch={false} href="/dashboard/activities" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">View all <ChevronRight className="w-3 h-3" /></Link>
       </div>
-      <div className="space-y-2">
-        {s.recentContacts.slice(0, 5).map((c: any, i: number) => (
-          <div key={c.id} className="flex items-center gap-3 py-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-            <p className="text-sm text-gray-600"><span className="font-medium text-gray-900">{c.firstName} {c.lastName}</span> was added as a contact</p>
-          </div>
-        ))}
+      <div className="space-y-1">
+        {activities.slice(0, 8).map((a, i) => {
+          const ev = EVENT_LABELS[a.action] || { label: a.action.replace("clyr.", "").replace(/_/g, " "), color: "bg-gray-300" };
+          return (
+            <div key={i} className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-gray-50 transition">
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${ev.color}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-700 truncate">
+                  <span className="font-medium text-gray-900">{a.contactName}</span>
+                  {" — "}
+                  <span>{ev.label}</span>
+                  {a.treatment && <span className="text-gray-400"> · {a.treatment === "tirzepatide" ? "Tirz" : "Sema"}{a.stage ? ` → ${a.stage}` : ""}</span>}
+                  {a.amount > 0 && <span className="text-emerald-600 font-medium"> · {fmt(a.amount)}</span>}
+                </p>
+              </div>
+              <span className="text-[10px] text-gray-400 flex-shrink-0">{timeAgo(a.createdAt)}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -413,11 +507,25 @@ function UpcomingMeetings() {
 }
 
 function RevenueChart({ s }: { s: Stats }) {
-  // Simple visual bar representation
-  const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
-  const total = s.revenue.total;
-  const perMonth = total > 0 ? [0.12, 0.15, 0.18, 0.14, 0.20, 0.21].map(p => Math.round(total * p)) : [0,0,0,0,0,0];
-  const max = Math.max(...perMonth, 1);
+  const months = s.monthlyRevenue && s.monthlyRevenue.length > 0
+    ? s.monthlyRevenue
+    : null;
+  // If no real monthly data, show empty state
+  if (!months || months.length === 0) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Revenue Trend</h3>
+          <Link prefetch={false} href="/dashboard/analytics" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">Full analytics <ChevronRight className="w-3 h-3" /></Link>
+        </div>
+        <div className="p-4 border border-dashed border-gray-200 rounded-xl text-center">
+          <BarChart3 className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+          <p className="text-xs text-gray-500">Revenue data will appear as deals close</p>
+        </div>
+      </div>
+    );
+  }
+  const max = Math.max(...months.map(m => m.revenue), 1);
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -426,17 +534,17 @@ function RevenueChart({ s }: { s: Stats }) {
       </div>
       <div className="flex items-end gap-3 h-32">
         {months.map((m, i) => (
-          <div key={m} className="flex-1 flex flex-col items-center gap-1 h-full">
+          <div key={m.month + i} className="flex-1 flex flex-col items-center gap-1 h-full">
             <div className="w-full flex-1 flex items-end">
-              <div className="w-full bg-indigo-100 rounded-t-lg relative overflow-hidden" style={{ height: `${Math.max((perMonth[i]/max)*100, 8)}%` }}>
-                <div className="absolute inset-0 bg-indigo-500 rounded-t-lg" style={{ opacity: 0.6 + (i * 0.08) }} />
+              <div className="w-full bg-indigo-100 rounded-t-lg relative overflow-hidden" style={{ height: `${Math.max((m.revenue/max)*100, 6)}%` }}>
+                <div className="absolute inset-0 bg-indigo-500 rounded-t-lg" style={{ opacity: 0.65 + (i * 0.05) }} />
               </div>
             </div>
-            <span className="text-[10px] text-gray-400 flex-shrink-0">{m}</span>
+            <span className="text-[10px] text-gray-400 flex-shrink-0">{m.month}</span>
           </div>
         ))}
       </div>
-      <p className="text-xs text-gray-400 mt-2 text-center">Estimated distribution across recent months</p>
+      <p className="text-xs text-gray-400 mt-2 text-center">{fmt(months.reduce((a, m) => a + m.revenue, 0))} across {months.length} month{months.length !== 1 ? "s" : ""}</p>
     </div>
   );
 }
